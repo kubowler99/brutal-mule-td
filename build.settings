@@ -1,0 +1,54 @@
+settings = {
+    orientation = {
+        default = "portrait",
+        supported = { "portrait", "portraitUpsideDown" }
+    },
+    
+    android = {
+        usesPermissions = {
+            "android.permission.INTERNET",
+            "com.android.vending.BILLING", -- Common for games
+        },
+        versionCode = "1",
+    },
+    
+    iphone = {
+        xcassets = "Images.xcassets",
+        plist = {
+            UIStatusBarHidden = true,
+            UILaunchStoryboardName = "LaunchScreen",
+            -- Privacy descriptions (Mandatory for modern iOS)
+            NSCameraUsageDescription = "This app does not use the camera.",
+            NSPhotoLibraryUsageDescription = "This app does not use the photo library.",
+            -- NSAdvertisingAttributionReportEndpoint = "https://postbacks-is.com", -- For SkAdNetwork (Note: Warning in simulator is normal)
+            CFBundleIconFiles = {
+                "Icon.png",
+                "Icon@2x.png",
+                "Icon-60.png",
+                "Icon-60@2x.png",
+                "Icon-60@3x.png",
+                "Icon-76.png",
+                "Icon-76@2x.png",
+                "Icon-Small-40.png",
+                "Icon-Small-40@2x.png",
+                "Icon-Small.png",
+                "Icon-Small@2x.png",
+                "Icon-Small@3x.png"
+            },
+        },
+    },
+
+    window = {
+        defaultMode = "normal",
+        defaultViewWidth = 360,
+        defaultViewHeight = 640,
+        resizable = true,
+        titleText = {
+            default = "My Game",
+        },
+    },
+    
+    plugins = {
+        -- Example: ["plugin.json"] = { publisherId = "com.coronalabs" },
+    },
+}

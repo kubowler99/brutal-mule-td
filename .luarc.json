@@ -1,0 +1,46 @@
+{
+    "$schema": "https://raw.githubusercontent.com/LuaLS/lua-language-server/master/resource/schema.json",
+    "runtime": {
+        "version": "Lua 5.1",
+        "path": [
+            "?.lua",
+            "src/?.lua",
+            "lib/?.lua"
+        ]
+    },
+    "workspace": {
+        "library": [],
+        "checkThirdParty": false
+    },
+    "diagnostics": {
+        "globals": [
+            "display",
+            "system",
+            "Runtime",
+            "transition",
+            "timer",
+            "audio",
+            "native",
+            "network",
+            "physics",
+            "composer",
+            "json",
+            "sqlite3",
+            "crypto",
+            "licensing",
+            "os",
+            "math",
+            "table",
+            "string",
+            "coroutine",
+            "debug",
+            "package",
+            "io",
+            "Class",
+            "Stateful"
+        ],
+        "disable": [
+            "lowercase-global"
+        ]
+    }
+}
