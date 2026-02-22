@@ -4,10 +4,55 @@
 
 -- Mock Solar2D Globals
 _G.display = {
-    newGroup = function() return { insert = function() end, remove = function() end } end,
-    newRect = function() return { setFillColor = function() end, setStrokeColor = function() end } end,
-    newCircle = function() return { setFillColor = function() end } end,
-    newText = function() return {} end,
+    newGroup = function() 
+        return { 
+            insert = function() end, 
+            remove = function() end,
+            numChildren = 0,
+            x = 0,
+            y = 0
+        } 
+    end,
+    newRect = function(x, y, w, h) 
+        return { 
+            x = x or 0,
+            y = y or 0,
+            width = w or 0,
+            height = h or 0,
+            setFillColor = function() end, 
+            setStrokeColor = function() end,
+            removeSelf = function() end
+        } 
+    end,
+    newCircle = function(x, y, r) 
+        return { 
+            x = x or 0,
+            y = y or 0,
+            radius = r or 0,
+            setFillColor = function() end,
+            removeSelf = function() end
+        } 
+    end,
+    newImageRect = function(parent, filename, w, h)
+        return {
+            x = 0,
+            y = 0,
+            width = w or 0,
+            height = h or 0,
+            setFillColor = function() end,
+            removeSelf = function() end
+        }
+    end,
+    newText = function(options) 
+        return {
+            x = 0,
+            y = 0,
+            text = options and options.text or "",
+            setFillColor = function() end,
+            removeSelf = function() end
+        } 
+    end,
+    remove = function(obj) end,
     contentCenterX = 360,
     contentCenterY = 640,
     contentWidth = 720,

@@ -8,33 +8,33 @@ The implementation follows a bottom-up approach: core entities → systems → g
 
 ## Tasks
 
-- [ ] 1. Set up project structure and testing infrastructure
+- [x] 1. Set up project structure and testing infrastructure
   - Create directory structure for entities, systems, controllers, scenes, UI
   - Set up Busted testing framework and spec_helper.lua with Solar2D mocks
   - Create custom generators file for property-based testing (tests/generators/game_generators.lua)
   - Install lua-quickcheck for property-based testing
   - _Requirements: 12.1, 12.3_
 
-- [ ] 2. Implement core entity: Hero
-  - [ ] 2.1 Create Hero class with middleclass
+- [x] 2. Implement core entity: Hero
+  - [x] 2.1 Create Hero class with middleclass
     - Implement Hero:initialize(x, y) with fixed position (360, 1180)
     - Add properties: health, maxHealth, level, xp, xpRequired, abilities array, pickupRadius, isAlive
     - Implement Hero:takeDamage(amount), Hero:addAbility(ability), Hero:addXP(amount)
     - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.6_
   
-  - [ ]* 2.2 Write unit tests for Hero entity
+  - [x] 2.2 Write unit tests for Hero entity
     - Test initial state (level 1, health 100, empty abilities)
     - Test takeDamage reduces health correctly
     - Test death state when health reaches zero
     - _Requirements: 1.1, 1.2, 1.5_
   
-  - [ ]* 2.3 Write property test for Hero position immutability
+  - [x] 2.3 Write property test for Hero position immutability
     - **Property 3: Hero Position Immutability**
     - **Validates: Requirements 1.4**
 
 
 - [ ] 3. Implement core entity: Walker
-  - [ ] 3.1 Create Walker class with middleclass
+  - [x] 3.1 Create Walker class with middleclass
     - Implement Walker:initialize() for object pooling
     - Implement Walker:activate(x, y, lane) to set spawn position and lane
     - Add properties: x, y, lane, health, maxHealth, speed, damage, attackCooldown, isActive
@@ -42,17 +42,17 @@ The implementation follows a bottom-up approach: core entities → systems → g
     - Implement Walker:takeDamage(amount) and Walker:deactivate()
     - _Requirements: 4.1, 4.2, 4.3, 4.4_
   
-  - [ ]* 3.2 Write unit tests for Walker entity
+  - [ ] 3.2 Write unit tests for Walker entity
     - Test activate/deactivate for pooling
     - Test vertical movement (Y decreases, X constant)
     - Test takeDamage and defeat behavior
     - _Requirements: 4.1, 4.3, 4.4_
   
-  - [ ]* 3.3 Write property test for Walker lane assignment
+  - [ ] 3.3 Write property test for Walker lane assignment
     - **Property 10: Lane Assignment**
     - **Validates: Requirements 3.8**
   
-  - [ ]* 3.4 Write property test for Walker vertical movement
+  - [ ] 3.4 Write property test for Walker vertical movement
     - **Property 11: Walker Vertical Movement**
     - **Validates: Requirements 4.1**
 
@@ -66,14 +66,14 @@ The implementation follows a bottom-up approach: core entities → systems → g
     - Implement Projectile:isOffScreen() boundary check
     - _Requirements: 2.4, 2.6_
   
-  - [ ]* 4.2 Write unit tests for Projectile entity
+  - [ ] 4.2 Write unit tests for Projectile entity
     - Test activate calculates correct velocity vector
     - Test update moves projectile correctly
     - Test isOffScreen detects boundaries
     - Test pierce behavior (hitEnemies tracking)
     - _Requirements: 2.4, 2.6_
   
-  - [ ]* 4.3 Write property test for Projectile velocity
+  - [ ] 4.3 Write property test for Projectile velocity
     - **Property 6: Projectile Velocity**
     - **Validates: Requirements 2.4**
 
@@ -86,13 +86,13 @@ The implementation follows a bottom-up approach: core entities → systems → g
     - Implement XPOrb:collect() and XPOrb:deactivate()
     - _Requirements: 5.1, 5.2_
   
-  - [ ]* 5.2 Write unit tests for XP Orb entity
+  - [ ] 5.2 Write unit tests for XP Orb entity
     - Test activate sets position and spawn time
     - Test lifetime expiration after 30 seconds
     - Test collect behavior
     - _Requirements: 5.1, 5.2_
   
-  - [ ]* 5.3 Write property test for XP Orb lifetime
+  - [ ] 5.3 Write property test for XP Orb lifetime
     - **Property 16: XP Orb Lifetime**
     - **Validates: Requirements 5.1**
 
@@ -107,18 +107,18 @@ The implementation follows a bottom-up approach: core entities → systems → g
     - Implement ArcaneBolt:upgrade(upgradeType) for tier upgrades
     - _Requirements: 2.1, 2.2, 2.3, 2.7_
   
-  - [ ]* 6.2 Write unit tests for Arcane Bolt ability
+  - [ ] 6.2 Write unit tests for Arcane Bolt ability
     - Test canActivate respects cooldown
     - Test findNearestEnemy returns closest enemy
     - Test activate creates projectiles
     - Test upgrade applies tier bonuses correctly
     - _Requirements: 2.1, 2.2, 2.3, 2.7_
   
-  - [ ]* 6.3 Write property test for ability cooldown independence
+  - [ ] 6.3 Write property test for ability cooldown independence
     - **Property 4: Ability Cooldown Independence**
     - **Validates: Requirements 2.8**
   
-  - [ ]* 6.4 Write property test for nearest enemy targeting
+  - [ ] 6.4 Write property test for nearest enemy targeting
     - **Property 5: Nearest Enemy Targeting**
     - **Validates: Requirements 2.3**
 
@@ -131,7 +131,7 @@ The implementation follows a bottom-up approach: core entities → systems → g
     - Define collision thresholds (projectile-enemy: 20px, hero-XP: hero.pickupRadius, hero-enemy: 30px)
     - _Requirements: 8.1, 8.2, 8.3, 8.4, 8.6_
   
-  - [ ]* 7.2 Write property test for distance-based collision detection
+  - [ ] 7.2 Write property test for distance-based collision detection
     - **Property 24: Distance-Based Collision Detection**
     - **Validates: Requirements 8.1, 8.2, 8.3, 8.4, 8.6**
 
@@ -146,18 +146,18 @@ The implementation follows a bottom-up approach: core entities → systems → g
     - Track activeProjectiles array
     - _Requirements: 2.1, 2.5, 2.6, 4.4_
   
-  - [ ]* 8.2 Write unit tests for Combat System
+  - [ ] 8.2 Write unit tests for Combat System
     - Test ability activation respects cooldowns
     - Test projectile creation and tracking
     - Test damage application on collision
     - Test projectile removal on hit/out of bounds
     - _Requirements: 2.1, 2.5, 2.6_
   
-  - [ ]* 8.3 Write property test for projectile damage application
+  - [ ] 8.3 Write property test for projectile damage application
     - **Property 14: Projectile Damage Application**
     - **Validates: Requirements 2.5**
   
-  - [ ]* 8.4 Write property test for projectile removal on collision
+  - [ ] 8.4 Write property test for projectile removal on collision
     - **Property 15: Projectile Removal on Collision**
     - **Validates: Requirements 2.6, 12.5**
 
@@ -173,22 +173,22 @@ The implementation follows a bottom-up approach: core entities → systems → g
     - Track activeWalkers array
     - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5, 3.6, 3.7, 3.8, 3.9_
   
-  - [ ]* 9.2 Write unit tests for Spawner System
+  - [ ] 9.2 Write unit tests for Spawner System
     - Test spawn timer accumulation
     - Test walker activation with correct lane
     - Test maximum concurrent limit enforcement
     - Test difficulty scaling at different levels
     - _Requirements: 3.1, 3.3, 3.9_
   
-  - [ ]* 9.3 Write property test for spawn rate scaling
+  - [ ] 9.3 Write property test for spawn rate scaling
     - **Property 7: Spawn Rate Scaling**
     - **Validates: Requirements 3.3, 3.4, 3.5, 3.6**
   
-  - [ ]* 9.4 Write property test for maximum concurrent enemies
+  - [ ] 9.4 Write property test for maximum concurrent enemies
     - **Property 8: Maximum Concurrent Enemies**
     - **Validates: Requirements 3.9, 12.2**
   
-  - [ ]* 9.5 Write property test for walker spawn position
+  - [ ] 9.5 Write property test for walker spawn position
     - **Property 9: Walker Spawn Position**
     - **Validates: Requirements 3.7**
 
@@ -203,22 +203,22 @@ The implementation follows a bottom-up approach: core entities → systems → g
     - Track activeOrbs array
     - _Requirements: 5.1, 5.2, 5.3, 5.4, 5.5, 5.6_
   
-  - [ ]* 10.2 Write unit tests for Level System
+  - [ ] 10.2 Write unit tests for Level System
     - Test XP orb spawning and activation
     - Test XP collection on proximity
     - Test XP requirement calculation
     - Test level-up trigger and callback
     - _Requirements: 5.2, 5.4, 5.5, 5.6_
   
-  - [ ]* 10.3 Write property test for XP collection on proximity
+  - [ ] 10.3 Write property test for XP collection on proximity
     - **Property 17: XP Collection on Proximity**
     - **Validates: Requirements 5.2**
   
-  - [ ]* 10.4 Write property test for XP requirement formula
+  - [ ] 10.4 Write property test for XP requirement formula
     - **Property 18: XP Requirement Formula**
     - **Validates: Requirements 5.4**
   
-  - [ ]* 10.5 Write property test for level-up trigger
+  - [ ] 10.5 Write property test for level-up trigger
     - **Property 19: Level-Up Trigger**
     - **Validates: Requirements 5.5, 5.6**
 
@@ -235,7 +235,7 @@ The implementation follows a bottom-up approach: core entities → systems → g
     - Ensure at least one tier upgrade card when abilities exist
     - _Requirements: 6.1, 6.2, 6.3, 6.4, 6.5, 6.6, 6.7_
   
-  - [ ]* 11.2 Write unit tests for Upgrade System
+  - [ ] 11.2 Write unit tests for Upgrade System
     - Test card generation creates exactly 3 cards
     - Test new ability availability when slots < 5
     - Test tier upgrade availability when abilities exist
@@ -243,19 +243,19 @@ The implementation follows a bottom-up approach: core entities → systems → g
     - Test tier limit enforcement (max tier 5)
     - _Requirements: 6.1, 6.3, 6.4, 6.5, 6.6_
   
-  - [ ]* 11.3 Write property test for upgrade card count
+  - [ ] 11.3 Write property test for upgrade card count
     - **Property 20: Upgrade Card Count**
     - **Validates: Requirements 6.1**
   
-  - [ ]* 11.4 Write property test for new ability availability
+  - [ ] 11.4 Write property test for new ability availability
     - **Property 21: New Ability Availability**
     - **Validates: Requirements 6.3**
   
-  - [ ]* 11.5 Write property test for tier upgrade availability
+  - [ ] 11.5 Write property test for tier upgrade availability
     - **Property 22: Tier Upgrade Availability**
     - **Validates: Requirements 6.4**
   
-  - [ ]* 11.6 Write property test for upgrade application
+  - [ ] 11.6 Write property test for upgrade application
     - **Property 23: Upgrade Application**
     - **Validates: Requirements 6.5, 6.6, 6.7**
 
@@ -274,13 +274,13 @@ The implementation follows a bottom-up approach: core entities → systems → g
     - Implement game_state.getStatistics() to return game stats
     - _Requirements: 7.1, 7.2, 7.4, 7.7_
   
-  - [ ]* 13.2 Write unit tests for Game State Model
+  - [ ] 13.2 Write unit tests for Game State Model
     - Test initial state values
     - Test pause/resume state transitions
     - Test endGame sets correct statistics
     - _Requirements: 7.1, 7.4, 7.7_
   
-  - [ ]* 13.3 Write property test for elapsed time increases
+  - [ ] 13.3 Write property test for elapsed time increases
     - **Property 33: Elapsed Time Increases**
     - **Validates: Requirements 7.2**
 
@@ -293,7 +293,7 @@ The implementation follows a bottom-up approach: core entities → systems → g
     - Implement ability_registry.isUnlocked(id) to check availability
     - _Requirements: 2.1, 6.2_
   
-  - [ ]* 14.2 Write unit tests for Ability Registry
+  - [ ] 14.2 Write unit tests for Ability Registry
     - Test getAbility returns correct definition
     - Test createInstance creates new ability instance
     - Test isUnlocked checks unlock status
@@ -315,7 +315,7 @@ The implementation follows a bottom-up approach: core entities → systems → g
     - Implement game_controller.cleanup() for resource cleanup
     - _Requirements: 7.1, 7.3, 7.4, 7.5, 7.6, 12.1_
   
-  - [ ]* 15.2 Write integration tests for Game Controller
+  - [ ] 15.2 Write integration tests for Game Controller
     - Test game initialization creates all entities and systems
     - Test game loop updates all systems in correct order
     - Test pause/resume during upgrade selection
@@ -323,11 +323,11 @@ The implementation follows a bottom-up approach: core entities → systems → g
     - Test cleanup removes all listeners and timers
     - _Requirements: 7.1, 7.3, 7.4, 7.5, 7.6_
   
-  - [ ]* 15.3 Write property test for game over on hero death
+  - [ ] 15.3 Write property test for game over on hero death
     - **Property 2: Game Over on Hero Death**
     - **Validates: Requirements 1.5, 7.6**
   
-  - [ ]* 15.4 Write property test for spawning continues throughout session
+  - [ ] 15.4 Write property test for spawning continues throughout session
     - **Property 32: Spawning Continues Throughout Session**
     - **Validates: Requirements 3.1**
 
@@ -357,22 +357,22 @@ The implementation follows a bottom-up approach: core entities → systems → g
     - Add visual feedback on tap
     - _Requirements: 6.1, 6.8_
   
-  - [ ]* 16.5 Write unit tests for UI components
+  - [ ] 16.5 Write unit tests for UI components
     - Test HealthBar displays correct fill ratio
     - Test XPBar displays correct fill ratio
     - Test AbilityIndicator shows correct ability and cooldown
     - Test UpgradeCard displays correct data and handles tap
     - _Requirements: 10.1, 10.3, 10.6, 10.7, 6.8_
   
-  - [ ]* 16.6 Write property test for health bar accuracy
+  - [ ] 16.6 Write property test for health bar accuracy
     - **Property 25: Health Bar Accuracy**
     - **Validates: Requirements 10.1**
   
-  - [ ]* 16.7 Write property test for XP bar accuracy
+  - [ ] 16.7 Write property test for XP bar accuracy
     - **Property 26: XP Bar Accuracy**
     - **Validates: Requirements 10.3**
   
-  - [ ]* 16.8 Write property test for ability indicator synchronization
+  - [ ] 16.8 Write property test for ability indicator synchronization
     - **Property 29: Ability Indicator Synchronization**
     - **Validates: Requirements 10.6, 10.7**
 
@@ -388,7 +388,7 @@ The implementation follows a bottom-up approach: core entities → systems → g
     - Add play button tap handler to transition to game scene
     - _Requirements: 9.1, 9.2, 11.1, 11.2_
   
-  - [ ]* 17.2 Write unit tests for Menu Scene
+  - [ ] 17.2 Write unit tests for Menu Scene
     - Test scene:create builds UI correctly
     - Test play button transitions to game scene
     - Test scene lifecycle cleanup
@@ -421,22 +421,22 @@ The implementation follows a bottom-up approach: core entities → systems → g
     - Update ability indicators with cooldown states
     - _Requirements: 10.1, 10.2, 10.3, 10.4, 10.5, 10.6, 10.7_
   
-  - [ ]* 18.4 Write integration tests for Game Scene
+  - [ ] 18.4 Write integration tests for Game Scene
     - Test scene initialization creates game controller
     - Test UI updates reflect game state
     - Test upgrade panel appears on level-up
     - Test scene cleanup on hide/destroy
     - _Requirements: 7.1, 10.1, 10.3, 11.3_
   
-  - [ ]* 18.5 Write property test for time display format
+  - [ ] 18.5 Write property test for time display format
     - **Property 27: Time Display Format**
     - **Validates: Requirements 10.4**
   
-  - [ ]* 18.6 Write property test for enemy defeat counter
+  - [ ] 18.6 Write property test for enemy defeat counter
     - **Property 28: Enemy Defeat Counter**
     - **Validates: Requirements 10.5**
   
-  - [ ]* 18.7 Write property test for scene cleanup on hide
+  - [ ] 18.7 Write property test for scene cleanup on hide
     - **Property 30: Scene Cleanup on Hide**
     - **Validates: Requirements 11.5**
 
@@ -453,14 +453,14 @@ The implementation follows a bottom-up approach: core entities → systems → g
     - Add button handlers to transition to game or menu scene
     - _Requirements: 7.7, 9.3, 9.4, 11.1, 11.2_
   
-  - [ ]* 19.2 Write unit tests for Game Over Scene
+  - [ ] 19.2 Write unit tests for Game Over Scene
     - Test scene displays correct statistics
     - Test "Play Again" transitions to game scene
     - Test "Main Menu" transitions to menu scene
     - Test scene lifecycle cleanup
     - _Requirements: 7.7, 9.3, 9.4, 11.1_
   
-  - [ ]* 19.3 Write property test for game over statistics
+  - [ ] 19.3 Write property test for game over statistics
     - **Property 31: Game Over Statistics**
     - **Validates: Requirements 7.7**
 
@@ -482,7 +482,7 @@ The implementation follows a bottom-up approach: core entities → systems → g
     - Call data.save() to persist changes
     - _Requirements: 7.7_
   
-  - [ ]* 21.2 Write unit tests for persistent data integration
+  - [ ] 21.2 Write unit tests for persistent data integration
     - Test statistics are saved correctly on game over
     - Test high scores are updated appropriately
     - _Requirements: 7.7_
@@ -547,15 +547,15 @@ The implementation follows a bottom-up approach: core entities → systems → g
 
 
 - [ ] 24. Implement remaining correctness properties as tests
-  - [ ]* 24.1 Write property test for ability slot limit
+  - [ ] 24.1 Write property test for ability slot limit
     - **Property 1: Ability Slot Limit**
     - **Validates: Requirements 1.7, 2.9**
   
-  - [ ]* 24.2 Write property test for walker melee damage
+  - [ ] 24.2 Write property test for walker melee damage
     - **Property 12: Walker Melee Damage**
     - **Validates: Requirements 4.2**
   
-  - [ ]* 24.3 Write property test for walker defeat spawns XP
+  - [ ] 24.3 Write property test for walker defeat spawns XP
     - **Property 13: Walker Defeat Spawns XP**
     - **Validates: Requirements 4.5**
 
