@@ -1,6 +1,8 @@
 -- Walker Entity
 -- Basic melee enemy that advances toward the defensive wall
 
+local placeholder_graphics = require("src.utils.placeholder_graphics")
+
 local Walker = Class("Walker")
 
 function Walker:initialize()
@@ -18,7 +20,10 @@ function Walker:initialize()
   self.damage = 5  -- Melee damage
   self.attackCooldown = 1.0  -- Time between attacks (seconds)
   self.lastAttackTime = 0  -- Timestamp of last attack
-  self.attackRange = 30  -- Distance to hero for melee
+  
+  -- Wall targeting properties
+  self.wallTarget = nil  -- Reference to wall entity
+  self.isAttackingWall = false  -- Attack state flag
   
   -- Pool state
   self.isActive = false
@@ -39,13 +44,16 @@ function Walker:activate(x, y, lane)
   -- Reset attack timer
   self.lastAttackTime = 0
   
+  -- Reset wall targeting
+  self.wallTarget = nil
+  self.isAttackingWall = false
+  
   -- Mark as active
   self.isActive = true
   
   -- Create or update display object
   if not self.displayObject then
-    self.displayObject = display.newCircle(self.x, self.y, 20)
-    self.displayObject:setFillColor(0.8, 0.2, 0.2)  -- Red color
+    self.displayObject = placeholder_graphics.createWalkerSprite(self.x, self.y)
   else
     self.displayObject.x = self.x
     self.displayObject.y = self.y
@@ -53,24 +61,29 @@ function Walker:activate(x, y, lane)
   end
 end
 
-function Walker:update(dt, heroX, heroY)
+function Walker:update(dt, wallThreshold)
   if not self.isActive then
     return
   end
   
-  -- Move down the lane (vertical movement, constant X)
-  self.y = self.y + (self.speed * dt)
-  
-  -- Update display object position
-  if self.displayObject then
-    self.displayObject.y = self.y
+  -- Check if walker has reached the wall threshold
+  if self.y >= wallThreshold then
+    -- Stop moving and set attacking state
+    self.isAttackingWall = true
+  else
+    -- Continue moving downward toward the wall
+    self.y = self.y + (self.speed * dt)
+    
+    -- Check again after movement to ensure we don't overshoot
+    if self.y >= wallThreshold then
+      self.y = wallThreshold
+      self.isAttackingWall = true
+    end
   end
   
-  -- Check if within melee range of hero
-  local distance = self:getDistance(heroX, heroY)
-  if distance <= self.attackRange then
-    -- Attack logic is handled externally by combat system
-    -- This just tracks the distance
+  -- Update display object position (always sync with logical position)
+  if self.displayObject then
+    self.displayObject.y = self.y
   end
 end
 
@@ -90,16 +103,14 @@ end
 function Walker:deactivate()
   self.isActive = false
   
+  -- Reset wall targeting
+  self.wallTarget = nil
+  self.isAttackingWall = false
+  
   -- Hide display object
   if self.displayObject then
     self.displayObject.isVisible = false
   end
-end
-
-function Walker:getDistance(x, y)
-  local dx = x - self.x
-  local dy = y - self.y
-  return math.sqrt(dx * dx + dy * dy)
 end
 
 function Walker:destroy()

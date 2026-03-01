@@ -1,16 +1,14 @@
 -- Hero Entity
 -- The stationary player character positioned at the defensive wall
 
+local placeholder_graphics = require("src.utils.placeholder_graphics")
+
 local Hero = Class("Hero")
 
 function Hero:initialize(x, y)
   -- Fixed position (default to bottom center if not provided)
   self.x = x or 360
-  self.y = y or 1180
-  
-  -- Health properties
-  self.health = 100
-  self.maxHealth = 100
+  self.y = y or 1200
   
   -- Level and XP properties
   self.level = 1
@@ -23,25 +21,8 @@ function Hero:initialize(x, y)
   -- Collection radius for XP orbs
   self.pickupRadius = 40
   
-  -- Alive state
-  self.isAlive = true
-  
-  -- Visual representation (placeholder circle for now)
-  self.displayObject = display.newCircle(self.x, self.y, 30)
-  self.displayObject:setFillColor(0.2, 0.5, 1.0) -- Blue color
-end
-
-function Hero:takeDamage(amount)
-  if not self.isAlive then
-    return
-  end
-  
-  self.health = self.health - amount
-  
-  if self.health <= 0 then
-    self.health = 0
-    self.isAlive = false
-  end
+  -- Visual representation using placeholder graphics
+  self.displayObject = placeholder_graphics.createHeroSprite(self.x, self.y)
 end
 
 function Hero:addAbility(ability)

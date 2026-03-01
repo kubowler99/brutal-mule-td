@@ -18,7 +18,7 @@ describe("Hero Entity", function()
     describe("initialization", function()
         it("should initialize with default position at bottom center", function()
             assert.is.equal(360, hero.x)
-            assert.is.equal(1180, hero.y)
+            assert.is.equal(1200, hero.y)
         end)
 
         it("should initialize with custom position when provided", function()
@@ -30,11 +30,6 @@ describe("Hero Entity", function()
 
         it("should initialize at level 1", function()
             assert.is.equal(1, hero.level)
-        end)
-
-        it("should initialize with 100 health", function()
-            assert.is.equal(100, hero.health)
-            assert.is.equal(100, hero.maxHealth)
         end)
 
         it("should initialize with empty abilities array", function()
@@ -54,55 +49,18 @@ describe("Hero Entity", function()
             assert.is.equal(40, hero.pickupRadius)
         end)
 
-        it("should initialize as alive", function()
-            assert.is_true(hero.isAlive)
-        end)
-
         it("should create a display object", function()
             assert.is_not_nil(hero.displayObject)
         end)
-    end)
 
-    describe("takeDamage", function()
-        it("should reduce health by damage amount", function()
-            hero:takeDamage(30)
-            assert.is.equal(70, hero.health)
+        it("should not have health properties", function()
+            assert.is_nil(hero.health)
+            assert.is_nil(hero.maxHealth)
+            assert.is_nil(hero.isAlive)
         end)
 
-        it("should reduce health correctly with multiple damage calls", function()
-            hero:takeDamage(20)
-            hero:takeDamage(15)
-            assert.is.equal(65, hero.health)
-        end)
-
-        it("should set health to zero when damage exceeds current health", function()
-            hero:takeDamage(150)
-            assert.is.equal(0, hero.health)
-        end)
-
-        it("should set isAlive to false when health reaches zero", function()
-            hero:takeDamage(100)
-            assert.is.equal(0, hero.health)
-            assert.is_false(hero.isAlive)
-        end)
-
-        it("should set isAlive to false when health goes below zero", function()
-            hero:takeDamage(120)
-            assert.is.equal(0, hero.health)
-            assert.is_false(hero.isAlive)
-        end)
-
-        it("should not reduce health when already dead", function()
-            hero:takeDamage(100)
-            assert.is_false(hero.isAlive)
-            hero:takeDamage(50)
-            assert.is.equal(0, hero.health)
-        end)
-
-        it("should handle zero damage", function()
-            hero:takeDamage(0)
-            assert.is.equal(100, hero.health)
-            assert.is_true(hero.isAlive)
+        it("should not have takeDamage method", function()
+            assert.is_nil(hero.takeDamage)
         end)
     end)
 
@@ -179,8 +137,8 @@ describe("Hero Entity", function()
         end)
     end)
 
-    -- **Validates: Requirements 1.4**
-    -- Property 3: Hero Position Immutability
+    -- **Validates: Requirements 8.1, 8.2, 8.3, 8.4**
+    -- Property 3: Hero Position Immutability (updated for wall-based hero)
     describe("Property Test: Hero Position Immutability", function()
         it("should maintain fixed position regardless of game operations", function()
             -- Test with default position
@@ -190,29 +148,21 @@ describe("Hero Entity", function()
             
             -- Expected default position (bottom center)
             assert.is.equal(360, initialX)
-            assert.is.equal(1180, initialY)
+            assert.is.equal(1200, initialY)
             
             -- Run 100 iterations with random game operations
             for i = 1, 100 do
                 -- Generate random operations
-                local operationType = math.random(1, 4)
+                local operationType = math.random(1, 2)
                 
                 if operationType == 1 then
-                    -- Take random damage (0-50)
-                    local damage = math.random(0, 50)
-                    testHero:takeDamage(damage)
-                elseif operationType == 2 then
                     -- Add random ability (if slots available)
                     local ability = { id = "test_ability_" .. i }
                     testHero:addAbility(ability)
-                elseif operationType == 3 then
+                else
                     -- Add random XP (0-100)
                     local xp = math.random(0, 100)
                     testHero:addXP(xp)
-                else
-                    -- Combination: damage + XP
-                    testHero:takeDamage(math.random(1, 20))
-                    testHero:addXP(math.random(10, 50))
                 end
                 
                 -- Property: Position must remain unchanged
@@ -240,7 +190,6 @@ describe("Hero Entity", function()
             -- Run 50 iterations with various operations
             for i = 1, 50 do
                 -- Perform multiple operations in sequence
-                testHero:takeDamage(math.random(1, 15))
                 testHero:addXP(math.random(5, 30))
                 
                 if #testHero.abilities < 5 then
@@ -257,28 +206,26 @@ describe("Hero Entity", function()
             testHero:destroy()
         end)
         
-        it("should maintain position even when hero dies", function()
+        it("should maintain abilities functionality without health", function()
             local testHero = Hero:new()
-            local initialX = testHero.x
-            local initialY = testHero.y
             
-            -- Kill the hero with massive damage
-            testHero:takeDamage(200)
+            -- Add abilities
+            for i = 1, 5 do
+                local ability = { id = "ability_" .. i, cooldown = 1.0 }
+                testHero:addAbility(ability)
+            end
             
-            -- Property: Position must remain unchanged even after death
-            assert.is.equal(initialX, testHero.x,
-                "Hero X position changed after death")
-            assert.is.equal(initialY, testHero.y,
-                "Hero Y position changed after death")
-            assert.is_false(testHero.isAlive)
+            -- Verify abilities are present and functional
+            assert.is.equal(5, #testHero.abilities)
             
-            -- Try more operations on dead hero
-            testHero:takeDamage(50)
+            -- Add XP
             testHero:addXP(100)
+            assert.is.equal(100, testHero.xp)
             
-            -- Position still unchanged
-            assert.is.equal(initialX, testHero.x)
-            assert.is.equal(initialY, testHero.y)
+            -- Verify hero still has no health properties
+            assert.is_nil(testHero.health)
+            assert.is_nil(testHero.maxHealth)
+            assert.is_nil(testHero.isAlive)
             
             testHero:destroy()
         end)

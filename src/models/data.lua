@@ -1,4 +1,4 @@
-local json = require("json")
+local json = _G.json or require("json")
 local M = {}
 
 M.filename = "gamedata.json"
@@ -11,6 +11,12 @@ M.defaultData = {
     highScore = 0,
     sessions = 0,
     firstRun = os.time(),
+    stats = {
+        gamesPlayed = 0,
+        highestLevel = 1,
+        longestSurvival = 0,
+        totalEnemiesDefeated = 0,
+    },
 }
 
 M.data = {}

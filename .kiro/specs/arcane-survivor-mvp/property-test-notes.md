@@ -59,6 +59,7 @@ busted
 ### Test Coverage
 
 The property test validates that:
+
 - Hero x and y coordinates never change
 - Position is immutable across all public methods (takeDamage, addAbility, addXP)
 - Position remains fixed even when hero dies (isAlive = false)

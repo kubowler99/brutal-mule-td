@@ -15,10 +15,12 @@ description = {
 dependencies = {
    "lua >= 5.1",
    "middleclass",
-   "busted",   -- For unit testing
-   "luacheck", -- For static analysis/linting
-   -- "ldoc",     -- For documentation generation
-   -- "penlight", -- For advanced data structures and utilities
+   "busted",         -- For unit testing
+   "lua-quickcheck", -- For property-based testing
+   "luacheck",       -- For static analysis/linting
+   "luacov",         -- For code coverage (optional)
+   -- "ldoc",        -- For documentation generation
+   -- "penlight",    -- For advanced data structures and utilities
 }
 build = {
    type = "builtin",
