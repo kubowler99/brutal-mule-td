@@ -23,7 +23,7 @@ A hero‑centric, roguelike, Survivors‑like 2D mobile action game built with S
 - Hero sits on the **wall (bottom center)** and auto‑uses active abilities according to cooldowns and triggers.  
 - Auto‑attacks fire at intervals.
 - Hero can have up to 5 active abilities/attacks
-- Collect XP orbs from defeated enemies.
+- Collect XP by defeating enemies.
 - Level up and choose one of three random abilities/ability upgrades.
 - Survive increasingly difficult waves.
 

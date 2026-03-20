@@ -88,8 +88,15 @@ local function showUpgradePanel(cards)
     return
   end
   
-  -- Show upgrade panel
+  -- Hide the game layer so no entities (including free-floating health bars)
+  -- render above the upgrade overlay. Game is paused during level-up anyway.
+  if scene.gameLayer then
+    scene.gameLayer.isVisible = false
+  end
+  
+  -- Show upgrade panel and bring to front so it renders above all game entities
   upgradePanel.isVisible = true
+  upgradePanel:toFront()
   
   -- Clear existing upgrade cards
   for _, card in ipairs(upgradeCards) do
@@ -129,6 +136,11 @@ function hideUpgradePanel()
     upgradePanel.isVisible = false
   end
   
+  -- Restore game layer visibility
+  if scene.gameLayer then
+    scene.gameLayer.isVisible = true
+  end
+  
   -- Clear upgrade cards
   for _, card in ipairs(upgradeCards) do
     card:destroy()
@@ -143,6 +155,11 @@ function scene:create(event)
   -- Create background using placeholder graphics
   local background = placeholder_graphics.createBackground(helpers.width, helpers.height)
   sceneGroup:insert(background)
+  
+  -- Create a game layer for entities (walkers, projectiles, hero, wall)
+  -- This layer is inserted BEFORE the UI overlay layer so entities always render behind UI
+  scene.gameLayer = display.newGroup()
+  sceneGroup:insert(scene.gameLayer)
   
   -- NOTE: Game controller initialization moved to scene:show(phase="will")
   -- to support "Play Again" functionality. UI elements are created here once,
@@ -240,7 +257,7 @@ function scene:show(event)
     -- CRITICAL FIX: Initialize game controller every time scene appears
     -- This handles the "Play Again" scenario where scene:create() doesn't run
     -- because Composer caches scenes by default
-    game_controller.initialize(self.view)
+    game_controller.initialize(scene.gameLayer)
     
     -- Reset hero and wall references
     hero = nil
@@ -265,7 +282,7 @@ function scene:show(event)
       
       for i = 1, 5 do
         local indicatorX = startX + (i - 1) * indicatorSpacing
-        local indicator = AbilityIndicator:new(indicatorX, indicatorY, i, self.view)
+        local indicator = AbilityIndicator:new(indicatorX, indicatorY, i, scene.gameLayer)
         table.insert(abilityIndicators, indicator)
       end
     end

@@ -2,6 +2,8 @@
 -- Manages enemy wave generation with difficulty scaling based on hero level
 -- Spawns walkers at intervals from the top edge of the screen
 
+local config_loader = require("src.models.config_loader")
+
 local M = {}
 
 -- State
@@ -34,9 +36,9 @@ function M.initialize(walkerPool, heroLevel)
     M.walkerPool = walkerPool
     M.activeWalkers = {}
     M.spawnTimer = 0
-    M.spawnInterval = 3.0
-    M.spawnCount = 1
-    M.maxConcurrent = 50
+    M.spawnInterval = config_loader.positiveNumber(config_loader.get("spawner.spawnInterval"), 3.0)
+    M.spawnCount = config_loader.positiveNumber(config_loader.get("spawner.spawnCount"), 1)
+    M.maxConcurrent = config_loader.positiveNumber(config_loader.get("spawner.maxConcurrent"), 50)
     M.heroLevel = heroLevel or 1
     M.gameStartTime = nil
     M.hasSpawnedInitial = false

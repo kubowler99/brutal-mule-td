@@ -1,3 +1,17 @@
+--[[
+  ⚠️ DEPRECATED - DO NOT USE ⚠️
+  
+  This file is deprecated and will be removed in a future cleanup.
+  
+  XP is now awarded automatically when enemies are defeated.
+  XP orbs are no longer spawned or collected in the game.
+  
+  This file is kept temporarily for reference during the transition period.
+  See: automatic-xp-on-defeat spec (Requirement 2.3)
+  
+  Migration: Use ExperienceSystem:awardXP() directly instead of spawning orbs.
+]]
+
 -- XP Orb Entity
 -- Collectible experience point dropped by defeated enemies
 

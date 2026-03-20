@@ -1,0 +1,51 @@
+{
+  "arcane_bolt": {
+    "name": "Arcane Bolt",
+    "description": "Fires magical projectiles at enemies",
+    "module": "src.entities.abilities.arcane_bolt",
+    "unlocked": true,
+    "maxTier": 5,
+    "icon": "assets/images/abilities/arcane_bolt.png",
+    "baseStats": {
+      "cooldown": 1.0,
+      "damage": 10,
+      "projectileSpeed": 1200,
+      "pierceCount": 0,
+      "projectileCount": 1
+    },
+    "upgrades": {
+      "damage_increase": {
+        "name": "Arcane Bolt Damage",
+        "description": "+5 damage per bolt",
+        "iconType": "damage",
+        "damageIncrease": 5
+      },
+      "attack_speed": {
+        "name": "Arcane Bolt Attack Speed",
+        "description": "-0.15s cooldown",
+        "iconType": "speed",
+        "cooldownReduction": 0.15,
+        "minCooldown": 0.25
+      },
+      "projectile_count": {
+        "name": "Arcane Bolt Projectile Count",
+        "description": "+1 projectile",
+        "iconType": "count",
+        "countIncrease": 1
+      },
+      "pierce": {
+        "name": "Arcane Bolt Pierce",
+        "description": "+1 pierce count",
+        "iconType": "pierce",
+        "pierceIncrease": 1
+      }
+    },
+    "tiers": {
+      "1": {},
+      "2": { "damageBonus": 5, "cooldownReduction": 0.15 },
+      "3": { "damageBonus": 5, "projectileCountBonus": 1 },
+      "4": { "damageBonus": 10, "cooldownReduction": 0.1 },
+      "5": { "damageBonus": 10, "pierceBonus": 1, "projectileCountBonus": 1 }
+    }
+  }
+}

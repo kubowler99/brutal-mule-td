@@ -1,0 +1,19 @@
+{
+  "_schema": {
+    "_comment": "Enemy configuration schema",
+    "_fields": {
+      "health": "number - Maximum health points",
+      "speed": "number - Movement speed in pixels per second",
+      "damage": "number - Attack damage dealt to player",
+      "xpValue": "number - Experience points awarded when defeated",
+      "attackCooldown": "number - Seconds between attacks"
+    }
+  },
+  "walker": {
+    "health": 20,
+    "speed": 80,
+    "damage": 5,
+    "attackCooldown": 1.0,
+    "xpValue": 10
+  }
+}

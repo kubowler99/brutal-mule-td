@@ -9,7 +9,7 @@ local composer = require("composer")
 local game_controller = require("src.controllers.game_controller")
 local game_state = require("src.models.game_state")
 local spawner_system = require("src.systems.spawner_system")
-local level_system = require("src.systems.level_system")
+local experience_system = require("src.systems.experience_system")
 local upgrade_system = require("src.systems.upgrade_system")
 local data = require("src.models.data")
 
@@ -107,8 +107,8 @@ describe("Full Game Session Integration", function()
       local hero = game_controller.getHero()
       local initialLevel = hero.level
       
-      -- Use level_system.addXP to trigger level-up (not hero:addXP)
-      level_system.addXP(100)  -- Enough for level 2
+      -- Use experience_system.addXP to trigger level-up (not hero:addXP)
+      experience_system.addXP(100)  -- Enough for level 2
       
       -- Verify level-up occurred
       assert.are.equal(2, hero.level, "Hero should level up to 2")
@@ -128,8 +128,8 @@ describe("Full Game Session Integration", function()
       
       local hero = game_controller.getHero()
       
-      -- Trigger level-up using level_system
-      level_system.addXP(100)
+      -- Trigger level-up using experience_system
+      experience_system.addXP(100)
       
       -- Verify 3 upgrade cards were generated
       assert.is_not_nil(upgradeCards, "Upgrade cards should be generated")
@@ -150,8 +150,8 @@ describe("Full Game Session Integration", function()
       
       local hero = game_controller.getHero()
       
-      -- Trigger level-up using level_system
-      level_system.addXP(100)
+      -- Trigger level-up using experience_system
+      experience_system.addXP(100)
       
       -- Verify game is paused
       assert.are.equal("paused", game_state.state)
@@ -208,8 +208,8 @@ describe("Full Game Session Integration", function()
       
       -- Level up 3 times
       for i = 1, 3 do
-        local xpNeeded = level_system.calculateXPRequired(hero.level)
-        level_system.addXP(xpNeeded)
+        local xpNeeded = experience_system.calculateXPRequired(hero.level)
+        experience_system.addXP(xpNeeded)
       end
       
       -- Verify multiple level-ups occurred
@@ -369,7 +369,7 @@ describe("Full Game Session Integration", function()
       assert.is_true(#hero.abilities > 0, "Hero should have abilities")
       
       -- 3. Level system: XP orbs may exist (if enemies defeated)
-      local activeOrbs = level_system.getActiveOrbs()
+      local activeOrbs = experience_system.getActiveOrbs()
       -- Can't guarantee orbs exist, but system should be initialized
       assert.is_not_nil(activeOrbs)
       
@@ -395,8 +395,8 @@ describe("Full Game Session Integration", function()
       
       -- Rapidly level up 5 times
       for i = 1, 5 do
-        local xpNeeded = level_system.calculateXPRequired(hero.level)
-        level_system.addXP(xpNeeded)
+        local xpNeeded = experience_system.calculateXPRequired(hero.level)
+        experience_system.addXP(xpNeeded)
       end
       
       -- Verify hero reached level 6
@@ -516,9 +516,9 @@ describe("Full Game Session Integration", function()
       local startTime = system.getTimer() / 1000
       
       -- Manually spawn an XP orb
-      level_system.spawnXPOrb(360, 640)
+      experience_system.spawnXPOrb(360, 640)
       
-      local activeOrbs = level_system.getActiveOrbs()
+      local activeOrbs = experience_system.getActiveOrbs()
       assert.are.equal(1, #activeOrbs)
       
       -- Mock system.getTimer to simulate 31 seconds passing
@@ -529,13 +529,13 @@ describe("Full Game Session Integration", function()
       
       -- Simulate a frame with the new time
       local currentTime = startTime + 31
-      level_system.update(0.016, currentTime)
+      experience_system.update(0.016, currentTime)
       
       -- Restore original getTimer
       system.getTimer = originalGetTimer
       
       -- Orb should have expired
-      activeOrbs = level_system.getActiveOrbs()
+      activeOrbs = experience_system.getActiveOrbs()
       assert.are.equal(0, #activeOrbs, "Orb should expire after 30 seconds")
     end)
     
@@ -606,8 +606,8 @@ describe("Full Game Session Integration", function()
       local wall = game_controller.getWall()
       
       -- Add XP immediately to ensure at least one level-up
-      level_system.addXP(100)  -- Level up to 2
-      level_system.addXP(120)  -- Level up to 3
+      experience_system.addXP(100)  -- Level up to 2
+      experience_system.addXP(120)  -- Level up to 3
       
       -- Simulate gameplay (shorter duration since we're testing integration)
       local fps = 60
@@ -619,7 +619,7 @@ describe("Full Game Session Integration", function()
         
         -- Periodically add more XP
         if i % (3 * fps) == 0 then  -- Every 3 seconds
-          level_system.addXP(50)
+          experience_system.addXP(50)
         end
         
         -- Check if game over
@@ -645,3 +645,4 @@ describe("Full Game Session Integration", function()
     end)
   end)
 end)
+

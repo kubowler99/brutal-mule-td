@@ -3,6 +3,7 @@ _G.Class = require("lib.middleclass")
 _G.Stateful = require("lib.stateful")
 local composer = require("composer")
 local state = require("src.models.data")
+local abilityRegistry = require("src.models.ability_registry")
 
 -- Hide status bar
 display.setStatusBar(display.HiddenStatusBar)
@@ -40,6 +41,9 @@ end
 
 -- Initialize and Load Game Data
 state.load()
+
+-- Initialize Ability Registry
+abilityRegistry.initialize()
 
 -- Go to menu scene
 composer.gotoScene("src.scenes.menu")

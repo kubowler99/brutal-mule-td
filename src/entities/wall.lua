@@ -1,6 +1,8 @@
 -- Wall Entity
 -- Defensive structure that serves as the primary damage target
 
+local config_loader = require("src.models.config_loader")
+
 local Wall = Class("Wall")
 
 function Wall:initialize(x, y, width)
@@ -9,9 +11,9 @@ function Wall:initialize(x, y, width)
   self.y = y or 1200
   self.width = width
   
-  -- Health properties
-  self.health = 100
-  self.maxHealth = 100
+  -- Health properties (read from config_loader with hard-coded fallbacks)
+  self.health = config_loader.positiveNumber(config_loader.get("wall.health"), 100)
+  self.maxHealth = config_loader.positiveNumber(config_loader.get("wall.maxHealth"), 100)
   
   -- Visual representation (rectangle spanning screen width)
   self.displayObject = display.newRect(self.x, self.y, self.width, 80)

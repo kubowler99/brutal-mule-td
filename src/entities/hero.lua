@@ -18,6 +18,9 @@ function Hero:initialize(x, y)
   -- Abilities array (max 5 slots)
   self.abilities = {}
   
+  -- Alive state
+  self.isAlive = true
+  
   -- Collection radius for XP orbs
   self.pickupRadius = 40
   
@@ -37,7 +40,7 @@ end
 
 function Hero:addXP(amount)
   self.xp = self.xp + amount
-  -- Note: Level-up logic is handled externally by level_system
+  -- Note: Level-up logic is handled externally by experience_system
 end
 
 function Hero:destroy()

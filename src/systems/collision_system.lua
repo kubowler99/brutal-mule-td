@@ -4,11 +4,17 @@
 --
 -- @module collision_system
 
+local config_loader = require("src.models.config_loader")
+
 local M = {}
 
--- Collision thresholds (in pixels)
-local PROJECTILE_ENEMY_THRESHOLD = 20
-local HERO_ENEMY_MELEE_THRESHOLD = 30
+-- Collision thresholds (in pixels) - read from config_loader with hard-coded fallbacks
+local PROJECTILE_ENEMY_THRESHOLD = config_loader.positiveNumber(
+  config_loader.get("collision.projectileEnemyThreshold"), 20
+)
+local HERO_ENEMY_MELEE_THRESHOLD = config_loader.positiveNumber(
+  config_loader.get("collision.heroEnemyMeleeThreshold"), 30
+)
 
 --- Calculate distance between two points using the distance formula
 -- @param x1 number X coordinate of first point
@@ -70,50 +76,6 @@ function M.checkProjectileCollisions(projectiles, enemies)
   end
   
   return collisions
-end
-
---- Check for XP orb collection by the hero
--- Detects when the hero is within pickup radius of an XP orb.
--- Returns array of orbs that should be collected.
---
--- @param hero table Hero entity with x, y, and pickupRadius properties
--- @param xpOrbs table Array of active XP orb entities
--- @return table Array of XP orbs within collection range
-function M.checkXPCollection(hero, xpOrbs)
-  local collectibleOrbs = {}
-  
-  -- Validate inputs
-  if not hero or not xpOrbs then
-    return collectibleOrbs
-  end
-  
-  -- Validate hero position and pickup radius
-  if type(hero.x) ~= "number" or type(hero.y) ~= "number" or
-     type(hero.pickupRadius) ~= "number" then
-    return collectibleOrbs
-  end
-  
-  -- Check each XP orb against hero pickup radius
-  for i = 1, #xpOrbs do
-    local orb = xpOrbs[i]
-    
-    -- Skip inactive orbs or invalid positions
-    if orb and orb.isActive and 
-       type(orb.x) == "number" and type(orb.y) == "number" then
-      
-      local distance = M.checkDistance(
-        hero.x, hero.y,
-        orb.x, orb.y
-      )
-      
-      -- Check if orb is within pickup radius
-      if distance <= hero.pickupRadius then
-        table.insert(collectibleOrbs, orb)
-      end
-    end
-  end
-  
-  return collectibleOrbs
 end
 
 --- Check for enemies within melee range of the hero

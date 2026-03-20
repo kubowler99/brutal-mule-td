@@ -1,0 +1,19 @@
+{
+  "wall": {
+    "health": 100,
+    "maxHealth": 100
+  },
+  "spawner": {
+    "spawnInterval": 3.0,
+    "spawnCount": 1,
+    "maxConcurrent": 50
+  },
+  "collision": {
+    "projectileEnemyThreshold": 20,
+    "heroEnemyMeleeThreshold": 30
+  },
+  "experience": {
+    "baseXPRequired": 100,
+    "xpPerLevelIncrement": 20
+  }
+}

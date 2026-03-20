@@ -1,6 +1,14 @@
 -- Upgrade System
 -- Manages upgrade card generation, ability unlocking, tier upgrades, and slot management
 
+local ability_data_loader = nil
+
+-- Safely load ability_data_loader (may not be available in all test environments)
+local _adl_load_success, _adl_module = pcall(require, "src.models.ability_data_loader")
+if _adl_load_success then
+  ability_data_loader = _adl_module
+end
+
 local upgrade_system = {}
 
 -- State
@@ -8,13 +16,71 @@ upgrade_system.hero = nil
 upgrade_system.upgradePool = {}
 upgrade_system.onUpgradeSelected = nil
 
--- Initialize the upgrade system
-function upgrade_system.initialize(hero, onUpgradeSelectedCallback)
-  upgrade_system.hero = hero
-  upgrade_system.onUpgradeSelected = onUpgradeSelectedCallback
-  
-  -- Define the MVP upgrade pool
-  upgrade_system.upgradePool = {
+-- Build upgrade pool entries from ability_data_loader JSON data
+-- Returns a table of upgrade pool entries, or nil if data is not available
+local function _buildUpgradePoolFromData()
+  if not ability_data_loader then
+    return nil
+  end
+
+  if not ability_data_loader._data or type(ability_data_loader._data) ~= "table" then
+    return nil
+  end
+
+  -- Check if there's any data at all
+  local hasData = false
+  for _ in pairs(ability_data_loader._data) do
+    hasData = true
+    break
+  end
+  if not hasData then
+    return nil
+  end
+
+  local pool = {}
+
+  -- Iterate over all abilities in the data loader
+  for abilityId, abilityData in pairs(ability_data_loader._data) do
+    if type(abilityData) == "table" and type(abilityData.upgrades) == "table" then
+      -- Create an upgrade pool entry for each upgrade type
+      for upgradeType, upgradeData in pairs(abilityData.upgrades) do
+        if type(upgradeData) == "table" then
+          local name = type(upgradeData.name) == "string" and upgradeData.name or (abilityId .. " " .. upgradeType)
+          local description = type(upgradeData.description) == "string" and upgradeData.description or ""
+          local iconType = type(upgradeData.iconType) == "string" and upgradeData.iconType or upgradeType
+
+          -- Capture abilityId and upgradeType in closure
+          local capturedAbilityId = abilityId
+          local capturedUpgradeType = upgradeType
+
+          table.insert(pool, {
+            id = capturedAbilityId .. "_" .. capturedUpgradeType,
+            type = "tier_upgrade",
+            abilityId = capturedAbilityId,
+            name = name,
+            description = description,
+            iconType = iconType,
+            apply = function(hero)
+              for _, ability in ipairs(hero.abilities) do
+                if ability.id == capturedAbilityId then
+                  ability:upgrade(capturedUpgradeType)
+                  return true
+                end
+              end
+              return false
+            end
+          })
+        end
+      end
+    end
+  end
+
+  return pool
+end
+
+-- Hard-coded fallback upgrade pool (used when ability_data_loader is not initialized)
+local function _buildHardCodedPool()
+  return {
     -- Arcane Bolt Damage upgrade
     {
       id = "arcane_bolt_damage",
@@ -33,7 +99,7 @@ function upgrade_system.initialize(hero, onUpgradeSelectedCallback)
         return false
       end
     },
-    
+
     -- Arcane Bolt Attack Speed upgrade
     {
       id = "arcane_bolt_attack_speed",
@@ -52,7 +118,7 @@ function upgrade_system.initialize(hero, onUpgradeSelectedCallback)
         return false
       end
     },
-    
+
     -- Arcane Bolt Projectile Count upgrade
     {
       id = "arcane_bolt_projectile_count",
@@ -71,7 +137,7 @@ function upgrade_system.initialize(hero, onUpgradeSelectedCallback)
         return false
       end
     },
-    
+
     -- Arcane Bolt Pierce upgrade
     {
       id = "arcane_bolt_pierce",
@@ -89,22 +155,74 @@ function upgrade_system.initialize(hero, onUpgradeSelectedCallback)
         end
         return false
       end
-    },
-    
-    -- XP Pickup Radius upgrade
-    {
-      id = "xp_pickup_radius",
-      type = "stat_upgrade",
-      abilityId = nil,
-      name = "XP Pickup Radius",
-      description = "+20 pixels pickup range",
-      iconType = "radius",
-      apply = function(hero)
-        hero.pickupRadius = hero.pickupRadius + 20
-        return true
-      end
     }
   }
+end
+
+-- Initialize the upgrade system
+function upgrade_system.initialize(hero, onUpgradeSelectedCallback)
+  upgrade_system.hero = hero
+  upgrade_system.onUpgradeSelected = onUpgradeSelectedCallback
+
+  -- Try to build upgrade pool from abilities.json data
+  local dataPool = _buildUpgradePoolFromData()
+
+  if dataPool and #dataPool > 0 then
+    upgrade_system.upgradePool = dataPool
+  else
+    -- Fall back to hard-coded pool if ability_data_loader is not initialized
+    upgrade_system.upgradePool = _buildHardCodedPool()
+  end
+
+  -- Always add stat upgrades (not ability-specific, not in abilities.json)
+  table.insert(upgrade_system.upgradePool, {
+    id = "wall_repair",
+    type = "stat_upgrade",
+    abilityId = nil,
+    name = "Wall Repair",
+    description = "Restore 25% wall health",
+    iconType = "damage",
+    apply = function(hero)
+      local gc = require("src.controllers.game_controller")
+      local wall = gc.getWall()
+      if wall then
+        local heal = math.floor(wall.maxHealth * 0.25)
+        wall.health = math.min(wall.health + heal, wall.maxHealth)
+      end
+      return true
+    end
+  })
+
+  table.insert(upgrade_system.upgradePool, {
+    id = "wall_fortify",
+    type = "stat_upgrade",
+    abilityId = nil,
+    name = "Fortify Wall",
+    description = "+50 max wall health",
+    iconType = "pierce",
+    apply = function(hero)
+      local gc = require("src.controllers.game_controller")
+      local wall = gc.getWall()
+      if wall then
+        wall.maxHealth = wall.maxHealth + 50
+        wall.health = wall.health + 50
+      end
+      return true
+    end
+  })
+
+  table.insert(upgrade_system.upgradePool, {
+    id = "xp_boost",
+    type = "stat_upgrade",
+    abilityId = nil,
+    name = "XP Boost",
+    description = "+25% XP from enemies",
+    iconType = "speed",
+    apply = function(hero)
+      hero.xpMultiplier = (hero.xpMultiplier or 1.0) + 0.25
+      return true
+    end
+  })
 end
 
 -- Generate random upgrade cards
@@ -123,6 +241,10 @@ function upgrade_system.generateCards(count)
   end
   
   local availableUpgrades = upgrade_system.getAvailableUpgrades()
+  
+  -- Debug: log pool and available counts
+  print(string.format("Upgrade system: pool=%d, available=%d, requested=%d", 
+    #upgrade_system.upgradePool, #availableUpgrades, count))
   
   -- If no upgrades available, provide fallback
   if #availableUpgrades == 0 then
@@ -172,7 +294,6 @@ function upgrade_system.getAvailableUpgrades()
   end
   
   local available = {}
-  local hasAbilities = #upgrade_system.hero.abilities > 0
   local hasAvailableSlots = #upgrade_system.hero.abilities < 5
   
   -- Check each upgrade in the pool
@@ -207,6 +328,111 @@ function upgrade_system.getAvailableUpgrades()
     
     if canOffer then
       table.insert(available, upgrade)
+    end
+  end
+  
+  -- Add new ability options from ability registry if slots available
+  if hasAvailableSlots then
+    -- Load ability registry with error handling
+    local registryLoadSuccess, ability_registry = pcall(require, "src.models.ability_registry")
+    if not registryLoadSuccess then
+      print("Error: Failed to load ability_registry in getAvailableUpgrades: " .. tostring(ability_registry))
+      return available
+    end
+    
+    -- Validate ability_registry has required structure
+    if not ability_registry.abilities or type(ability_registry.abilities) ~= "table" then
+      print("Error: ability_registry missing abilities table")
+      return available
+    end
+    
+    -- Build set of abilities hero already has
+    local heroAbilityIds = {}
+    for _, ability in ipairs(upgrade_system.hero.abilities) do
+      if ability and ability.id then
+        heroAbilityIds[ability.id] = true
+      end
+    end
+    
+    -- Query ability registry for unlocked abilities
+    for abilityId, abilityDef in pairs(ability_registry.abilities) do
+      -- Validate abilityId is a string
+      local shouldProcess = true
+      if type(abilityId) ~= "string" then
+        print("Warning: Invalid abilityId type in registry: " .. tostring(abilityId))
+        shouldProcess = false
+      end
+      
+      -- Only offer abilities that are:
+      -- 1. Unlocked in the registry
+      -- 2. Not already equipped by the hero
+      if shouldProcess and ability_registry.isUnlocked(abilityId) and not heroAbilityIds[abilityId] then
+        -- Create instance to get ability metadata with error handling
+        local instanceSuccess, abilityInstance = pcall(ability_registry.createInstance, abilityId)
+        
+        if not instanceSuccess then
+          print("Error: Failed to create instance for ability " .. tostring(abilityId) .. ": " .. tostring(abilityInstance))
+          shouldProcess = false
+        end
+        
+        if shouldProcess and abilityInstance then
+          -- Create upgrade card for this ability
+          local newAbilityCard = {
+            id = "new_ability_" .. abilityId,
+            type = "new_ability",
+            abilityId = abilityId,
+            name = abilityInstance.name or "Unknown Ability",
+            description = abilityInstance.description or "No description available",
+            iconType = abilityInstance.iconType or abilityId,
+            apply = function(hero)
+              -- Validate hero reference
+              if not hero then
+                print("Error: apply function called with nil hero")
+                return false
+              end
+              
+              -- Validate hero abilities array
+              if not hero.abilities or type(hero.abilities) ~= "table" then
+                print("Error: Hero has invalid abilities array in apply function")
+                return false
+              end
+              
+              -- Validate ability is still unlocked
+              if not ability_registry.isUnlocked(abilityId) then
+                print("Warning: Attempting to add locked ability: " .. tostring(abilityId))
+                return false
+              end
+              
+              -- Validate slot availability
+              if #hero.abilities >= 5 then
+                print("Warning: Cannot add ability - all 5 slots full")
+                return false
+              end
+              
+              -- Create new instance and add to hero with error handling
+              local ability = ability_registry.createInstance(abilityId)
+              if not ability then
+                print("Error: Failed to create ability instance: " .. tostring(abilityId))
+                return false
+              end
+              
+              -- Use pcall to safely add ability to hero
+              local success, result = pcall(function()
+                return hero:addAbility(ability)
+              end)
+              
+              if not success then
+                print("Error: Failed to add ability to hero: " .. tostring(result))
+                return false
+              end
+              
+              return result
+            end
+          }
+          
+          table.insert(available, newAbilityCard)
+        end
+      end
     end
   end
   
@@ -306,6 +532,74 @@ function upgrade_system.applyUpgrade(upgradeCard)
       print("Warning: Cannot add new ability - all 5 slots are full")
       return false
     end
+    
+    -- Validate abilityId is present
+    if not upgradeCard.abilityId or type(upgradeCard.abilityId) ~= "string" then
+      print("Error: new_ability card missing or has invalid abilityId")
+      return false
+    end
+    
+    -- Load ability registry with error handling
+    local success, ability_registry = pcall(require, "src.models.ability_registry")
+    if not success then
+      print("Error: Failed to load ability_registry: " .. tostring(ability_registry))
+      return false
+    end
+    
+    -- Validate ability registry has required methods
+    if not ability_registry.isUnlocked or type(ability_registry.isUnlocked) ~= "function" then
+      print("Error: ability_registry missing isUnlocked method")
+      return false
+    end
+    
+    if not ability_registry.createInstance or type(ability_registry.createInstance) ~= "function" then
+      print("Error: ability_registry missing createInstance method")
+      return false
+    end
+    
+    -- Validate ability is unlocked
+    if not ability_registry.isUnlocked(upgradeCard.abilityId) then
+      print("Warning: Attempting to add locked ability: " .. tostring(upgradeCard.abilityId))
+      return false
+    end
+    
+    -- Create ability instance
+    local ability = ability_registry.createInstance(upgradeCard.abilityId)
+    if not ability then
+      print("Warning: Failed to create instance of ability: " .. tostring(upgradeCard.abilityId))
+      return false
+    end
+    
+    -- Validate ability has required properties
+    if not ability.id then
+      print("Error: Created ability instance missing id property")
+      return false
+    end
+    
+    -- Add ability to hero with error handling
+    local addSuccess, addResult = pcall(function()
+      return upgrade_system.hero:addAbility(ability)
+    end)
+    
+    if not addSuccess then
+      print("Error: Exception while adding ability to hero: " .. tostring(addResult))
+      return false
+    end
+    
+    if not addResult then
+      print("Warning: Failed to add ability to hero: " .. tostring(upgradeCard.abilityId))
+      return false
+    end
+    
+    -- Call the upgrade selected callback to resume game
+    if upgrade_system.onUpgradeSelected then
+      local callbackSuccess, callbackError = pcall(upgrade_system.onUpgradeSelected)
+      if not callbackSuccess then
+        print("Error: Upgrade callback failed: " .. tostring(callbackError))
+      end
+    end
+    
+    return true
   end
   
   -- Apply the upgrade using its apply function with error handling

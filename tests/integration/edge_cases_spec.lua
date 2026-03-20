@@ -7,7 +7,7 @@ require("tests.spec_helper")
 
 local game_controller = require("src.controllers.game_controller")
 local spawner_system = require("src.systems.spawner_system")
-local level_system = require("src.systems.level_system")
+local experience_system = require("src.systems.experience_system")
 local combat_system = require("src.systems.combat_system")
 local game_state = require("src.models.game_state")
 
@@ -295,10 +295,10 @@ describe("Edge Cases and Boundary Conditions", function()
       game_controller.start()
       
       -- Spawn an XP orb manually
-      level_system.spawnXPOrb(360, 640)
+      experience_system.spawnXPOrb(360, 640)
       
       -- Verify orb exists
-      local activeOrbs = level_system.getActiveOrbs()
+      local activeOrbs = experience_system.getActiveOrbs()
       assert.equals(1, #activeOrbs,
         "Should have 1 active XP orb")
       
@@ -307,10 +307,10 @@ describe("Edge Cases and Boundary Conditions", function()
       
       -- Simulate 31 seconds passing
       local currentTime = spawnTime + 31
-      level_system.update(0.016, currentTime)
+      experience_system.update(0.016, currentTime)
       
       -- Orb should be expired and removed
-      activeOrbs = level_system.getActiveOrbs()
+      activeOrbs = experience_system.getActiveOrbs()
       assert.equals(0, #activeOrbs,
         "XP orb should expire after 30 seconds")
     end)
@@ -320,9 +320,9 @@ describe("Edge Cases and Boundary Conditions", function()
       game_controller.start()
       
       -- Spawn an XP orb
-      level_system.spawnXPOrb(360, 640)
+      experience_system.spawnXPOrb(360, 640)
       
-      local activeOrbs = level_system.getActiveOrbs()
+      local activeOrbs = experience_system.getActiveOrbs()
       assert.equals(1, #activeOrbs)
       
       local orb = activeOrbs[1]
@@ -330,10 +330,10 @@ describe("Edge Cases and Boundary Conditions", function()
       
       -- Simulate 29 seconds passing (just before expiration)
       local currentTime = spawnTime + 29
-      level_system.update(0.016, currentTime)
+      experience_system.update(0.016, currentTime)
       
       -- Orb should still exist
-      activeOrbs = level_system.getActiveOrbs()
+      activeOrbs = experience_system.getActiveOrbs()
       assert.equals(1, #activeOrbs,
         "XP orb should not expire before 30 seconds")
     end)
@@ -346,11 +346,11 @@ describe("Edge Cases and Boundary Conditions", function()
       local baseTime = system.getTimer() / 1000
       
       -- Spawn first orb
-      level_system.spawnXPOrb(300, 640)
-      local firstOrb = level_system.getActiveOrbs()[1]
+      experience_system.spawnXPOrb(300, 640)
+      local firstOrb = experience_system.getActiveOrbs()[1]
       
       -- Should have 1 orb
-      assert.equals(1, #level_system.getActiveOrbs())
+      assert.equals(1, #experience_system.getActiveOrbs())
       
       -- Simulate time passing and spawn second orb
       -- Mock system.getTimer to simulate 10 seconds later
@@ -359,11 +359,11 @@ describe("Edge Cases and Boundary Conditions", function()
         return (baseTime + 10) * 1000
       end
       
-      level_system.spawnXPOrb(420, 640)
-      local secondOrb = level_system.getActiveOrbs()[2]
+      experience_system.spawnXPOrb(420, 640)
+      local secondOrb = experience_system.getActiveOrbs()[2]
       
       -- Should have 2 orbs
-      assert.equals(2, #level_system.getActiveOrbs())
+      assert.equals(2, #experience_system.getActiveOrbs())
       
       -- Simulate 31 seconds from first orb spawn (21 from second)
       system.getTimer = function()
@@ -371,13 +371,13 @@ describe("Edge Cases and Boundary Conditions", function()
       end
       
       local currentTime = baseTime + 31
-      level_system.update(0.016, currentTime)
+      experience_system.update(0.016, currentTime)
       
       -- Restore original getTimer
       system.getTimer = originalGetTimer
       
       -- First orb should be expired (31 seconds >= 30), second should remain (21 seconds < 30)
-      local activeOrbs = level_system.getActiveOrbs()
+      local activeOrbs = experience_system.getActiveOrbs()
       assert.equals(1, #activeOrbs,
         "Only second orb should remain after first expires")
     end)
@@ -552,10 +552,10 @@ describe("Edge Cases and Boundary Conditions", function()
       
       -- Spawn XP orbs
       for i = 1, 10 do
-        level_system.spawnXPOrb(math.random(100, 620), math.random(200, 1000))
+        experience_system.spawnXPOrb(math.random(100, 620), math.random(200, 1000))
       end
       
-      local firstOrbTime = level_system.getActiveOrbs()[1].spawnTime
+      local firstOrbTime = experience_system.getActiveOrbs()[1].spawnTime
       
       -- Spawn max walkers
       for i = 1, 50 do
@@ -564,10 +564,10 @@ describe("Edge Cases and Boundary Conditions", function()
       
       -- Simulate 31 seconds
       local currentTime = firstOrbTime + 31
-      level_system.update(0.016, currentTime)
+      experience_system.update(0.016, currentTime)
       
       -- All orbs should be expired
-      assert.equals(0, #level_system.getActiveOrbs(),
+      assert.equals(0, #experience_system.getActiveOrbs(),
         "All XP orbs should expire")
       
       -- Walkers should still be active
@@ -621,25 +621,26 @@ describe("Edge Cases and Boundary Conditions", function()
       game_controller.initialize(mockSceneGroup)
       game_controller.start()
       
-      level_system.spawnXPOrb(360, 640)
-      local orb = level_system.getActiveOrbs()[1]
+      experience_system.spawnXPOrb(360, 640)
+      local orb = experience_system.getActiveOrbs()[1]
       local spawnTime = orb.spawnTime
       
       -- Just before 30 seconds
       local currentTime = spawnTime + 29.9
-      level_system.update(0.016, currentTime)
+      experience_system.update(0.016, currentTime)
       
       -- Should still exist
-      assert.equals(1, #level_system.getActiveOrbs(),
+      assert.equals(1, #experience_system.getActiveOrbs(),
         "XP orb should exist just before 30 seconds")
       
       -- At exactly 30 seconds (expires at >= 30)
       currentTime = spawnTime + 30
-      level_system.update(0.016, currentTime)
+      experience_system.update(0.016, currentTime)
       
       -- Should be expired
-      assert.equals(0, #level_system.getActiveOrbs(),
+      assert.equals(0, #experience_system.getActiveOrbs(),
         "XP orb should expire at exactly 30 seconds")
     end)
   end)
 end)
+

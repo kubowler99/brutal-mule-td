@@ -347,12 +347,22 @@ _G.network = {
 -- Mock JSON library (Solar2D built-in)
 _G.json = {
     encode = function(t) 
-        -- Simple JSON encoding for testing
+        -- Use Lua's built-in JSON encoding if available, otherwise simple mock
+        local success, dkjson = pcall(require, "dkjson")
+        if success then
+            return dkjson.encode(t)
+        end
+        -- Fallback: Simple JSON encoding for testing
         if type(t) ~= "table" then return tostring(t) end
         return "{}" -- Simplified for testing
     end,
     decode = function(str) 
-        -- Simple JSON decoding for testing
+        -- Use Lua's built-in JSON decoding if available, otherwise simple mock
+        local success, dkjson = pcall(require, "dkjson")
+        if success then
+            return dkjson.decode(str)
+        end
+        -- Fallback: Simple JSON decoding for testing
         if str == "{}" or str == "" then return {} end
         return {} -- Simplified for testing
     end

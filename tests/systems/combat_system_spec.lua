@@ -621,6 +621,110 @@ describe("Combat System", function()
     end)
   end)
 
+  describe("sceneGroup integration", function()
+    it("stores sceneGroup reference when passed to initialize", function()
+      local group = display.newGroup()
+      combat_system.initialize(hero, projectilePool, enemies, group)
+
+      -- Verify initialization works with sceneGroup by running update without error
+      local success = pcall(function()
+        combat_system.update(0.016, 1.0)
+      end)
+      assert.is_true(success)
+    end)
+
+    it("works without sceneGroup (backward compatible)", function()
+      combat_system.initialize(hero, projectilePool, enemies)
+
+      local success = pcall(function()
+        combat_system.update(0.016, 1.0)
+      end)
+      assert.is_true(success)
+    end)
+
+    it("inserts projectile display objects into sceneGroup on refresh", function()
+      local group = display.newGroup()
+      combat_system.initialize(hero, projectilePool, enemies, group)
+
+      -- Create an active projectile with a display object that has no parent
+      local proj = projectilePool:get()
+      proj:activate(100, 100, 200, 200, 100, 10, 0)
+      -- Simulate a display object without a parent (newly created, not yet in scene)
+      proj.displayObject.parent = nil
+
+      combat_system.refreshActiveProjectiles()
+
+      -- Display object should now have the sceneGroup as parent
+      assert.are.equal(group, proj.displayObject.parent)
+    end)
+
+    it("does not re-insert display objects that already have a parent", function()
+      local group = display.newGroup()
+      local otherGroup = display.newGroup()
+      combat_system.initialize(hero, projectilePool, enemies, group)
+
+      local proj = projectilePool:get()
+      proj:activate(100, 100, 200, 200, 100, 10, 0)
+      -- Simulate a display object already in another group
+      proj.displayObject.parent = otherGroup
+
+      local initialCount = group.numChildren
+      combat_system.refreshActiveProjectiles()
+
+      -- Should not have been inserted into sceneGroup (already has a parent)
+      assert.are.equal(initialCount, group.numChildren)
+      assert.are.equal(otherGroup, proj.displayObject.parent)
+    end)
+
+    it("skips insertion when sceneGroup is nil", function()
+      combat_system.initialize(hero, projectilePool, enemies, nil)
+
+      local proj = projectilePool:get()
+      proj:activate(100, 100, 200, 200, 100, 10, 0)
+      proj.displayObject.parent = nil
+
+      -- Should not crash
+      local success = pcall(function()
+        combat_system.refreshActiveProjectiles()
+      end)
+      assert.is_true(success)
+    end)
+
+    it("skips insertion when projectile has no display object", function()
+      local group = display.newGroup()
+      combat_system.initialize(hero, projectilePool, enemies, group)
+
+      local proj = projectilePool:get()
+      proj.isActive = true
+      proj.displayObject = nil
+
+      local initialCount = group.numChildren
+      combat_system.refreshActiveProjectiles()
+
+      -- No new children should be added
+      assert.are.equal(initialCount, group.numChildren)
+    end)
+
+    it("clears sceneGroup reference on cleanup", function()
+      local group = display.newGroup()
+      combat_system.initialize(hero, projectilePool, enemies, group)
+      combat_system.cleanup()
+
+      -- After cleanup, re-initialize without sceneGroup and verify no crash
+      combat_system.initialize(hero, projectilePool, enemies)
+      local proj = projectilePool:get()
+      proj:activate(100, 100, 200, 200, 100, 10, 0)
+      proj.displayObject.parent = nil
+
+      local success = pcall(function()
+        combat_system.refreshActiveProjectiles()
+      end)
+      assert.is_true(success)
+      -- Display object should still have no parent (no sceneGroup to insert into)
+      assert.is_nil(proj.displayObject.parent)
+    end)
+  end)
+
   -- Property-Based Tests
   describe("Property Tests", function()
 

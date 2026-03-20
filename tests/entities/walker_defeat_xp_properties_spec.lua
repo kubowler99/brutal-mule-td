@@ -4,7 +4,7 @@
 require("tests.spec_helper")
 
 local Walker = require("src.entities.walker")
-local level_system = require("src.systems.level_system")
+local experience_system = require("src.systems.experience_system")
 local pool = require("src.utils.pool")
 local XPOrb = require("src.entities.xp_orb")
 local lqc = require("lqc.quickcheck")
@@ -37,12 +37,12 @@ describe("Walker - Defeat XP Spawning Properties", function()
       end
     }
 
-    level_system.initialize(mockHero, xpOrbPool, function() end)
+    experience_system.initialize(mockHero, xpOrbPool, function() end)
   end)
 
   after_each(function()
     -- Cleanup level system
-    level_system.cleanup()
+    experience_system.cleanup()
   end)
 
   -- Feature: arcane-survivor-mvp, Property 13: Walker Defeat Spawns XP
@@ -64,7 +64,7 @@ describe("Walker - Defeat XP Spawning Properties", function()
           walker:activate(walkerX, walkerY, walkerX)
 
           -- Track initial orb count
-          local initialOrbCount = #level_system.getActiveOrbs()
+          local initialOrbCount = #experience_system.getActiveOrbs()
 
           -- Apply damage to defeat walker (walker has 20 health)
           -- Ensure damage is enough to defeat walker
@@ -81,10 +81,10 @@ describe("Walker - Defeat XP Spawning Properties", function()
           end
 
           -- Simulate XP orb spawning (as done in game controller)
-          level_system.spawnXPOrb(walkerX, walkerY)
+          experience_system.spawnXPOrb(walkerX, walkerY)
 
           -- Get current orb count
-          local currentOrbCount = #level_system.getActiveOrbs()
+          local currentOrbCount = #experience_system.getActiveOrbs()
 
           -- CRITICAL PROPERTY: Exactly one XP orb should be spawned
           local orbsSpawned = currentOrbCount - initialOrbCount
@@ -98,7 +98,7 @@ describe("Walker - Defeat XP Spawning Properties", function()
           end
 
           -- Verify the spawned orb is at the walker's position
-          local spawnedOrb = level_system.getActiveOrbs()[currentOrbCount]
+          local spawnedOrb = experience_system.getActiveOrbs()[currentOrbCount]
 
           if not spawnedOrb then
             walker:destroy()
@@ -142,10 +142,10 @@ describe("Walker - Defeat XP Spawning Properties", function()
           walker:takeDamage(damageAmount)
 
           -- Spawn XP orb at defeat position
-          level_system.spawnXPOrb(defeatX, defeatY)
+          experience_system.spawnXPOrb(defeatX, defeatY)
 
           -- Get the spawned orb
-          local activeOrbs = level_system.getActiveOrbs()
+          local activeOrbs = experience_system.getActiveOrbs()
           local spawnedOrb = activeOrbs[#activeOrbs]
 
           -- CRITICAL PROPERTY: Orb position must exactly match walker defeat position
@@ -190,7 +190,7 @@ describe("Walker - Defeat XP Spawning Properties", function()
             table.insert(walkerPositions, {x = x, y = y})
           end
 
-          local initialOrbCount = #level_system.getActiveOrbs()
+          local initialOrbCount = #experience_system.getActiveOrbs()
 
           -- Defeat all walkers and spawn XP orbs
           for i, walker in ipairs(walkers) do
@@ -205,10 +205,10 @@ describe("Walker - Defeat XP Spawning Properties", function()
             end
 
             -- Spawn XP orb at walker position
-            level_system.spawnXPOrb(walkerPositions[i].x, walkerPositions[i].y)
+            experience_system.spawnXPOrb(walkerPositions[i].x, walkerPositions[i].y)
           end
 
-          local finalOrbCount = #level_system.getActiveOrbs()
+          local finalOrbCount = #experience_system.getActiveOrbs()
           local orbsSpawned = finalOrbCount - initialOrbCount
 
           -- CRITICAL PROPERTY: Number of orbs spawned should equal number of walkers defeated
@@ -248,7 +248,7 @@ describe("Walker - Defeat XP Spawning Properties", function()
           walker:takeDamage(walker.health)
 
           -- Spawn XP orb
-          local orb = level_system.spawnXPOrb(walkerX, walkerY)
+          local orb = experience_system.spawnXPOrb(walkerX, walkerY)
 
           -- CRITICAL PROPERTY: Orb should be active
           if not orb or not orb.isActive then
@@ -291,7 +291,7 @@ describe("Walker - Defeat XP Spawning Properties", function()
           local walker = Walker:new()
           walker:activate(walkerX, walkerY, walkerX)
 
-          local initialOrbCount = #level_system.getActiveOrbs()
+          local initialOrbCount = #experience_system.getActiveOrbs()
 
           -- Apply non-lethal damage
           walker:takeDamage(damageAmount)
@@ -309,7 +309,7 @@ describe("Walker - Defeat XP Spawning Properties", function()
           -- So we should NOT spawn an orb here
           -- This test verifies the condition: only spawn if walker.isActive == false
 
-          local currentOrbCount = #level_system.getActiveOrbs()
+          local currentOrbCount = #experience_system.getActiveOrbs()
           local orbsSpawned = currentOrbCount - initialOrbCount
 
           -- CRITICAL PROPERTY: No XP orb should be spawned if walker is still alive
@@ -349,7 +349,7 @@ describe("Walker - Defeat XP Spawning Properties", function()
           walker:takeDamage(walker.health)
 
           -- Spawn XP orb
-          local orb = level_system.spawnXPOrb(walkerX, walkerY)
+          local orb = experience_system.spawnXPOrb(walkerX, walkerY)
 
           -- CRITICAL PROPERTY: Orb should spawn at exact position
           if not orb then
@@ -372,3 +372,4 @@ describe("Walker - Defeat XP Spawning Properties", function()
     end)
   end)
 end)
+

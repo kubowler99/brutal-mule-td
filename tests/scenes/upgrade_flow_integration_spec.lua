@@ -6,7 +6,7 @@ require("tests.spec_helper")
 local composer = require("composer")
 local game_controller = require("src.controllers.game_controller")
 local upgrade_system = require("src.systems.upgrade_system")
-local level_system = require("src.systems.level_system")
+local experience_system = require("src.systems.experience_system")
 
 describe("Upgrade Selection Flow Integration", function()
   local scene
@@ -379,3 +379,4 @@ describe("Upgrade Selection Flow Integration", function()
     upgrade_system.applyUpgrade = originalApplyUpgrade
   end)
 end)
+

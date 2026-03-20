@@ -11,17 +11,20 @@ local hero = nil
 local projectilePool = nil
 local activeProjectiles = {}
 local enemies = {}
+local sceneGroup = nil
 
 --- Initialize the combat system
--- Sets up references to the hero, projectile pool, and enemies array.
+-- Sets up references to the hero, projectile pool, enemies array, and scene group.
 --
 -- @param heroEntity table The hero entity
 -- @param projPool table Object pool for projectiles
 -- @param enemiesArray table Reference to active enemies array
-function M.initialize(heroEntity, projPool, enemiesArray)
+-- @param group table Optional scene group for inserting projectile display objects
+function M.initialize(heroEntity, projPool, enemiesArray, group)
   hero = heroEntity
   projectilePool = projPool
   enemies = enemiesArray
+  sceneGroup = group
   activeProjectiles = {}
 end
 
@@ -73,13 +76,28 @@ function M.activateAbilities(currentTime)
   -- Iterate through hero abilities with pcall wrapper for critical operations
   for _, ability in ipairs(hero.abilities) do
     if ability and ability.canActivate and ability:canActivate(currentTime) then
+      -- Create a tracking wrapper around the pool to capture created projectiles
+      local trackingPool = {
+        get = function(self, ...)
+          local projectile = projectilePool:get(...)
+          if projectile then
+            -- We'll track it after activation completes
+            table.insert(activeProjectiles, projectile)
+          end
+          return projectile
+        end,
+        release = function(self, obj)
+          return projectilePool:release(obj)
+        end
+      }
+      
       -- Wrap ability activation in pcall for error handling
       local success, result = pcall(function()
-        return ability:activate(hero.x, hero.y, enemies, projectilePool)
+        return ability:activate(hero.x, hero.y, enemies, trackingPool)
       end)
       
       if success then
-        -- If activation was successful, track the created projectiles
+        -- If activation was successful, ensure display objects are in scene group
         if result then
           M.refreshActiveProjectiles()
         end
@@ -92,20 +110,29 @@ function M.activateAbilities(currentTime)
 end
 
 --- Refresh the active projectiles array
--- Scans all projectiles and updates the activeProjectiles tracking array.
--- This is called after abilities create new projectiles.
+-- Scans all tracked projectiles and removes inactive ones.
+-- Also picks up any newly created projectiles from the last ability activation.
+-- Inserts new projectile display objects into the scene group if available.
 function M.refreshActiveProjectiles()
-  -- Clear and rebuild the active projectiles array
-  activeProjectiles = {}
-  
-  if not projectilePool or not projectilePool.pool then
-    return
+  -- Insert display objects for any active projectiles not yet in the scene group
+  for _, projectile in ipairs(activeProjectiles) do
+    if projectile and projectile.isActive and sceneGroup and projectile.displayObject 
+       and not projectile.displayObject.parent then
+      sceneGroup:insert(projectile.displayObject)
+    end
   end
-  
-  -- Scan the pool for active projectiles
-  for _, projectile in ipairs(projectilePool.pool) do
-    if projectile and projectile.isActive then
-      table.insert(activeProjectiles, projectile)
+end
+
+--- Track a newly created projectile
+-- Called by ability activation to register projectiles with the combat system.
+-- @param projectile table The projectile entity to track
+function M.trackProjectile(projectile)
+  if projectile and projectile.isActive then
+    table.insert(activeProjectiles, projectile)
+    
+    -- Insert display object into scene group if available
+    if sceneGroup and projectile.displayObject and not projectile.displayObject.parent then
+      sceneGroup:insert(projectile.displayObject)
     end
   end
 end
@@ -193,12 +220,26 @@ function M.getActiveProjectiles()
 end
 
 --- Cleanup combat system resources
--- Clears all references and resets state.
+-- Deactivates all active projectiles and clears all references.
 function M.cleanup()
+  -- Deactivate and hide all tracked projectiles
+  for _, projectile in ipairs(activeProjectiles) do
+    if projectile then
+      if projectile.deactivate then
+        projectile:deactivate()
+      end
+      -- Ensure display object is hidden even if deactivate didn't handle it
+      if projectile.displayObject then
+        projectile.displayObject.isVisible = false
+      end
+    end
+  end
+  
   hero = nil
   projectilePool = nil
   activeProjectiles = {}
   enemies = {}
+  sceneGroup = nil
 end
 
 return M

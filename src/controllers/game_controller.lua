@@ -7,25 +7,27 @@ local Hero = require("src.entities.hero")
 local Wall = require("src.entities.wall")
 local Walker = require("src.entities.walker")
 local Projectile = require("src.entities.projectile")
-local XPOrb = require("src.entities.xp_orb")
+
 local ArcaneBolt = require("src.entities.abilities.arcane_bolt")
 local combat_system = require("src.systems.combat_system")
 local spawner_system = require("src.systems.spawner_system")
-local level_system = require("src.systems.level_system")
+local experience_system = require("src.systems.experience_system")
 local upgrade_system = require("src.systems.upgrade_system")
 local collision_system = require("src.systems.collision_system")
 local game_state = require("src.models.game_state")
+local ability_data_loader = require("src.models.ability_data_loader")
+local ability_registry = require("src.models.ability_registry")
+local config_loader = require("src.models.config_loader")
 
 local M = {}
 
 -- Internal state
-local hero = nil
-local wall = nil
-local walkerPool = nil
-local projectilePool = nil
-local xpOrbPool = nil
-local sceneGroup = nil
-local gameLoopListener = nil
+local hero
+local wall
+local walkerPool
+local projectilePool
+local sceneGroup
+local gameLoopListener
 local isPaused = false
 
 --- Initialize the game controller and set up game session
@@ -34,6 +36,11 @@ local isPaused = false
 function M.initialize(group)
   sceneGroup = group
   isPaused = false
+  
+  -- Initialize data loaders before any entity or system that depends on them
+  ability_data_loader.initialize()
+  ability_registry.initialize()
+  config_loader.initialize()
   
   -- Initialize game state
   game_state.initialize()
@@ -63,17 +70,12 @@ function M.initialize(group)
   
   -- Initialize object pools
   walkerPool = pool.new(
-    function() return Walker:new() end,
+    function() return Walker:new(sceneGroup) end,
     nil  -- No reset function, we'll call activate manually
   )
   
   projectilePool = pool.new(
-    function() return Projectile:new() end,
-    nil  -- No reset function, we'll call activate manually
-  )
-  
-  xpOrbPool = pool.new(
-    function() return XPOrb:new() end,
+    function() return Projectile:new(sceneGroup) end,
     nil  -- No reset function, we'll call activate manually
   )
   
@@ -81,7 +83,7 @@ function M.initialize(group)
   if sceneGroup then
     -- Pre-warm pools and add display objects
     for i = 1, 10 do
-      local walker = Walker:new()
+      local walker = Walker:new(sceneGroup)
       if walker.displayObject then
         sceneGroup:insert(walker.displayObject)
       end
@@ -89,19 +91,11 @@ function M.initialize(group)
     end
     
     for i = 1, 20 do
-      local projectile = Projectile:new()
+      local projectile = Projectile:new(sceneGroup)
       if projectile.displayObject then
         sceneGroup:insert(projectile.displayObject)
       end
       projectilePool:release(projectile)
-    end
-    
-    for i = 1, 20 do
-      local orb = XPOrb:new()
-      if orb.displayObject then
-        sceneGroup:insert(orb.displayObject)
-      end
-      xpOrbPool:release(orb)
     end
     
     -- Move wall to front after pool pre-warming to ensure correct display order
@@ -118,9 +112,11 @@ function M.initialize(group)
   end
   
   -- Initialize systems
-  combat_system.initialize(hero, projectilePool, spawner_system.getActiveWalkers())
+  -- IMPORTANT: spawner must be initialized BEFORE combat_system so that
+  -- combat_system receives the live activeWalkers reference
   spawner_system.initialize(walkerPool, hero.level)
-  level_system.initialize(hero, xpOrbPool, M.onLevelUp)
+  combat_system.initialize(hero, projectilePool, spawner_system.getActiveWalkers(), sceneGroup)
+  experience_system.initialize(hero, M.onLevelUp)
   upgrade_system.initialize(hero, M.onUpgradeSelected)
 end
 
@@ -186,9 +182,9 @@ function M.update(event)
     -- Handle projectile hit (pierce logic)
     projectile:onHit(enemy)
     
-    -- If enemy was defeated, spawn XP orb
+    -- If enemy was defeated, award XP immediately
     if not enemy.isActive then
-      level_system.spawnXPOrb(enemy.x, enemy.y)
+      experience_system.awardXP(enemy.type or "walker", enemy.x, enemy.y)
       game_state.enemiesDefeated = game_state.enemiesDefeated + 1
     end
   end
@@ -215,15 +211,8 @@ function M.update(event)
     end
   end
   
-  -- Check XP orb collection
-  local activeOrbs = level_system.getActiveOrbs()
-  level_system.checkOrbCollection(hero.x, hero.y, hero.pickupRadius)
-  
   -- 5. Combat system (ability activation and projectile updates)
   combat_system.update(dt, currentTime)
-  
-  -- 6. Level system (orb lifetime checks)
-  level_system.update(dt, currentTime)
 end
 
 --- Pause the game
@@ -237,6 +226,8 @@ end
 -- Restarts game loop updates
 function M.resume()
   isPaused = false
+  -- Reset lastFrameTime so the first frame after resume doesn't get a huge dt
+  M.lastFrameTime = nil
   game_state.resume()
 end
 
@@ -306,7 +297,7 @@ function M.cleanup()
   -- Cleanup systems
   combat_system.cleanup()
   spawner_system.cleanup()
-  level_system.cleanup()
+  experience_system.cleanup()
   upgrade_system.cleanup()
   
   -- Destroy hero
@@ -321,20 +312,25 @@ function M.cleanup()
     wall = nil
   end
   
-  -- Clear pools
+  -- Clear pools (destroy display objects first)
   if walkerPool then
+    for _, walker in ipairs(walkerPool._available or {}) do
+      if walker and walker.destroy then
+        walker:destroy()
+      end
+    end
     walkerPool:clear()
     walkerPool = nil
   end
   
   if projectilePool then
+    for _, projectile in ipairs(projectilePool._available or {}) do
+      if projectile and projectile.destroy then
+        projectile:destroy()
+      end
+    end
     projectilePool:clear()
     projectilePool = nil
-  end
-  
-  if xpOrbPool then
-    xpOrbPool:clear()
-    xpOrbPool = nil
   end
   
   -- Clear references

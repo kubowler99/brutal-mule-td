@@ -5,7 +5,10 @@ local placeholder_graphics = require("src.utils.placeholder_graphics")
 
 local Projectile = Class("Projectile")
 
-function Projectile:initialize()
+function Projectile:initialize(parentGroup)
+  -- Parent display group for display objects
+  self.parentGroup = parentGroup
+  
   -- Position properties
   self.x = 0
   self.y = 0
@@ -61,6 +64,9 @@ function Projectile:activate(x, y, targetX, targetY, speed, damage, pierce)
   -- Create or update display object
   if not self.displayObject then
     self.displayObject = placeholder_graphics.createProjectileSprite(self.x, self.y)
+    if self.parentGroup and self.displayObject then
+      self.parentGroup:insert(self.displayObject)
+    end
   else
     self.displayObject.x = self.x
     self.displayObject.y = self.y

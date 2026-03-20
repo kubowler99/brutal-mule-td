@@ -8,12 +8,42 @@ local ArcaneBolt = require("src.entities.abilities.arcane_bolt")
 
 describe("Ability Registry", function()
   
+  before_each(function()
+    -- Initialize with test data
+    ability_registry.abilities = {
+      arcane_bolt = {
+        name = "Arcane Bolt",
+        description = "Fires magical projectiles at enemies",
+        module = "src.entities.abilities.arcane_bolt",
+        unlocked = true,
+        maxTier = 5,
+        icon = "assets/images/abilities/arcane_bolt.png"
+      }
+    }
+  end)
+  
+  describe("initialize", function()
+    it("loads ability definitions from JSON file", function()
+      local success = ability_registry.initialize("data/abilities.json")
+      
+      assert.is_true(success)
+      assert.is_not_nil(ability_registry.abilities.arcane_bolt)
+    end)
+    
+    it("returns false when file not found", function()
+      local success = ability_registry.initialize("data/nonexistent.json")
+      
+      assert.is_false(success)
+    end)
+  end)
+  
   describe("getAbility", function()
     it("returns correct definition for arcane_bolt", function()
       local abilityDef = ability_registry.getAbility("arcane_bolt")
       
       assert.is_not_nil(abilityDef)
-      assert.are.equal(ArcaneBolt, abilityDef.class)
+      assert.are.equal("Arcane Bolt", abilityDef.name)
+      assert.are.equal("src.entities.abilities.arcane_bolt", abilityDef.module)
       assert.is_true(abilityDef.unlocked)
       assert.are.equal(5, abilityDef.maxTier)
     end)
@@ -59,6 +89,22 @@ describe("Ability Registry", function()
       
       assert.is_nil(instance)
     end)
+    
+    it("returns nil when ability definition has no module reference", function()
+      -- Temporarily add an ability with missing module reference
+      ability_registry.abilities.test_no_module = {
+        name = "Test No Module",
+        unlocked = true,
+        maxTier = 5
+      }
+      
+      local instance = ability_registry.createInstance("test_no_module")
+      
+      assert.is_nil(instance)
+      
+      -- Clean up
+      ability_registry.abilities.test_no_module = nil
+    end)
   end)
   
   describe("isUnlocked", function()
@@ -77,7 +123,8 @@ describe("Ability Registry", function()
     it("returns false for locked ability", function()
       -- Temporarily add a locked ability for testing
       ability_registry.abilities.test_locked = {
-        class = ArcaneBolt,
+        name = "Test Locked",
+        module = "src.entities.abilities.arcane_bolt",
         unlocked = false,
         maxTier = 5
       }
@@ -85,6 +132,37 @@ describe("Ability Registry", function()
       local unlocked = ability_registry.isUnlocked("test_locked")
       
       assert.is_false(unlocked)
+      
+      -- Clean up
+      ability_registry.abilities.test_locked = nil
+    end)
+  end)
+  
+  describe("getAllAbilityIds", function()
+    it("returns all ability IDs", function()
+      local ids = ability_registry.getAllAbilityIds()
+      
+      assert.is_not_nil(ids)
+      assert.are.equal(1, #ids)
+      assert.is_true(ids[1] == "arcane_bolt")
+    end)
+  end)
+  
+  describe("getUnlockedAbilityIds", function()
+    it("returns only unlocked ability IDs", function()
+      -- Add a locked ability
+      ability_registry.abilities.test_locked = {
+        name = "Test Locked",
+        module = "src.entities.abilities.arcane_bolt",
+        unlocked = false,
+        maxTier = 5
+      }
+      
+      local ids = ability_registry.getUnlockedAbilityIds()
+      
+      assert.is_not_nil(ids)
+      assert.are.equal(1, #ids)
+      assert.is_true(ids[1] == "arcane_bolt")
       
       -- Clean up
       ability_registry.abilities.test_locked = nil

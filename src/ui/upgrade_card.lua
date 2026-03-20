@@ -77,10 +77,13 @@ end
 function UpgradeCard:onTap(callback)
   self.callback = callback
   
-  -- Add touch listener to background
-  self.background:addEventListener("touch", function(event)
+  -- Store listener reference so it can be removed in destroy()
+  self._touchListener = function(event)
     return self:_handleTouch(event)
-  end)
+  end
+  
+  -- Add touch listener to background
+  self.background:addEventListener("touch", self._touchListener)
 end
 
 --- Internal touch handler with visual feedback
@@ -141,9 +144,10 @@ end
 
 --- Destroy the upgrade card and clean up resources
 function UpgradeCard:destroy()
-  -- Remove touch listener
-  if self.background then
-    self.background:removeEventListener("touch")
+  -- Remove touch listener using stored reference
+  if self.background and self._touchListener then
+    self.background:removeEventListener("touch", self._touchListener)
+    self._touchListener = nil
   end
   
   if self.group then

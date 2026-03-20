@@ -61,6 +61,14 @@ describe("Walker Entity", function()
         it("should initialize with nil display object", function()
             assert.is_nil(walker.displayObject)
         end)
+
+        it("should initialize with type set to 'walker'", function()
+            assert.is.equal("walker", walker.type)
+        end)
+
+        it("should initialize with xpValue as nil", function()
+            assert.is_nil(walker.xpValue)
+        end)
     end)
 
     -- **Validates: Requirements 4.1, 4.3, 4.4**
