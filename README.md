@@ -4,7 +4,7 @@ A professional, production-ready scaffolding for Solar2D (formerly Corona SDK) g
 
 ## Project Structure
 
-```
+```text
 MyGame/
 ├── main.lua                    # Entry point
 ├── config.lua                  # App configuration
@@ -90,40 +90,51 @@ MyGame/
 │   └── models/                # Tests for src/models/
 │       └── data_spec.lua
 └── Icon.png                   # App icon (1024x1024)
+```
 
 ---
 
 ## Core Files
 
 ### 1. config.lua
+
 Standard configuration for 720x1280 resolution with letterbox scaling and adaptive high-resolution asset support.
 
 ### 2. build.settings
+
 Modern build settings including:
+
 - Android permissions (`INTERNET`, `BILLING`).
 - iOS Privacy descriptions (Camera, Photo Library).
 - Desktop window settings.
 
 ### 3. main.lua
+
 The entry point of the application, featuring:
+
 - Global unhandled error handling to prevent crashes.
 - Android hardware back button management.
 - Intelligent platform detection to silence iOS simulator warnings.
 - Game data initialization and scene routing.
 
 ### 4. .luarc.json
+
 Configuration file for the [Lua Language Server](https://github.com/LuaLS/lua-language-server). It pre-defines Solar2D globals (like `display`, `transition`, `Runtime`) to provide better autocomplete and linting in IDEs like VS Code and IntelliJ IDEA.
 
 ### 5. solar2d-game-template-0.1.0-1.rockspec
+
 A template for [LuaRocks](https://luarocks.org/), the package manager for Lua. This allows you to define project metadata and manage external Lua dependencies if your project uses them.
 
 ### 6. config.ld
+
 Configuration file for [LDoc](https://github.com/lunarmodules/LDoc), the documentation generator for Lua. It defines which files to document and where to output the generated HTML.
 
 ### 7. middleclass.lua
+
 A lightweight Object-Orientation library for Lua. It provides a standard `class()` function to create classes with inheritance, mixins, and constructors (`initialize`).
 
 ### 8. stateful.lua
+
 An extension for `middleclass` that adds state machine support to classes. It allows objects to change their behavior by switching between different states (e.g., `Moving`, `Attacking`, `Idle`).
 
 ---
@@ -163,9 +174,9 @@ An extension for `middleclass` that adds state machine support to classes. It al
 - **State Management**: Use `stateful.lua` (registered as `Stateful`) for complex entity behavior and state machines.
 - **Safe I/O**: Use `pcall` when encoding/decoding JSON and check for file existence to prevent crashes.
 - **Dependency Management**: A `.rockspec` template is included. For a professional workflow, consider using LuaRocks to install:
-    - **busted**: For unit testing.
-    - **luacheck**: For static analysis and catching common Lua errors.
-    - **ldoc**: For generating API documentation from source code comments.
+  - **busted**: For unit testing.
+  - **luacheck**: For static analysis and catching common Lua errors.
+  - **ldoc**: For generating API documentation from source code comments.
 - **Profiling**: Regularly use the Solar2D Profiler to check for memory leaks and high CPU usage.
 - **Unit Testing**: A standardized `tests/` directory is provided. Use [Busted](https://olivinelabs.com/busted/) for unit testing logic in `src/`. Mocks for Solar2D globals are provided in `tests/spec_helper.lua`.
 - **Asset Optimization**: Use `@2x` and `@4x` suffixes for high-resolution assets to save memory on older devices.
