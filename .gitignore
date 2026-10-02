@@ -73,7 +73,5 @@ lnk
 # Serena
 .serena/
 
-# Kiro
-.kiro/specs/
 # Local save data (the game writes it to the documents directory)
 gamedata.json
