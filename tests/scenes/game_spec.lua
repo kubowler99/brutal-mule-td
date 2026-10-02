@@ -9,12 +9,21 @@ local game_state = require("src.models.game_state")
 
 describe("Game Scene", function()
   local scene
+  local restoreGameController
+  local restoreComposer
   
   before_each(function()
+    -- Tests below stub game_controller and composer functions; restore them
+    -- in after_each even when a test fails before its own cleanup
+    restoreGameController = snapshotModule(game_controller)
+    restoreComposer = snapshotModule(composer)
+    
     -- Create a new scene instance
     scene = composer.newScene()
     
-    -- Load the game scene module
+    -- Load a fresh game scene module so scene-local state (such as the
+    -- end-session flag) never carries over from another test
+    package.loaded["src.scenes.game"] = nil
     local gameSceneModule = require("src.scenes.game")
     
     -- Copy functions from module to scene
@@ -32,6 +41,8 @@ describe("Game Scene", function()
     end
     
     scene = nil
+    restoreGameController()
+    restoreComposer()
   end)
   
   describe("Scene Initialization", function()

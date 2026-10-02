@@ -34,6 +34,11 @@ describe("Full Game Session Integration", function()
     -- Cleanup after each test
     game_controller.cleanup()
     data.stopSandbox()
+    
+    -- Tests set these callbacks; a leftover level-up callback would pick an
+    -- upgrade and resume the game in the next test
+    game_controller.onLevelUpCallback = nil
+    game_controller.onGameOverCallback = nil
   end)
   
   describe("Complete Game Flow", function()

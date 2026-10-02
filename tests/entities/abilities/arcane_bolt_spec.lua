@@ -1,10 +1,14 @@
 require("tests.spec_helper")
 local ArcaneBolt = require("src.entities.abilities.arcane_bolt")
+local ability_data_loader = require("src.models.ability_data_loader")
 
 describe("ArcaneBolt Ability", function()
     local ability
 
     before_each(function()
+        -- These tests check the hard-coded defaults, so clear any data
+        -- another spec loaded from abilities.json
+        ability_data_loader._data = nil
         ability = ArcaneBolt:new()
     end)
 
@@ -425,8 +429,6 @@ describe("ArcaneBolt Ability", function()
         end)
 
         describe("with tier data loaded from abilities.json", function()
-            local ability_data_loader = require("src.models.ability_data_loader")
-
             before_each(function()
                 ability_data_loader.initialize()
                 ability = ArcaneBolt:new(ability_data_loader.getBaseStats("arcane_bolt"))

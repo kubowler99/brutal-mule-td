@@ -389,3 +389,25 @@ _G.Class = require("lib.middleclass")
 _G.Stateful = require("lib.stateful")
 
 -- Any other global mocks needed for the specific project logic
+
+--- Snapshot a module table so a test can monkeypatch its functions safely.
+-- Call the returned function in after_each: it restores every field, so a
+-- test that fails before its own cleanup cannot leak stubs into later tests.
+-- @param mod table The module table to snapshot
+-- @return function Restores the module to the snapshot
+function _G.snapshotModule(mod)
+    local saved = {}
+    for key, value in pairs(mod) do
+        saved[key] = value
+    end
+    return function()
+        for key in pairs(mod) do
+            if saved[key] == nil then
+                mod[key] = nil
+            end
+        end
+        for key, value in pairs(saved) do
+            mod[key] = value
+        end
+    end
+end
