@@ -39,13 +39,6 @@
         "iconType": "pierce",
         "pierceIncrease": 1
       }
-    },
-    "tiers": {
-      "1": {},
-      "2": { "damageBonus": 5, "cooldownReduction": 0.15 },
-      "3": { "damageBonus": 5, "projectileCountBonus": 1 },
-      "4": { "damageBonus": 10, "cooldownReduction": 0.1 },
-      "5": { "damageBonus": 10, "pierceBonus": 1, "projectileCountBonus": 1 }
     }
   },
   "frost_nova": {
