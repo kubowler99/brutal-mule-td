@@ -116,6 +116,7 @@ function M.initialize(group)
   -- combat_system receives the live activeWalkers reference
   spawner_system.initialize(walkerPool, hero.level)
   combat_system.initialize(hero, projectilePool, spawner_system.getActiveWalkers(), sceneGroup)
+  combat_system.onEnemyKilled = M.onEnemyKilled
   experience_system.initialize(hero, M.onLevelUp)
   upgrade_system.initialize(hero, M.onUpgradeSelected)
 end
@@ -180,17 +181,11 @@ function M.update(event)
     -- this frame may have killed the enemy or spent the projectile's pierce.
     -- Skip those pairs so a kill is only rewarded once.
     if enemy.isActive and projectile.isActive then
-      -- Apply damage to enemy
+      -- Apply damage to enemy (kills are rewarded through onEnemyKilled)
       combat_system.applyDamage(enemy, projectile.damage)
 
       -- Handle projectile hit (pierce logic)
       projectile:onHit(enemy)
-
-      -- If enemy was defeated, award XP immediately
-      if not enemy.isActive then
-        experience_system.awardXP(enemy.type or "walker", enemy.x, enemy.y)
-        game_state.enemiesDefeated = game_state.enemiesDefeated + 1
-      end
     end
   end
   
@@ -218,6 +213,14 @@ function M.update(event)
   
   -- 5. Combat system (ability activation and projectile updates)
   combat_system.update(dt, currentTime)
+end
+
+--- Reward a kill from any damage source
+-- Awards XP and counts the kill. Set as combat_system.onEnemyKilled.
+-- @param enemy table The enemy that was killed
+function M.onEnemyKilled(enemy)
+  experience_system.awardXP(enemy.type or "walker", enemy.x, enemy.y)
+  game_state.enemiesDefeated = game_state.enemiesDefeated + 1
 end
 
 --- Pause the game

@@ -13,6 +13,9 @@ local activeProjectiles = {}
 local enemies = {}
 local sceneGroup = nil
 
+-- Called with the enemy whenever applyDamage() kills an active enemy
+M.onEnemyKilled = nil
+
 --- Deactivate a projectile and return it to the projectile pool
 -- @param projectile table The projectile entity to release
 local function releaseProjectile(projectile)
@@ -105,7 +108,7 @@ function M.activateAbilities(currentTime)
       
       -- Wrap ability activation in pcall for error handling
       local success, result = pcall(function()
-        return ability:activate(hero.x, hero.y, enemies, trackingPool)
+        return ability:activate(hero.x, hero.y, enemies, trackingPool, sceneGroup)
       end)
       
       if success then
@@ -197,15 +200,21 @@ function M.updateProjectiles(dt)
 end
 
 --- Apply damage to an entity
--- Validates the damage amount and applies it to the entity.
+-- Validates the damage amount and applies it to the entity. When the hit kills
+-- an active enemy, calls M.onEnemyKilled so every damage source rewards kills
+-- the same way.
 --
 -- @param entity table The entity to damage (must have takeDamage method)
 -- @param amount number The damage amount to apply
+-- @return boolean True if this hit killed the entity
 function M.applyDamage(entity, amount)
   -- Validate entity
   if not entity or not entity.takeDamage then
-    return
+    return false
   end
+  
+  -- Only entities that track isActive (enemies) can be killed by a hit
+  local wasActive = entity.isActive == true
   
   -- Validate damage values (clamp to minimum 0)
   local validAmount = 0
@@ -220,7 +229,14 @@ function M.applyDamage(entity, amount)
   
   if not success then
     print("Warning: Damage application failed:", err)
+    return false
   end
+  
+  local killed = wasActive and not entity.isActive
+  if killed and M.onEnemyKilled then
+    M.onEnemyKilled(entity)
+  end
+  return killed
 end
 
 --- Get active projectiles array
@@ -251,6 +267,7 @@ function M.cleanup()
   activeProjectiles = {}
   enemies = {}
   sceneGroup = nil
+  M.onEnemyKilled = nil
 end
 
 return M

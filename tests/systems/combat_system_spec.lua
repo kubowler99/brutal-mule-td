@@ -487,6 +487,47 @@ describe("Combat System", function()
     end)
   end)
 
+  describe("applyDamage kill reporting", function()
+    it("returns true and calls onEnemyKilled once when a hit kills an enemy", function()
+      local killed = {}
+      combat_system.onEnemyKilled = function(enemy) table.insert(killed, enemy) end
+      local walker = Walker:new()
+      walker:activate(100, 100, 100)
+      walker.health = 10
+
+      assert.is_true(combat_system.applyDamage(walker, 10))
+      assert.is_false(combat_system.applyDamage(walker, 10))
+
+      assert.are.same({walker}, killed)
+      combat_system.onEnemyKilled = nil
+    end)
+
+    it("returns false for a hit that does not kill", function()
+      local walker = Walker:new()
+      walker:activate(100, 100, 100)
+      walker.health = 30
+
+      assert.is_false(combat_system.applyDamage(walker, 10))
+      assert.are.equal(20, walker.health)
+    end)
+
+    it("does not report the wall as a kill", function()
+      local called = false
+      combat_system.onEnemyKilled = function() called = true end
+      local wall = { health = 5, takeDamage = function(self, amount) self.health = self.health - amount end }
+
+      assert.is_false(combat_system.applyDamage(wall, 10))
+      assert.is_false(called)
+      combat_system.onEnemyKilled = nil
+    end)
+
+    it("clears onEnemyKilled on cleanup", function()
+      combat_system.onEnemyKilled = function() end
+      combat_system.cleanup()
+      assert.is_nil(combat_system.onEnemyKilled)
+    end)
+  end)
+
   describe("projectile pooling", function()
     it("returns a spent projectile to the pool when it stops being tracked", function()
       local realPool = pool.new(function() return Projectile:new() end)
