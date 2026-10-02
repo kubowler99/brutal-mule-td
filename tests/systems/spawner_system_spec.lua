@@ -23,12 +23,12 @@ describe("Spawner System", function()
     end)
 
     describe("initialization", function()
-        it("should initialize with default spawn interval of 3.0 seconds", function()
-            assert.are.equal(3.0, spawner_system.spawnInterval)
+        it("should initialize with default spawn interval of 2.0 seconds", function()
+            assert.are.equal(2.0, spawner_system.spawnInterval)
         end)
 
-        it("should initialize with spawn count of 1", function()
-            assert.are.equal(1, spawner_system.spawnCount)
+        it("should initialize with spawn count of 3", function()
+            assert.are.equal(3, spawner_system.spawnCount)
         end)
 
         it("should initialize with maximum concurrent limit of 50", function()
@@ -50,8 +50,8 @@ describe("Spawner System", function()
 
         it("should set difficulty based on initial hero level", function()
             spawner_system.initialize(walkerPool, 7)
-            assert.are.equal(3.0, spawner_system.spawnInterval)
-            assert.are.equal(2, spawner_system.spawnCount)
+            assert.are.equal(2.0, spawner_system.spawnInterval)
+            assert.are.equal(4, spawner_system.spawnCount)
         end)
     end)
 
@@ -78,17 +78,18 @@ describe("Spawner System", function()
             assert.is_true(spawner_system.spawnTimer < 3.0)
         end)
 
-        it("should spawn walker when timer reaches interval", function()
+        it("should spawn walkers when timer reaches interval", function()
             spawner_system.hasSpawnedInitial = true
-            spawner_system.update(3.0, 5.0)
-            assert.are.equal(1, #spawner_system.activeWalkers)
+            spawner_system.update(2.0, 5.0)
+            -- spawnCount is 3, so 3 walkers per tick
+            assert.are.equal(3, #spawner_system.activeWalkers)
         end)
 
         it("should spawn multiple times if dt exceeds interval", function()
             spawner_system.hasSpawnedInitial = true
-            spawner_system.update(6.5, 10.0)
-            -- Should spawn twice (at 3s and 6s)
-            assert.are.equal(2, #spawner_system.activeWalkers)
+            spawner_system.update(4.5, 10.0)
+            -- Should spawn twice (at 2s and 4s), 3 per tick = 6
+            assert.are.equal(6, #spawner_system.activeWalkers)
         end)
     end)
 
@@ -190,53 +191,53 @@ describe("Spawner System", function()
     -- **Validates: Requirements 3.3, 3.4, 3.5, 3.6**
     -- Test difficulty scaling at different levels
     describe("difficulty scaling at different levels", function()
-        it("should use 1 walker every 3s for level < 5", function()
+        it("should use base config values for level < 5", function()
             spawner_system.updateDifficulty(1)
-            assert.are.equal(3.0, spawner_system.spawnInterval)
-            assert.are.equal(1, spawner_system.spawnCount)
+            assert.are.equal(2.0, spawner_system.spawnInterval)
+            assert.are.equal(3, spawner_system.spawnCount)
             
             spawner_system.updateDifficulty(4)
-            assert.are.equal(3.0, spawner_system.spawnInterval)
-            assert.are.equal(1, spawner_system.spawnCount)
+            assert.are.equal(2.0, spawner_system.spawnInterval)
+            assert.are.equal(3, spawner_system.spawnCount)
         end)
 
-        it("should use 2 walkers every 3s for level 5-9", function()
+        it("should add 1 walker for level 5-9", function()
             spawner_system.updateDifficulty(5)
-            assert.are.equal(3.0, spawner_system.spawnInterval)
-            assert.are.equal(2, spawner_system.spawnCount)
+            assert.are.equal(2.0, spawner_system.spawnInterval)
+            assert.are.equal(4, spawner_system.spawnCount)
             
             spawner_system.updateDifficulty(9)
-            assert.are.equal(3.0, spawner_system.spawnInterval)
-            assert.are.equal(2, spawner_system.spawnCount)
+            assert.are.equal(2.0, spawner_system.spawnInterval)
+            assert.are.equal(4, spawner_system.spawnCount)
         end)
 
-        it("should use 3 walkers every 2s for level 10-14", function()
+        it("should add 2 walkers and reduce interval for level 10-14", function()
             spawner_system.updateDifficulty(10)
-            assert.are.equal(2.0, spawner_system.spawnInterval)
-            assert.are.equal(3, spawner_system.spawnCount)
+            assert.are.equal(1.5, spawner_system.spawnInterval)
+            assert.are.equal(5, spawner_system.spawnCount)
             
             spawner_system.updateDifficulty(14)
-            assert.are.equal(2.0, spawner_system.spawnInterval)
-            assert.are.equal(3, spawner_system.spawnCount)
+            assert.are.equal(1.5, spawner_system.spawnInterval)
+            assert.are.equal(5, spawner_system.spawnCount)
         end)
 
-        it("should use 4 walkers every 2s for level 15+", function()
+        it("should add 3 walkers and further reduce interval for level 15+", function()
             spawner_system.updateDifficulty(15)
-            assert.are.equal(2.0, spawner_system.spawnInterval)
-            assert.are.equal(4, spawner_system.spawnCount)
+            assert.are.equal(1.0, spawner_system.spawnInterval)
+            assert.are.equal(6, spawner_system.spawnCount)
             
             spawner_system.updateDifficulty(20)
-            assert.are.equal(2.0, spawner_system.spawnInterval)
-            assert.are.equal(4, spawner_system.spawnCount)
+            assert.are.equal(1.0, spawner_system.spawnInterval)
+            assert.are.equal(6, spawner_system.spawnCount)
         end)
 
         it("should spawn correct count based on difficulty", function()
             spawner_system.hasSpawnedInitial = true
             
-            -- Level 5-9: spawn 2 walkers
+            -- Level 5-9: spawn 4 walkers per tick
             spawner_system.updateDifficulty(7)
-            spawner_system.update(3.0, 5.0)
-            assert.are.equal(2, #spawner_system.activeWalkers)
+            spawner_system.update(2.0, 5.0)
+            assert.are.equal(4, #spawner_system.activeWalkers)
         end)
     end)
 
@@ -354,16 +355,17 @@ end)
                 )
                 spawner_system.initialize(testPool, level)
                 
-                -- Determine expected values based on level
+                -- Determine expected values based on config-driven difficulty curve
+                -- Base: spawnInterval=2.0, spawnCount=3
                 local expectedInterval, expectedCount
                 if level < 5 then
-                    expectedInterval, expectedCount = 3.0, 1
-                elseif level < 10 then
-                    expectedInterval, expectedCount = 3.0, 2
-                elseif level < 15 then
                     expectedInterval, expectedCount = 2.0, 3
-                else
+                elseif level < 10 then
                     expectedInterval, expectedCount = 2.0, 4
+                elseif level < 15 then
+                    expectedInterval, expectedCount = 1.5, 5
+                else
+                    expectedInterval, expectedCount = 1.0, 6
                 end
                 
                 -- Property: spawn interval and count should match difficulty curve

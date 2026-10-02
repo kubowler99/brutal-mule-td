@@ -12,6 +12,7 @@ local XPBar = require("src.ui.xp_bar")
 local AbilityIndicator = require("src.ui.ability_indicator")
 local UpgradeCard = require("src.ui.upgrade_card")
 local stringUtils = require("src.utils.string")
+local combat_system = require("src.systems.combat_system")
 
 local scene = composer.newScene()
 
@@ -435,6 +436,9 @@ function scene:show(event)
         table.insert(abilityIndicators, indicator)
       end
     end
+
+    -- Pass indicator positions to combat system for fire origin resolution
+    combat_system.setIndicatorPositions(abilityIndicators)
     
     -- Set abilities on indicators
     if hero then

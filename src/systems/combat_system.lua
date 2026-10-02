@@ -12,6 +12,7 @@ local projectilePool = nil
 local activeProjectiles = {}
 local enemies = {}
 local sceneGroup = nil
+local indicatorPositions = {}
 
 -- Called with the enemy whenever applyDamage() kills an active enemy
 M.onEnemyKilled = nil
@@ -89,7 +90,7 @@ function M.activateAbilities(currentTime)
   end
   
   -- Iterate through hero abilities with pcall wrapper for critical operations
-  for _, ability in ipairs(hero.abilities) do
+  for i, ability in ipairs(hero.abilities) do
     if ability and ability.canActivate and ability:canActivate(currentTime) then
       -- Create a tracking wrapper around the pool to capture created projectiles
       local trackingPool = {
@@ -106,9 +107,12 @@ function M.activateAbilities(currentTime)
         end
       }
       
+      -- Resolve fire origin from indicator position (or fallback to hero)
+      local originX, originY = M.getFireOrigin(i)
+      
       -- Wrap ability activation in pcall for error handling
       local success, result = pcall(function()
-        return ability:activate(hero.x, hero.y, enemies, trackingPool, sceneGroup)
+        return ability:activate(originX, originY, enemies, trackingPool, sceneGroup)
       end)
       
       if success then
@@ -247,6 +251,30 @@ function M.getActiveProjectiles()
   return activeProjectiles
 end
 
+--- Update indicator positions reference
+-- Called when indicators are created or repositioned after initialization.
+--
+-- @param indicators table Array of AbilityIndicator objects (or nil)
+function M.setIndicatorPositions(indicators)
+  indicatorPositions = indicators or {}
+end
+
+--- Get the fire origin for a given ability slot
+-- Returns indicator position if available, otherwise hero position, otherwise (0, 0).
+--
+-- @param slotIndex number The ability slot (1-5)
+-- @return number x, number y The fire origin coordinates
+function M.getFireOrigin(slotIndex)
+  local indicator = indicatorPositions and indicatorPositions[slotIndex]
+  if indicator and indicator.x and indicator.y then
+    return indicator.x, indicator.y
+  end
+  if hero then
+    return hero.x, hero.y
+  end
+  return 0, 0
+end
+
 --- Cleanup combat system resources
 -- Deactivates all active projectiles and clears all references.
 function M.cleanup()
@@ -268,6 +296,7 @@ function M.cleanup()
   enemies = {}
   sceneGroup = nil
   M.onEnemyKilled = nil
+  indicatorPositions = {}
 end
 
 return M

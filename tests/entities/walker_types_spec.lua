@@ -44,14 +44,32 @@ describe("Enemy types", function()
             assert.are.equal(80, enemy.speed)
         end)
 
-        it("shrinks runners and keeps walkers full size", function()
+        it("shrinks runners and keeps walkers at full sprite size", function()
             local runner = Walker:new(nil)
             runner:activate(100, 0, 100, "runner")
             local walker = Walker:new(nil)
             walker:activate(100, 0, 100, "walker")
 
-            assert.are.equal(0.75, runner.displayObject.xScale)
-            assert.are.equal(1.0, walker.displayObject.xScale)
+            assert.are.equal(1.5 * 0.75, runner.displayObject.xScale)
+            assert.are.equal(1.5, walker.displayObject.xScale)
+        end)
+
+        it("tints runners orange, slowed enemies blue, and walkers not at all", function()
+            local enemy = Walker:new(nil)
+            enemy:activate(100, 0, 100, "walker")
+            local tints = {}
+            enemy.displayObject.setFillColor = function(self, r, g, b)
+                table.insert(tints, {r, g, b})
+            end
+
+            enemy:refreshStyle()
+            enemy:applySlow(0.5, 1.0)
+            enemy:deactivate()
+            enemy:activate(100, 0, 100, "runner")
+
+            assert.are.same({1.0, 1.0, 1.0}, tints[1])
+            assert.are.same({0.5, 0.8, 1.0}, tints[2])
+            assert.are.same({1.0, 0.65, 0.3}, tints[#tints])
         end)
 
         it("awards runner XP from enemies.json", function()

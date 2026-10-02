@@ -1,10 +1,34 @@
 -- Walker Entity
 -- Basic melee enemy that advances toward the defensive wall
 
-local placeholder_graphics = require("src.utils.placeholder_graphics")
 local HealthBar = require("src.ui.health_bar")
 
 local json = _G.json or require("json")
+
+-- Sprite sheet data for walker animations
+local runSheetInfo = require("assets.images.sprites.zombie_run_with_shadow_down")
+local attackSheetInfo = require("assets.images.sprites.zombie_attack_with_shadow_down")
+
+-- Pre-create image sheets (shared across all walker instances)
+local _runSheet = nil
+local _attackSheet = nil
+local _sequenceData = nil
+
+local function _ensureSheets()
+  if _runSheet then return end
+  _runSheet = graphics.newImageSheet(
+    "assets/images/sprites/zombie_run_with_shadow_down.png",
+    runSheetInfo:getSheet()
+  )
+  _attackSheet = graphics.newImageSheet(
+    "assets/images/sprites/zombie_attack_with_shadow_down.png",
+    attackSheetInfo:getSheet()
+  )
+  _sequenceData = {
+    { name = "run",    sheet = _runSheet,    frames = runSheetInfo:getAnimation("Zombie1-run-with-shadow-down"),       time = 800, loopCount = 0 },
+    { name = "attack", sheet = _attackSheet, frames = attackSheetInfo:getAnimation("Zombie1-Attack-With-Shadow-down"), time = 800, loopCount = 0 },
+  }
+end
 
 local Walker = Class("Walker")
 
@@ -14,14 +38,17 @@ local DEFAULT_STATS = {
   runner = { health = 10, speed = 160, damage = 3, attackCooldown = 0.8 },
 }
 
--- Placeholder look per enemy type
+-- Scale applied to the 64x64 zombie sprite frames
+local SPRITE_SCALE = 96 / 64
+
+-- Sprite tint and size multiplier per enemy type
 local TYPE_STYLES = {
-  walker = { color = {0.9, 0.2, 0.2}, scale = 1.0 },
-  runner = { color = {1.0, 0.6, 0.1}, scale = 0.75 },
+  walker = { tint = {1.0, 1.0, 1.0}, scale = 1.0 },
+  runner = { tint = {1.0, 0.65, 0.3}, scale = 0.75 },
 }
 
--- Body tint while slowed
-local SLOWED_COLOR = {0.5, 0.8, 1.0}
+-- Sprite tint while slowed
+local SLOWED_TINT = {0.5, 0.8, 1.0}
 
 -- Load enemy stats from enemies.json (all types) with hard-coded fallbacks
 local _enemiesConfig = nil
@@ -90,8 +117,9 @@ function Walker:initialize(parentGroup, enemyType)
   -- Pool state
   self.isActive = false
   
-  -- Visual representation (placeholder circle for now)
+  -- Visual representation
   self.displayObject = nil
+  self._currentAnim = nil
   
   -- Health bar
   self.healthBar = nil
@@ -114,13 +142,12 @@ function Walker:refreshStyle()
   end
   
   local style = TYPE_STYLES[self.type] or TYPE_STYLES.walker
-  self.displayObject.xScale = style.scale
-  self.displayObject.yScale = style.scale
+  self.displayObject.xScale = SPRITE_SCALE * style.scale
+  self.displayObject.yScale = SPRITE_SCALE * style.scale
   
-  local body = self.displayObject[1]
-  if body and body.setFillColor then
-    local color = self.slowRemaining > 0 and SLOWED_COLOR or style.color
-    body:setFillColor(color[1], color[2], color[3])
+  if self.displayObject.setFillColor then
+    local tint = self.slowRemaining > 0 and SLOWED_TINT or style.tint
+    self.displayObject:setFillColor(tint[1], tint[2], tint[3])
   end
 end
 
@@ -177,9 +204,15 @@ function Walker:activate(x, y, lane, enemyType)
   -- Mark as active
   self.isActive = true
   
-  -- Create or update display object
+  -- Create or update display object (animated sprite)
   if not self.displayObject then
-    self.displayObject = placeholder_graphics.createWalkerSprite(self.x, self.y)
+    _ensureSheets()
+    self.displayObject = display.newSprite(_runSheet, _sequenceData)
+    -- Scale and tint are set per enemy type in refreshStyle()
+    self.displayObject.x = self.x
+    self.displayObject.y = self.y
+    self.displayObject:setSequence("run")
+    self.displayObject:play()
     if self.parentGroup and self.displayObject then
       self.parentGroup:insert(self.displayObject)
     end
@@ -187,7 +220,10 @@ function Walker:activate(x, y, lane, enemyType)
     self.displayObject.x = self.x
     self.displayObject.y = self.y
     self.displayObject.isVisible = true
+    self.displayObject:setSequence("run")
+    self.displayObject:play()
   end
+  self._currentAnim = "run"
   
   -- Create or show health bar (30px wide, 4px tall, 25px above walker center)
   if self.healthBar then
@@ -229,6 +265,15 @@ function Walker:update(dt, wallThreshold)
     if self.y >= wallThreshold then
       self.y = wallThreshold
       self.isAttackingWall = true
+    end
+  end
+  
+  -- Switch to attack animation when attacking wall
+  if self.isAttackingWall and self._currentAnim ~= "attack" then
+    if self.displayObject and self.displayObject.setSequence then
+      self.displayObject:setSequence("attack")
+      self.displayObject:play()
+      self._currentAnim = "attack"
     end
   end
   
@@ -276,10 +321,14 @@ function Walker:deactivate()
   self.wallTarget = nil
   self.isAttackingWall = false
   
-  -- Hide display object
+  -- Hide display object and stop animation
   if self.displayObject then
     self.displayObject.isVisible = false
+    if self.displayObject.pause then
+      self.displayObject:pause()
+    end
   end
+  self._currentAnim = nil
   
   -- Hide health bar
   if self.healthBar and self.healthBar.group then

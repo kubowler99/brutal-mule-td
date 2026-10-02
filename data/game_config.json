@@ -5,7 +5,7 @@
   },
   "spawner": {
     "spawnInterval": 3.0,
-    "spawnCount": 1,
+    "spawnCount": 2,
     "maxConcurrent": 50,
     "runnerMinLevel": 3,
     "runnerChance": 0.3

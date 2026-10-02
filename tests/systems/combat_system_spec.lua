@@ -1043,4 +1043,120 @@ describe("Combat System", function()
 
   end)
 
+  -- Feature: projectile-fire-from-wall
+  -- Unit tests for fire origin integration
+  describe("Fire Origin Integration", function()
+
+    before_each(function()
+      combat_system.cleanup()
+
+      hero = {
+        x = 45,
+        y = 1200,
+        isAlive = true,
+        abilities = {}
+      }
+
+      projectilePool = {
+        pool = {},
+        get = function(self)
+          local proj = Projectile:new()
+          table.insert(self.pool, proj)
+          return proj
+        end
+      }
+
+      enemies = {}
+    end)
+
+    after_each(function()
+      combat_system.cleanup()
+    end)
+
+    -- **Validates: Requirements 1.3**
+    it("getFireOrigin with slot index 0 falls back to hero position", function()
+      combat_system.initialize(hero, projectilePool, enemies)
+      combat_system.setIndicatorPositions({
+        [1] = { x = 120, y = 1200 },
+      })
+
+      local x, y = combat_system.getFireOrigin(0)
+      assert.are.equal(hero.x, x)
+      assert.are.equal(hero.y, y)
+    end)
+
+    -- **Validates: Requirements 1.3**
+    it("getFireOrigin with slot index 6 falls back to hero position", function()
+      combat_system.initialize(hero, projectilePool, enemies)
+      combat_system.setIndicatorPositions({
+        [1] = { x = 120, y = 1200 },
+      })
+
+      local x, y = combat_system.getFireOrigin(6)
+      assert.are.equal(hero.x, x)
+      assert.are.equal(hero.y, y)
+    end)
+
+    -- **Validates: Requirements 1.3**
+    it("getFireOrigin with slot index -1 falls back to hero position", function()
+      combat_system.initialize(hero, projectilePool, enemies)
+      combat_system.setIndicatorPositions({
+        [1] = { x = 120, y = 1200 },
+      })
+
+      local x, y = combat_system.getFireOrigin(-1)
+      assert.are.equal(hero.x, x)
+      assert.are.equal(hero.y, y)
+    end)
+
+    -- **Validates: Requirements 1.3, 2.1**
+    it("setIndicatorPositions called with nil does not crash and falls back to hero", function()
+      combat_system.initialize(hero, projectilePool, enemies)
+      combat_system.setIndicatorPositions(nil)
+
+      local x, y = combat_system.getFireOrigin(1)
+      assert.are.equal(hero.x, x)
+      assert.are.equal(hero.y, y)
+    end)
+
+    -- **Validates: Requirements 1.1, 1.2, 2.1**
+    it("full activation flow spawns projectile at indicator position, not hero position", function()
+      -- Hero at x=45, y=1200
+      hero.x = 45
+      hero.y = 1200
+
+      -- Indicator at a different position for slot 1
+      local indicators = {
+        [1] = { x = 120, y = 1200 },
+      }
+
+      -- Add ArcaneBolt ability to hero
+      local ability = ArcaneBolt:new()
+      ability.lastActivation = 0
+      hero.abilities = { ability }
+
+      -- Add an active enemy
+      table.insert(enemies, { x = 360, y = 600, isActive = true })
+
+      -- Initialize combat system and set indicator positions
+      combat_system.initialize(hero, projectilePool, enemies)
+      combat_system.setIndicatorPositions(indicators)
+
+      -- Activate abilities at time 2.0 (past cooldown)
+      combat_system.activateAbilities(2.0)
+
+      -- Verify a projectile was created
+      assert.are.equal(1, #projectilePool.pool)
+
+      local proj = projectilePool.pool[1]
+      assert.is_true(proj.isActive)
+
+      -- The projectile should have spawned at the indicator position (120, 1200),
+      -- NOT the hero position (45, 1200)
+      assert.are.equal(120, proj.x)
+      assert.are.equal(1200, proj.y)
+    end)
+
+  end)
+
 end)
