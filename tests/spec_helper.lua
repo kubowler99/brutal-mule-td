@@ -252,7 +252,17 @@ _G.system = {
         if key == "environment" then return "simulator" end
         return "unknown"
     end,
-    pathForFile = function(name, dir) return name end,
+    -- Resource files resolve relative to the repo root. Writable directories
+    -- (documents, temporary, caches) resolve to the OS temp directory so test
+    -- runs never overwrite files in the working tree.
+    pathForFile = function(name, dir)
+        if dir == "docs" or dir == "tmp" or dir == "cache" then
+            local tmpDir = os.getenv("TMPDIR") or "/tmp/"
+            if tmpDir:sub(-1) ~= "/" then tmpDir = tmpDir .. "/" end
+            return tmpDir .. "brutal-mule-td-test-" .. dir .. "-" .. name
+        end
+        return name
+    end,
     getTimer = function() return 0 end,  -- Mock timer for testing
     DocumentsDirectory = "docs",
     TemporaryDirectory = "tmp",
