@@ -10,7 +10,7 @@ describe("Spawner System", function()
         -- Create walker pool
         walkerPool = pool.new(
             function() return Walker:new() end,
-            function(walker, x, y, lane) walker:activate(x, y, lane) end
+            nil  -- No reset: spawnWalker() activates the walker with its spawn position
         )
         
         -- Initialize spawner system
@@ -350,7 +350,7 @@ end)
                 -- Create fresh spawner for each test
                 local testPool = pool.new(
                     function() return Walker:new() end,
-                    function(walker, x, y, lane) walker:activate(x, y, lane) end
+                    nil  -- No reset: spawnWalker() activates the walker with its spawn position
                 )
                 spawner_system.initialize(testPool, level)
                 
@@ -387,7 +387,7 @@ end)
                 -- Create fresh spawner for each test
                 local testPool = pool.new(
                     function() return Walker:new() end,
-                    function(walker, x, y, lane) walker:activate(x, y, lane) end
+                    nil  -- No reset: spawnWalker() activates the walker with its spawn position
                 )
                 spawner_system.initialize(testPool, 1)
                 spawner_system.hasSpawnedInitial = true  -- Skip initial spawn logic
@@ -417,7 +417,7 @@ end)
                 -- Create fresh spawner for each test
                 local testPool = pool.new(
                     function() return Walker:new() end,
-                    function(walker, x, y, lane) walker:activate(x, y, lane) end
+                    nil  -- No reset: spawnWalker() activates the walker with its spawn position
                 )
                 
                 -- Random level to get different spawn counts
@@ -452,7 +452,7 @@ end)
                 -- Create fresh spawner for each test
                 local testPool = pool.new(
                     function() return Walker:new() end,
-                    function(walker, x, y, lane) walker:activate(x, y, lane) end
+                    nil  -- No reset: spawnWalker() activates the walker with its spawn position
                 )
                 spawner_system.initialize(testPool, 1)
                 spawner_system.hasSpawnedInitial = true  -- Skip initial spawn logic

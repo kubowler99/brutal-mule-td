@@ -14,6 +14,9 @@ describe("Ability Selection Flow Integration", function()
   local callbackInvoked
 
   before_each(function()
+    -- Load ability definitions so new-ability cards can be offered
+    ability_registry.initialize()
+    
     -- Create fresh hero
     hero = Hero:new(360, 1180)
     

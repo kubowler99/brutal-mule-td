@@ -13,7 +13,13 @@ local combat_system = require("src.systems.combat_system")
 
 describe("Integration: Full Game Flow with Wall Defense", function()
   local mockSceneGroup
-  
+
+  -- Remove the hero's abilities so walkers can reach the wall.
+  -- With Arcane Bolt active, the hero kills every walker before it arrives.
+  local function disarmHero()
+    game_controller.getHero().abilities = {}
+  end
+
   before_each(function()
     -- Create mock scene group
     mockSceneGroup = {
@@ -88,6 +94,7 @@ describe("Integration: Full Game Flow with Wall Defense", function()
     
     it("walkers stop at wall and attack", function()
       game_controller.initialize(mockSceneGroup)
+      disarmHero()
       game_controller.start()
       
       local wall = game_controller.getWall()
@@ -129,6 +136,7 @@ describe("Integration: Full Game Flow with Wall Defense", function()
     
     it("wall health decreases over time from walker attacks", function()
       game_controller.initialize(mockSceneGroup)
+      disarmHero()
       game_controller.start()
       
       local wall = game_controller.getWall()
@@ -169,6 +177,7 @@ describe("Integration: Full Game Flow with Wall Defense", function()
     
     it("game over triggers when wall dies", function()
       game_controller.initialize(mockSceneGroup)
+      disarmHero()
       
       -- Set up game over callback
       local gameOverCalled = false
@@ -250,6 +259,7 @@ describe("Integration: Full Game Flow with Wall Defense", function()
   describe("Wall Defense Mechanics", function()
     it("hero remains on wall and is not damaged", function()
       game_controller.initialize(mockSceneGroup)
+      disarmHero()
       game_controller.start()
       
       local wall = game_controller.getWall()
@@ -282,6 +292,7 @@ describe("Integration: Full Game Flow with Wall Defense", function()
     
     it("walkers target wall not hero", function()
       game_controller.initialize(mockSceneGroup)
+      disarmHero()
       game_controller.start()
       
       local wall = game_controller.getWall()
@@ -408,6 +419,7 @@ describe("Integration: Full Game Flow with Wall Defense", function()
     
     it("handles maximum walkers (50) attacking wall simultaneously", function()
       game_controller.initialize(mockSceneGroup)
+      disarmHero()
       game_controller.start()
       
       local wall = game_controller.getWall()

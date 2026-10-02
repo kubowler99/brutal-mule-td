@@ -204,21 +204,21 @@ describe("Upgrade System Data Properties", function()
         local hasSpeed = false
         local hasCount = false
         local hasPierce = false
-        local hasXpRadius = false
+        local hasXpBoost = false
 
         for _, poolEntry in ipairs(upgrade_system.upgradePool) do
           if poolEntry.id == "arcane_bolt_damage" then hasDamage = true end
           if poolEntry.id == "arcane_bolt_attack_speed" then hasSpeed = true end
           if poolEntry.id == "arcane_bolt_projectile_count" then hasCount = true end
           if poolEntry.id == "arcane_bolt_pierce" then hasPierce = true end
-          if poolEntry.id == "xp_pickup_radius" then hasXpRadius = true end
+          if poolEntry.id == "xp_boost" then hasXpBoost = true end
         end
 
         assert.is_true(hasDamage, "Fallback pool should have arcane_bolt_damage")
         assert.is_true(hasSpeed, "Fallback pool should have arcane_bolt_attack_speed")
         assert.is_true(hasCount, "Fallback pool should have arcane_bolt_projectile_count")
         assert.is_true(hasPierce, "Fallback pool should have arcane_bolt_pierce")
-        assert.is_true(hasXpRadius, "Fallback pool should have xp_pickup_radius")
+        assert.is_true(hasXpBoost, "Fallback pool should have xp_boost")
 
         upgrade_system.cleanup()
       end
@@ -250,7 +250,7 @@ describe("Upgrade System Data Properties", function()
       end
     end)
 
-    it("should always include stat upgrades (xp_pickup_radius) regardless of data source", function()
+    it("should always include stat upgrades (xp_boost) regardless of data source", function()
       for _ = 1, 100 do
         -- Randomly choose between data-driven and fallback
         if math.random() > 0.5 then
@@ -266,16 +266,16 @@ describe("Upgrade System Data Properties", function()
 
         upgrade_system.initialize(hero, function() end)
 
-        local hasXpRadius = false
+        local hasXpBoost = false
         for _, poolEntry in ipairs(upgrade_system.upgradePool) do
-          if poolEntry.id == "xp_pickup_radius" then
-            hasXpRadius = true
+          if poolEntry.id == "xp_boost" then
+            hasXpBoost = true
             break
           end
         end
 
-        assert.is_true(hasXpRadius,
-          "xp_pickup_radius stat upgrade should always be present")
+        assert.is_true(hasXpBoost,
+          "xp_boost stat upgrade should always be present")
 
         upgrade_system.cleanup()
       end

@@ -44,9 +44,16 @@ describe("Hero Position Preservation Properties", function()
       assert.is_not_nil(hero)
       assert.is_not_nil(hero.displayObject)
       
-      -- Verify the display object is a circle with radius 30
-      -- The hero is created with display.newCircle(x, y, 30)
-      assert.are.equal(30, hero.displayObject.radius, "Hero radius must remain 30 pixels")
+      -- The hero sprite is a group of circles (body, border, glow).
+      -- Its outermost circle (the glow) has radius 30.
+      local maxRadius = 0
+      for i = 1, hero.displayObject.numChildren do
+        local child = hero.displayObject[i]
+        if child.radius and child.radius > maxRadius then
+          maxRadius = child.radius
+        end
+      end
+      assert.are.equal(30, maxRadius, "Hero outer radius must remain 30 pixels")
       
       -- Verify display object is visible
       assert.is_true(hero.displayObject.isVisible, "Hero display object must be visible")

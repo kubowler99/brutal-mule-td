@@ -90,10 +90,10 @@ describe("Upgrade System", function()
             assert.is_true(found)
         end)
 
-        it("should have XP pickup radius upgrade in pool", function()
+        it("should have XP boost upgrade in pool", function()
             local found = false
             for _, upgrade in ipairs(upgrade_system.upgradePool) do
-                if upgrade.id == "xp_pickup_radius" then
+                if upgrade.id == "xp_boost" then
                     found = true
                     break
                 end
@@ -135,11 +135,11 @@ describe("Upgrade System", function()
         end)
 
         it("should handle request for more cards than available", function()
-            -- With only Arcane Bolt, we have 5 upgrades available
-            local cards = upgrade_system.generateCards(10)
+            local availableCount = #upgrade_system.getAvailableUpgrades()
+            local cards = upgrade_system.generateCards(availableCount + 5)
             
-            -- Should return at most 5 cards
-            assert.is_true(#cards <= 5)
+            -- Should return at most the number of available upgrades
+            assert.is_true(#cards <= availableCount)
         end)
 
         it("should return empty array when no upgrades available", function()
@@ -336,21 +336,19 @@ describe("Upgrade System", function()
             assert.are.equal(initialPierce + 1, hero.abilities[1].pierceCount)
         end)
 
-        it("should apply XP pickup radius upgrade to hero", function()
-            local initialRadius = hero.pickupRadius
-            
-            -- Find XP radius upgrade
-            local radiusUpgrade = nil
+        it("should apply XP boost upgrade to hero", function()
+            -- Find XP boost upgrade
+            local boostUpgrade = nil
             for _, upgrade in ipairs(upgrade_system.upgradePool) do
-                if upgrade.id == "xp_pickup_radius" then
-                    radiusUpgrade = upgrade
+                if upgrade.id == "xp_boost" then
+                    boostUpgrade = upgrade
                     break
                 end
             end
             
-            upgrade_system.applyUpgrade(radiusUpgrade)
+            upgrade_system.applyUpgrade(boostUpgrade)
             
-            assert.are.equal(initialRadius + 20, hero.pickupRadius)
+            assert.are.equal(1.25, hero.xpMultiplier)
         end)
 
         it("should call upgrade callback after successful application", function()
@@ -1004,28 +1002,28 @@ describe("Property 23: Upgrade Application", function()
         for _ = 1, 100 do
             -- Create hero
             local testHero = Hero:new(360, 1180)
-            local initialRadius = testHero.pickupRadius
+            local initialMultiplier = testHero.xpMultiplier or 1.0
             
             upgrade_system.initialize(testHero, function() end)
             
-            -- Find XP radius upgrade
-            local radiusUpgrade = nil
+            -- Find XP boost upgrade
+            local boostUpgrade = nil
             for _, upgrade in ipairs(upgrade_system.upgradePool) do
-                if upgrade.id == "xp_pickup_radius" then
-                    radiusUpgrade = upgrade
+                if upgrade.id == "xp_boost" then
+                    boostUpgrade = upgrade
                     break
                 end
             end
             
             -- Apply the upgrade
-            local success = upgrade_system.applyUpgrade(radiusUpgrade)
+            local success = upgrade_system.applyUpgrade(boostUpgrade)
             
             -- Property: Upgrade should succeed
             assert.is_true(success, "Stat upgrade should succeed")
             
-            -- Property: Pickup radius should increase by 20
-            assert.are.equal(initialRadius + 20, testHero.pickupRadius,
-                string.format("Pickup radius should increase from %d to %d", initialRadius, initialRadius + 20))
+            -- Property: XP multiplier should increase by 0.25
+            assert.are.equal(initialMultiplier + 0.25, testHero.xpMultiplier,
+                string.format("XP multiplier should increase from %.2f to %.2f", initialMultiplier, initialMultiplier + 0.25))
             
             -- Cleanup
             upgrade_system.cleanup()

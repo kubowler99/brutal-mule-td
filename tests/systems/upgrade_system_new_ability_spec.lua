@@ -9,6 +9,9 @@ describe("Upgrade System - New Ability Cards", function()
     local upgradeCallback
 
     before_each(function()
+        -- Load ability definitions so new-ability cards can be offered
+        ability_registry.initialize()
+        
         -- Create hero with no abilities initially
         hero = Hero:new(360, 1180)
         

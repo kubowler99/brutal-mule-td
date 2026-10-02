@@ -9,6 +9,9 @@ describe("Upgrade System Error Handling", function()
   local hero
   
   before_each(function()
+    -- Load ability definitions so new-ability cards can be offered
+    ability_registry.initialize()
+    
     hero = Hero:new(360, 1200)
     upgrade_system.initialize(hero, function() end)
   end)

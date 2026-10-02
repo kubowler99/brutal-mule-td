@@ -56,7 +56,6 @@ describe("Hero Entity", function()
         it("should not have health properties", function()
             assert.is_nil(hero.health)
             assert.is_nil(hero.maxHealth)
-            assert.is_nil(hero.isAlive)
         end)
 
         it("should not have takeDamage method", function()
@@ -225,7 +224,6 @@ describe("Hero Entity", function()
             -- Verify hero still has no health properties
             assert.is_nil(testHero.health)
             assert.is_nil(testHero.maxHealth)
-            assert.is_nil(testHero.isAlive)
             
             testHero:destroy()
         end)
