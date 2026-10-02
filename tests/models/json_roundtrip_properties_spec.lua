@@ -88,6 +88,11 @@ local function randomTable(maxDepth, maxKeys)
   local numKeys = math.random(1, maxKeys)
   for _ = 1, numKeys do
     local key = randomString(1, 10)
+    -- dkjson (the test JSON backend) reads a field named "n" as an array
+    -- length, so {n = 5} encodes as an array; skip that key
+    if key == "n" then
+      key = key .. "_"
+    end
     t[key] = randomValue(maxDepth - 1, maxKeys)
   end
   return t

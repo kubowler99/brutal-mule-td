@@ -384,4 +384,52 @@ describe("Game Over Scene - Persistent Data Integration", function()
     assert.are.equal(180, data.get("stats.longestSurvival"), "longestSurvival should be 180 (new record)")
     assert.are.equal(190, data.get("stats.totalEnemiesDefeated"), "totalEnemiesDefeated should be 190 (150 + 40)")
   end)
+
+  describe("best run display", function()
+    local function findBestRunText()
+      for i = 1, scene.view.numChildren do
+        local child = scene.view[i]
+        if type(child.text) == "string" and child.text:find("Best: ") then
+          return child
+        end
+      end
+      return nil
+    end
+
+    local function showGameOver(params)
+      scene:create({ name = "create", phase = "will" })
+      scene:show({ name = "show", phase = "will", params = params })
+    end
+
+    it("shows the saved best when this run did not beat it", function()
+      data.set("stats.highestLevel", 6)
+      data.set("stats.longestSurvival", 300)
+
+      showGameOver({ survivalTime = 60, enemiesDefeated = 5, finalLevel = 2 })
+
+      local bestRunText = findBestRunText()
+      assert.is_not_nil(bestRunText, "Best run line should be shown")
+      assert.are.equal("Best: Level 6  |  05:00", bestRunText.text)
+    end)
+
+    it("marks a new best and shows the updated record", function()
+      data.set("stats.highestLevel", 3)
+      data.set("stats.longestSurvival", 100)
+
+      showGameOver({ survivalTime = 125, enemiesDefeated = 20, finalLevel = 4 })
+
+      local bestRunText = findBestRunText()
+      assert.is_not_nil(bestRunText, "Best run line should be shown")
+      assert.are.equal("NEW BEST!  Best: Level 4  |  02:05", bestRunText.text)
+    end)
+
+    it("marks a new best when only survival time improves", function()
+      data.set("stats.highestLevel", 9)
+      data.set("stats.longestSurvival", 100)
+
+      showGameOver({ survivalTime = 101, enemiesDefeated = 3, finalLevel = 2 })
+
+      assert.are.equal("NEW BEST!  Best: Level 9  |  01:41", findBestRunText().text)
+    end)
+  end)
 end)

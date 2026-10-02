@@ -14,6 +14,9 @@ describe("Ability Selection Flow Integration", function()
   local callbackInvoked
 
   before_each(function()
+    -- Load ability definitions so new-ability cards can be offered
+    ability_registry.initialize()
+    
     -- Create fresh hero
     hero = Hero:new(360, 1180)
     
@@ -40,7 +43,8 @@ describe("Ability Selection Flow Integration", function()
       assert.are.equal(0, #hero.abilities, "Hero should start with no abilities")
       
       -- Step 2: Generate upgrade cards
-      local cards = upgrade_system.generateCards(3)
+      -- Request every available card so the new ability card is always drawn
+      local cards = upgrade_system.generateCards(#upgrade_system.getAvailableUpgrades())
       assert.is_not_nil(cards, "Should generate cards")
       assert.is_true(#cards > 0, "Should generate at least one card")
       
@@ -221,8 +225,8 @@ describe("Ability Selection Flow Integration", function()
       local arcaneBolt = ArcaneBolt:new()
       hero:addAbility(arcaneBolt)
       
-      -- Generate cards (should include both tier upgrades and new abilities)
-      local cards = upgrade_system.generateCards(3)
+      -- Generate every available card so both types are always drawn
+      local cards = upgrade_system.generateCards(#upgrade_system.getAvailableUpgrades())
       
       local hasTierUpgrade = false
       local hasNewAbility = false
@@ -235,9 +239,8 @@ describe("Ability Selection Flow Integration", function()
         end
       end
       
-      -- With 1 ability, we should get both types
-      assert.is_true(hasTierUpgrade or hasNewAbility, 
-        "Should offer at least one upgrade type")
+      -- With 1 ability, tier upgrades are offered for it
+      assert.is_true(hasTierUpgrade, "Should offer tier upgrades for the owned ability")
     end)
 
     it("should allow tier upgrades after adding new abilities", function()

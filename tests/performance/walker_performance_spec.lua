@@ -14,7 +14,7 @@ describe("Walker Performance Test", function()
         -- Create walker pool with capacity for 50 walkers
         walkerPool = pool.new(
             function() return Walker:new() end,
-            function(walker, x, y, lane) walker:activate(x, y, lane) end
+            nil  -- No reset: spawnWalker() activates the walker with its spawn position
         )
         
         -- Initialize spawner system

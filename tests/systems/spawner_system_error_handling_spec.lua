@@ -29,7 +29,7 @@ describe("Spawner System Error Handling", function()
     local function createWalkerPool()
         return pool.new(
             function() return Walker:new() end,
-            function(walker, x, y, lane) walker:activate(x, y, lane) end
+            nil  -- No reset: spawnWalker() activates the walker with its spawn position
         )
     end
     

@@ -62,6 +62,15 @@ local function randomInvalidValue()
   return invalidTypes[math.random(1, #invalidTypes)]
 end
 
+
+-- Read base stats straight from data/abilities.json so tests track data changes
+local function readFileBaseStats(abilityId)
+  local file = assert(io.open("data/abilities.json", "r"))
+  local contents = file:read("*a")
+  file:close()
+  return json.decode(contents)[abilityId].baseStats
+end
+
 describe("Ability Data Loader Properties", function()
 
   before_each(function()
@@ -121,12 +130,12 @@ describe("Ability Data Loader Properties", function()
         local loaded = ability_data_loader.getBaseStats("arcane_bolt")
 
         assert.is_not_nil(loaded, "getBaseStats should return stats for arcane_bolt")
-        -- Values from data/abilities.json
-        assert.are.equal(1.0, loaded.cooldown)
-        assert.are.equal(10, loaded.damage)
-        assert.are.equal(400, loaded.projectileSpeed)
-        assert.are.equal(0, loaded.pierceCount)
-        assert.are.equal(1, loaded.projectileCount)
+        local expected = readFileBaseStats("arcane_bolt")
+        assert.are.equal(expected.cooldown, loaded.cooldown)
+        assert.are.equal(expected.damage, loaded.damage)
+        assert.are.equal(expected.projectileSpeed, loaded.projectileSpeed)
+        assert.are.equal(expected.pierceCount, loaded.pierceCount)
+        assert.are.equal(expected.projectileCount, loaded.projectileCount)
       end
     end)
   end)

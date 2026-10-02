@@ -11,6 +11,8 @@ local HealthBar = require("src.ui.health_bar")
 local XPBar = require("src.ui.xp_bar")
 local AbilityIndicator = require("src.ui.ability_indicator")
 local UpgradeCard = require("src.ui.upgrade_card")
+local stringUtils = require("src.utils.string")
+local combat_system = require("src.systems.combat_system")
 
 local scene = composer.newScene()
 
@@ -26,16 +28,13 @@ local abilityIndicators = {}
 local upgradePanel = nil
 local upgradeCards = {}
 local uiUpdateListener = nil
-local isGameOver = false
+local pauseButton = nil
+local pausePanel = nil
+local isPausedByPlayer = false
+-- Set when the session ends (game over or quit) so scene:hide() cleans up entities
+local endSessionOnHide = false
 
---- Format time as MM:SS
--- @param seconds number Total seconds
--- @return string Formatted time string
-local function formatTime(seconds)
-  local minutes = math.floor(seconds / 60)
-  local secs = math.floor(seconds % 60)
-  return string.format("%02d:%02d", minutes, secs)
-end
+local formatTime = stringUtils.formatTime
 
 --- Update all UI elements based on current game state
 local function updateUI()
@@ -72,6 +71,10 @@ local function updateUI()
   local currentTime = system.getTimer() / 1000
   for i, indicator in ipairs(abilityIndicators) do
     local ability = hero.abilities[i]
+    -- Abilities picked from level-up cards appear here after the scene shows
+    if indicator.ability ~= ability then
+      indicator:setAbility(ability)
+    end
     if ability then
       -- Calculate remaining cooldown
       local timeSinceActivation = currentTime - (ability.lastActivation or 0)
@@ -146,6 +149,78 @@ function hideUpgradePanel()
     card:destroy()
   end
   upgradeCards = {}
+end
+
+--- Show or hide the pause overlay
+-- The game layer is hidden while paused so entities never render above the overlay.
+-- @param visible boolean Whether the overlay should be shown
+local function setPausePanelVisible(visible)
+  if pausePanel then
+    pausePanel.isVisible = visible
+    if visible then
+      pausePanel:toFront()
+    end
+  end
+  if scene.gameLayer then
+    scene.gameLayer.isVisible = not visible
+  end
+end
+
+--- Pause the game from the pause button
+-- Ignored while the level-up panel is open, since the game is already paused there.
+-- @return boolean True if the game was paused
+function scene.pauseGame()
+  if isPausedByPlayer or not hero then
+    return false
+  end
+  if upgradePanel and upgradePanel.isVisible then
+    return false
+  end
+  
+  isPausedByPlayer = true
+  game_controller.pause()
+  setPausePanelVisible(true)
+  return true
+end
+
+--- Resume the game from the pause overlay
+-- @return boolean True if the game was resumed
+function scene.resumeGame()
+  if not isPausedByPlayer then
+    return false
+  end
+  
+  isPausedByPlayer = false
+  setPausePanelVisible(false)
+  game_controller.resume()
+  return true
+end
+
+--- Abandon the current run and return to the main menu
+-- The run is not recorded in saved stats.
+-- @return boolean True if the transition started
+function scene.quitToMenu()
+  if not isPausedByPlayer then
+    return false
+  end
+  
+  isPausedByPlayer = false
+  setPausePanelVisible(false)
+  endSessionOnHide = true
+  composer.gotoScene("src.scenes.menu", {
+    effect = "fade",
+    time = 300
+  })
+  return true
+end
+
+--- Pause when the app is suspended (home button, incoming call)
+-- The player returns to the pause overlay instead of a running game.
+-- @param event table Runtime "system" event
+function scene.onSystemEvent(event)
+  if event.type == "applicationSuspend" then
+    scene.pauseGame()
+  end
 end
 
 --- Scene create event
@@ -232,11 +307,82 @@ function scene:create(event)
   })
   upgradeTitle:setFillColor(1, 1, 0)
   
+  -- Pause button (top center, below the level display)
+  pauseButton = helpers.newButton({
+    x = helpers.centerX,
+    y = 75,
+    width = 60,
+    height = 36,
+    label = "II",
+    fontSize = 20,
+    fillColor = {0.3, 0.3, 0.4},
+    onRelease = function()
+      scene.pauseGame()
+    end
+  })
+  sceneGroup:insert(pauseButton)
+  sceneGroup:insert(pauseButton.label)
+  
+  -- Pause panel (hidden by default)
+  pausePanel = display.newGroup()
+  sceneGroup:insert(pausePanel)
+  pausePanel.isVisible = false
+  
+  local pauseOverlay = display.newRect(
+    pausePanel,
+    helpers.centerX,
+    helpers.centerY,
+    helpers.width,
+    helpers.height
+  )
+  pauseOverlay:setFillColor(0, 0, 0, 0.8)
+  -- Swallow touches so taps do not reach the pause button underneath
+  pauseOverlay:addEventListener("touch", function() return true end)
+  
+  local pauseTitle = display.newText({
+    parent = pausePanel,
+    text = "PAUSED",
+    x = helpers.centerX,
+    y = helpers.centerY - 150,
+    fontSize = 48,
+    font = native.systemFontBold
+  })
+  pauseTitle:setFillColor(1, 1, 1)
+  
+  local resumeButton = helpers.newButton({
+    x = helpers.centerX,
+    y = helpers.centerY,
+    width = 220,
+    height = 60,
+    label = "RESUME",
+    fontSize = 24,
+    onRelease = function()
+      scene.resumeGame()
+    end
+  })
+  pausePanel:insert(resumeButton)
+  pausePanel:insert(resumeButton.label)
+  
+  local quitButton = helpers.newButton({
+    x = helpers.centerX,
+    y = helpers.centerY + 80,
+    width = 220,
+    height = 60,
+    label = "QUIT TO MENU",
+    fontSize = 24,
+    fillColor = {0.5, 0.5, 0.6},
+    onRelease = function()
+      scene.quitToMenu()
+    end
+  })
+  pausePanel:insert(quitButton)
+  pausePanel:insert(quitButton.label)
+  
   -- Set game controller callbacks
   game_controller.onLevelUpCallback = showUpgradePanel
   game_controller.onGameOverCallback = function(stats)
-    -- Set game over flag to trigger cleanup in scene:hide()
-    isGameOver = true
+    -- End the session so scene:hide() cleans up entities
+    endSessionOnHide = true
     
     -- Transition to game over scene with statistics
     composer.gotoScene("src.scenes.gameover", {
@@ -258,6 +404,10 @@ function scene:show(event)
     -- This handles the "Play Again" scenario where scene:create() doesn't run
     -- because Composer caches scenes by default
     game_controller.initialize(scene.gameLayer)
+    
+    -- A new session never starts paused
+    isPausedByPlayer = false
+    setPausePanelVisible(false)
     
     -- Reset hero and wall references
     hero = nil
@@ -286,6 +436,9 @@ function scene:show(event)
         table.insert(abilityIndicators, indicator)
       end
     end
+
+    -- Pass indicator positions to combat system for fire origin resolution
+    combat_system.setIndicatorPositions(abilityIndicators)
     
     -- Set abilities on indicators
     if hero then
@@ -299,6 +452,9 @@ function scene:show(event)
     
     -- Start UI update loop
     uiUpdateListener = Runtime:addEventListener("enterFrame", updateUI)
+    
+    -- Auto-pause when the app is suspended
+    Runtime:addEventListener("system", scene.onSystemEvent)
   end
 end
 
@@ -314,9 +470,10 @@ function scene:hide(event)
       Runtime:removeEventListener("enterFrame", updateUI)
       uiUpdateListener = nil
     end
+    Runtime:removeEventListener("system", scene.onSystemEvent)
     
-    -- Check if this is a game over transition
-    if isGameOver then
+    -- Check if the session ended (game over or quit to menu)
+    if endSessionOnHide then
       -- Cleanup ability indicators before game controller cleanup
       for _, indicator in ipairs(abilityIndicators) do
         indicator:destroy()
@@ -327,9 +484,9 @@ function scene:hide(event)
       game_controller.cleanup()
       
       -- Reset flag for next game session
-      isGameOver = false
+      endSessionOnHide = false
     else
-      -- Non-game-over transition (e.g., pause): preserve entities
+      -- Session continues (e.g., an overlay scene): preserve entities
       game_controller.pause()
     end
     
@@ -372,12 +529,16 @@ function scene:destroy(event)
   timeText = nil
   enemyCountText = nil
   upgradePanel = nil
+  pauseButton = nil
+  pausePanel = nil
+  isPausedByPlayer = false
   
   -- Remove UI update listener (if still active)
   if uiUpdateListener then
     Runtime:removeEventListener("enterFrame", updateUI)
     uiUpdateListener = nil
   end
+  Runtime:removeEventListener("system", scene.onSystemEvent)
 end
 
 -- Add scene event listeners

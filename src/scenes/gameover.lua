@@ -6,6 +6,7 @@
 local composer = require("composer")
 local helpers = require("src.utils.helpers")
 local data = require("src.models.data")
+local stringUtils = require("src.utils.string")
 
 local scene = composer.newScene()
 
@@ -15,20 +16,14 @@ local titleText
 local survivalTimeText
 local enemiesDefeatedText
 local finalLevelText
+local bestRunText
 local playAgainButton
 local mainMenuButton
 
 -- Statistics received from game scene
 local stats = nil
 
---- Format time as MM:SS
--- @param seconds number Total seconds
--- @return string Formatted time string
-local function formatTime(seconds)
-  local minutes = math.floor(seconds / 60)
-  local secs = math.floor(seconds % 60)
-  return string.format("%02d:%02d", minutes, secs)
-end
+local formatTime = stringUtils.formatTime
 
 --- Scene create event
 function scene:create(event)
@@ -92,6 +87,17 @@ function scene:create(event)
   })
   finalLevelText:setFillColor(1, 1, 1)
   
+  -- Best run (filled in on show, after this run is recorded)
+  bestRunText = display.newText({
+    parent = sceneGroup,
+    text = "",
+    x = helpers.centerX,
+    y = statsY + statsSpacing * 3 + 20,
+    font = native.systemFontBold,
+    fontSize = 24
+  })
+  bestRunText:setFillColor(0.7, 0.7, 0.8)
+  
   -- Play Again button (handler will be added in show phase)
   playAgainButton = helpers.newButton({
     x = helpers.centerX,
@@ -153,14 +159,30 @@ function scene:show(event)
     
     -- Update highest level if current is higher
     local highestLevel = data.get("stats.highestLevel") or 1
-    if finalLevel > highestLevel then
+    local isNewBestLevel = finalLevel > highestLevel
+    if isNewBestLevel then
+      highestLevel = finalLevel
       data.set("stats.highestLevel", finalLevel)
     end
     
     -- Update longest survival if current is longer
     local longestSurvival = data.get("stats.longestSurvival") or 0
-    if survivalTime > longestSurvival then
+    local isNewBestSurvival = survivalTime > longestSurvival
+    if isNewBestSurvival then
+      longestSurvival = survivalTime
       data.set("stats.longestSurvival", survivalTime)
+    end
+    
+    -- Show the best run, highlighted when this run set a record
+    if bestRunText then
+      local bestLine = "Best: Level " .. tostring(highestLevel) .. "  |  " .. formatTime(longestSurvival)
+      if isNewBestLevel or isNewBestSurvival then
+        bestRunText.text = "NEW BEST!  " .. bestLine
+        bestRunText:setFillColor(1, 0.85, 0.2)
+      else
+        bestRunText.text = bestLine
+        bestRunText:setFillColor(0.7, 0.7, 0.8)
+      end
     end
     
     -- Add to total enemies defeated
@@ -227,6 +249,7 @@ function scene:destroy(event)
   survivalTimeText = nil
   enemiesDefeatedText = nil
   finalLevelText = nil
+  bestRunText = nil
   playAgainButton = nil
   mainMenuButton = nil
   stats = nil

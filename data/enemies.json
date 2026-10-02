@@ -15,5 +15,12 @@
     "damage": 5,
     "attackCooldown": 1.0,
     "xpValue": 10
+  },
+  "runner": {
+    "health": 10,
+    "speed": 160,
+    "damage": 3,
+    "attackCooldown": 0.8,
+    "xpValue": 8
   }
 }

@@ -68,13 +68,23 @@ local function _validateBaseStats(abilityId, baseStats)
     }
   end
 
-  return {
+  local validated = {
     cooldown = _validateNumeric(baseStats.cooldown, "baseStats.cooldown", abilityId, "positive", BASE_STAT_DEFAULTS.cooldown),
     damage = _validateNumeric(baseStats.damage, "baseStats.damage", abilityId, "positive", BASE_STAT_DEFAULTS.damage),
     projectileSpeed = _validateNumeric(baseStats.projectileSpeed, "baseStats.projectileSpeed", abilityId, "positive", BASE_STAT_DEFAULTS.projectileSpeed),
     pierceCount = _validateNumeric(baseStats.pierceCount, "baseStats.pierceCount", abilityId, "non_negative", BASE_STAT_DEFAULTS.pierceCount),
     projectileCount = _validateNumeric(baseStats.projectileCount, "baseStats.projectileCount", abilityId, "positive", BASE_STAT_DEFAULTS.projectileCount)
   }
+
+  -- Pass through ability-specific stats (e.g. Frost Nova's range) that are
+  -- non-negative numbers; the ability applies its own defaults for them
+  for key, value in pairs(baseStats) do
+    if validated[key] == nil and type(value) == "number" and value >= 0 then
+      validated[key] = value
+    end
+  end
+
+  return validated
 end
 
 --- Validate ability entry structure, log errors for missing/invalid fields

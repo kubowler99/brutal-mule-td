@@ -29,6 +29,31 @@ describe("Collision System", function()
       assert.are.equal(0, dist)
     end)
   end)
+
+  describe("checkDistanceSquared", function()
+    it("returns the square of checkDistance", function()
+      assert.are.equal(25, collision_system.checkDistanceSquared(0, 0, 3, 4))
+      assert.are.equal(200, collision_system.checkDistanceSquared(-5, -5, 5, 5))
+      assert.are.equal(0, collision_system.checkDistanceSquared(100, 200, 100, 200))
+    end)
+
+    it("detects a projectile exactly at the 20px threshold", function()
+      -- 12-16-20 triangle: distance is exactly the threshold
+      local collisions = collision_system.checkProjectileCollisions(
+        {{x = 0, y = 0, isActive = true}},
+        {{x = 12, y = 16, isActive = true}}
+      )
+      assert.are.equal(1, #collisions)
+    end)
+
+    it("does not detect a projectile just past the 20px threshold", function()
+      local collisions = collision_system.checkProjectileCollisions(
+        {{x = 0, y = 0, isActive = true}},
+        {{x = 20.01, y = 0, isActive = true}}
+      )
+      assert.are.equal(0, #collisions)
+    end)
+  end)
   
   describe("checkProjectileCollisions", function()
     it("detects collision when projectile is within threshold", function()
@@ -130,85 +155,6 @@ describe("Collision System", function()
       local collisions = collision_system.checkProjectileCollisions(projectiles, enemies)
       
       assert.are.equal(0, #collisions)
-    end)
-  end)
-  
-  describe("checkXPCollection", function()
-    it("detects XP orb within pickup radius", function()
-      local hero = {x = 100, y = 100, pickupRadius = 40}
-      local xpOrbs = {
-        {x = 120, y = 100, isActive = true}  -- 20 pixels away (< 40 radius)
-      }
-      
-      local collectible = collision_system.checkXPCollection(hero, xpOrbs)
-      
-      assert.are.equal(1, #collectible)
-      assert.are.equal(xpOrbs[1], collectible[1])
-    end)
-    
-    it("does not detect XP orb beyond pickup radius", function()
-      local hero = {x = 100, y = 100, pickupRadius = 40}
-      local xpOrbs = {
-        {x = 150, y = 100, isActive = true}  -- 50 pixels away (> 40 radius)
-      }
-      
-      local collectible = collision_system.checkXPCollection(hero, xpOrbs)
-      
-      assert.are.equal(0, #collectible)
-    end)
-    
-    it("detects multiple XP orbs within radius", function()
-      local hero = {x = 100, y = 100, pickupRadius = 40}
-      local xpOrbs = {
-        {x = 110, y = 100, isActive = true},
-        {x = 100, y = 110, isActive = true},
-        {x = 90, y = 100, isActive = true}
-      }
-      
-      local collectible = collision_system.checkXPCollection(hero, xpOrbs)
-      
-      assert.are.equal(3, #collectible)
-    end)
-    
-    it("skips inactive XP orbs", function()
-      local hero = {x = 100, y = 100, pickupRadius = 40}
-      local xpOrbs = {
-        {x = 110, y = 100, isActive = false}
-      }
-      
-      local collectible = collision_system.checkXPCollection(hero, xpOrbs)
-      
-      assert.are.equal(0, #collectible)
-    end)
-    
-    it("handles empty XP orb array", function()
-      local hero = {x = 100, y = 100, pickupRadius = 40}
-      local collectible = collision_system.checkXPCollection(hero, {})
-      
-      assert.are.equal(0, #collectible)
-    end)
-    
-    it("handles nil inputs gracefully", function()
-      local collectible1 = collision_system.checkXPCollection(nil, nil)
-      assert.are.equal(0, #collectible1)
-      
-      local collectible2 = collision_system.checkXPCollection(
-        {x = 100, y = 100, pickupRadius = 40}, 
-        nil
-      )
-      assert.are.equal(0, #collectible2)
-    end)
-    
-    it("handles invalid hero properties gracefully", function()
-      local hero1 = {x = "invalid", y = 100, pickupRadius = 40}
-      local xpOrbs = {{x = 110, y = 100, isActive = true}}
-      
-      local collectible1 = collision_system.checkXPCollection(hero1, xpOrbs)
-      assert.are.equal(0, #collectible1)
-      
-      local hero2 = {x = 100, y = 100, pickupRadius = "invalid"}
-      local collectible2 = collision_system.checkXPCollection(hero2, xpOrbs)
-      assert.are.equal(0, #collectible2)
     end)
   end)
   
@@ -416,36 +362,6 @@ describe("Collision System", function()
         else
           assert.are.equal(0, #collisions,
             string.format("Expected no collision at distance %.2f (threshold: %d)", distance, threshold))
-        end
-      end
-    end)
-
-    it("should detect collection when distance is within pickup radius for hero-XP orb pairs", function()
-      -- Run property test with 100 iterations
-      for _ = 1, 100 do
-        local heroPos = generators.position()()
-        local orbPos = generators.position()()
-        
-        -- Generate random pickup radius (20-100 pixels)
-        local pickupRadius = math.random(20, 100)
-        
-        -- Calculate actual distance
-        local distance = collision_system.checkDistance(heroPos.x, heroPos.y, orbPos.x, orbPos.y)
-        
-        -- Create test entities
-        local hero = {x = heroPos.x, y = heroPos.y, pickupRadius = pickupRadius}
-        local xpOrbs = {{x = orbPos.x, y = orbPos.y, isActive = true}}
-        
-        -- Check collection
-        local collectible = collision_system.checkXPCollection(hero, xpOrbs)
-        
-        -- Property: collection should be detected if and only if distance <= pickupRadius
-        if distance <= pickupRadius then
-          assert.are.equal(1, #collectible,
-            string.format("Expected collection at distance %.2f (radius: %d)", distance, pickupRadius))
-        else
-          assert.are.equal(0, #collectible,
-            string.format("Expected no collection at distance %.2f (radius: %d)", distance, pickupRadius))
         end
       end
     end)

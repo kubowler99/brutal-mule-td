@@ -40,6 +40,7 @@ describe("Hero Render Front of Wall - Bug Condition Exploration", function()
       -- Override toFront() to actually move objects to front in our mock
       local originalNewRect = display.newRect
       local originalNewCircle = display.newCircle
+      local originalNewGroup = display.newGroup
       
       display.newRect = function(...)
         local rect = originalNewRect(...)
@@ -81,6 +82,24 @@ describe("Hero Render Front of Wall - Bug Condition Exploration", function()
           end
         end
         return circle
+      end
+      
+      -- The hero sprite is a group, so groups need the same toFront tracking
+      display.newGroup = function(...)
+        local group = originalNewGroup(...)
+        group.toFront = function(self)
+          for i, obj in ipairs(displayObjects) do
+            if obj == self then
+              table.remove(displayObjects, i)
+              table.insert(displayObjects, self)
+              for j, o in ipairs(displayObjects) do
+                o._sceneIndex = j
+              end
+              break
+            end
+          end
+        end
+        return group
       end
       
       -- Initialize game controller
@@ -114,6 +133,7 @@ describe("Hero Render Front of Wall - Bug Condition Exploration", function()
       -- Restore original functions
       display.newRect = originalNewRect
       display.newCircle = originalNewCircle
+      display.newGroup = originalNewGroup
     end)
     
     it("should ensure hero display object index is maximum among all game entities (EXPECTED TO FAIL ON UNFIXED CODE)", function()
@@ -136,6 +156,7 @@ describe("Hero Render Front of Wall - Bug Condition Exploration", function()
       -- Override toFront() to actually move objects to front in our mock
       local originalNewRect = display.newRect
       local originalNewCircle = display.newCircle
+      local originalNewGroup = display.newGroup
       
       display.newRect = function(...)
         local rect = originalNewRect(...)
@@ -171,6 +192,24 @@ describe("Hero Render Front of Wall - Bug Condition Exploration", function()
         return circle
       end
       
+      -- The hero sprite is a group, so groups need the same toFront tracking
+      display.newGroup = function(...)
+        local group = originalNewGroup(...)
+        group.toFront = function(self)
+          for i, obj in ipairs(displayObjects) do
+            if obj == self then
+              table.remove(displayObjects, i)
+              table.insert(displayObjects, self)
+              for j, o in ipairs(displayObjects) do
+                o._sceneIndex = j
+              end
+              break
+            end
+          end
+        end
+        return group
+      end
+      
       -- Initialize game controller
       game_controller.initialize(mockSceneGroup)
       
@@ -198,6 +237,7 @@ describe("Hero Render Front of Wall - Bug Condition Exploration", function()
       -- Restore original functions
       display.newRect = originalNewRect
       display.newCircle = originalNewCircle
+      display.newGroup = originalNewGroup
     end)
   end)
 end)

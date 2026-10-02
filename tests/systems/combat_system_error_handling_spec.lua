@@ -129,8 +129,7 @@ describe("Combat System Error Handling", function()
         end
       }
 
-      table.insert(projectilePool.pool, faultyProj)
-      combat_system.refreshActiveProjectiles()
+      combat_system.trackProjectile(faultyProj)
 
       -- Should not crash
       local success = pcall(function()
@@ -148,7 +147,7 @@ describe("Combat System Error Handling", function()
       local proj = projectilePool:get()
       proj:activate(100, 100, 200, 200, 100, 10, 0)
 
-      combat_system.refreshActiveProjectiles()
+      combat_system.trackProjectile(proj)
 
       -- Move projectile far off-screen (> 200px)
       proj.x = -500

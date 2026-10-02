@@ -1,11 +1,14 @@
 local composer = require("composer")
 local helpers = require("src.utils.helpers")
+local data = require("src.models.data")
+local stringUtils = require("src.utils.string")
 
 local scene = composer.newScene()
 
 -- Scene variables
 local background
 local titleText
+local bestRunText
 local playButton
 local settingsButton
 
@@ -33,6 +36,17 @@ function scene:create(event)
         font = native.systemFontBold,
         fontSize = 48
     })
+    
+    -- Best run from saved stats (filled in on show so it updates after each game)
+    bestRunText = display.newText({
+        parent = sceneGroup,
+        text = "",
+        x = helpers.centerX,
+        y = 280,
+        font = native.systemFont,
+        fontSize = 24
+    })
+    bestRunText:setFillColor(0.8, 0.8, 0.9)
     
     -- Play button (handler will be added in show phase)
     playButton = helpers.newButton({
@@ -64,7 +78,18 @@ function scene:show(event)
     local phase = event.phase
     
     if phase == "will" then
-        -- Code here runs when scene is still off screen
+        -- Show the best run once at least one game has been played
+        if bestRunText then
+            local gamesPlayed = data.get("stats.gamesPlayed") or 0
+            if gamesPlayed > 0 then
+                local highestLevel = data.get("stats.highestLevel") or 1
+                local longestSurvival = data.get("stats.longestSurvival") or 0
+                bestRunText.text = "Best: Level " .. tostring(highestLevel) ..
+                    "  |  " .. stringUtils.formatTime(longestSurvival)
+            else
+                bestRunText.text = ""
+            end
+        end
     elseif phase == "did" then
         -- Add button tap handler when scene is fully visible
         local function onPlayTap(event)
@@ -101,6 +126,7 @@ function scene:destroy(event)
     -- Nil out references
     background = nil
     titleText = nil
+    bestRunText = nil
     playButton = nil
     settingsButton = nil
 end

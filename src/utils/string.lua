@@ -25,4 +25,11 @@ function M.trim(str)
     return str:match("^%s*(.-)%s*$")
 end
 
+--- Formats a duration in seconds as MM:SS
+function M.formatTime(seconds)
+    local minutes = math.floor(seconds / 60)
+    local secs = math.floor(seconds % 60)
+    return string.format("%02d:%02d", minutes, secs)
+end
+
 return M

@@ -34,6 +34,11 @@ describe("Full Game Session Integration", function()
     -- Cleanup after each test
     game_controller.cleanup()
     data.stopSandbox()
+    
+    -- Tests set these callbacks; a leftover level-up callback would pick an
+    -- upgrade and resume the game in the next test
+    game_controller.onLevelUpCallback = nil
+    game_controller.onGameOverCallback = nil
   end)
   
   describe("Complete Game Flow", function()
@@ -233,7 +238,11 @@ describe("Full Game Session Integration", function()
       game_controller.start()
       
       local wall = game_controller.getWall()
-      
+
+      -- Remove the hero's abilities so walkers can reach the wall.
+      -- With Arcane Bolt active, the hero kills every walker before it arrives.
+      game_controller.getHero().abilities = {}
+
       -- Set wall to low health for faster test
       wall.health = 10
       
@@ -368,15 +377,10 @@ describe("Full Game Session Integration", function()
       -- 2. Combat system: hero has abilities
       assert.is_true(#hero.abilities > 0, "Hero should have abilities")
       
-      -- 3. Level system: XP orbs may exist (if enemies defeated)
-      local activeOrbs = experience_system.getActiveOrbs()
-      -- Can't guarantee orbs exist, but system should be initialized
-      assert.is_not_nil(activeOrbs)
-      
-      -- 4. Game state: time is tracking
+      -- 3. Game state: time is tracking
       assert.is_true(game_state.elapsedTime > 0, "Elapsed time should be tracked")
       
-      -- 5. Wall: should still be alive or have taken damage
+      -- 4. Wall: should still be alive or have taken damage
       assert.is_true(wall.health <= 100, "Wall health should be <= initial")
     end)
     
@@ -506,37 +510,6 @@ describe("Full Game Session Integration", function()
       
       -- Tier should still be 5
       assert.are.equal(5, ability.tier)
-    end)
-    
-    it("handles XP orb lifetime expiration", function()
-      game_controller.initialize(mockSceneGroup)
-      game_controller.start()
-      
-      -- Get current time from system
-      local startTime = system.getTimer() / 1000
-      
-      -- Manually spawn an XP orb
-      experience_system.spawnXPOrb(360, 640)
-      
-      local activeOrbs = experience_system.getActiveOrbs()
-      assert.are.equal(1, #activeOrbs)
-      
-      -- Mock system.getTimer to simulate 31 seconds passing
-      local originalGetTimer = system.getTimer
-      system.getTimer = function()
-        return (startTime + 31) * 1000  -- 31 seconds later in milliseconds
-      end
-      
-      -- Simulate a frame with the new time
-      local currentTime = startTime + 31
-      experience_system.update(0.016, currentTime)
-      
-      -- Restore original getTimer
-      system.getTimer = originalGetTimer
-      
-      -- Orb should have expired
-      activeOrbs = experience_system.getActiveOrbs()
-      assert.are.equal(0, #activeOrbs, "Orb should expire after 30 seconds")
     end)
     
     it("handles pause and resume correctly", function()

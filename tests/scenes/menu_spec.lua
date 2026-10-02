@@ -139,4 +139,48 @@ describe("Menu Scene", function()
             composer.gotoScene = originalGotoScene
         end)
     end)
+
+    describe("best run line", function()
+        local data = require("src.models.data")
+
+        local function findBestRunText()
+            for i = 1, menuScene.view.numChildren do
+                local child = menuScene.view[i]
+                if type(child.text) == "string" and child.text:find("^Best: ") then
+                    return child
+                end
+            end
+            return nil
+        end
+
+        before_each(function()
+            data.startSandbox()
+        end)
+
+        after_each(function()
+            data.stopSandbox(false)
+        end)
+
+        it("shows the saved best run after at least one game", function()
+            data.set("stats.gamesPlayed", 4)
+            data.set("stats.highestLevel", 7)
+            data.set("stats.longestSurvival", 3661)
+
+            menuScene:dispatchEvent({ name = "create", phase = "will" })
+            menuScene:dispatchEvent({ name = "show", phase = "will" })
+
+            local bestRunText = findBestRunText()
+            assert.is_not_nil(bestRunText)
+            assert.are.equal("Best: Level 7  |  61:01", bestRunText.text)
+        end)
+
+        it("shows nothing before the first game", function()
+            data.set("stats.gamesPlayed", 0)
+
+            menuScene:dispatchEvent({ name = "create", phase = "will" })
+            menuScene:dispatchEvent({ name = "show", phase = "will" })
+
+            assert.is_nil(findBestRunText())
+        end)
+    end)
 end)

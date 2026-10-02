@@ -246,13 +246,60 @@ _G.display = {
     getCurrentStage = function() return { setFocus = function() end } end
 }
 
+-- Mock graphics library (Solar2D built-in)
+_G.graphics = {
+    newImageSheet = function(filename, sheetData)
+        return { _filename = filename, _type = "imageSheet" }
+    end
+}
+
+-- Add display.newSprite mock
+_G.display.newSprite = function(imageSheet, sequenceData)
+    local sprite = {
+        x = 0,
+        y = 0,
+        xScale = 1,
+        yScale = 1,
+        isVisible = true,
+        _type = "sprite",
+        _currentSequence = nil,
+        _isPlaying = false,
+        setSequence = function(self, name)
+            self._currentSequence = name
+        end,
+        play = function(self)
+            self._isPlaying = true
+        end,
+        pause = function(self)
+            self._isPlaying = false
+        end,
+        setFillColor = function() end,
+        removeSelf = function() end,
+        toFront = function() end,
+        toBack = function() end,
+        addEventListener = function() end,
+        removeEventListener = function() end
+    }
+    return sprite
+end
+
 _G.system = {
     getInfo = function(key)
         if key == "platform" then return "macos" end
         if key == "environment" then return "simulator" end
         return "unknown"
     end,
-    pathForFile = function(name, dir) return name end,
+    -- Resource files resolve relative to the repo root. Writable directories
+    -- (documents, temporary, caches) resolve to the OS temp directory so test
+    -- runs never overwrite files in the working tree.
+    pathForFile = function(name, dir)
+        if dir == "docs" or dir == "tmp" or dir == "cache" then
+            local tmpDir = os.getenv("TMPDIR") or "/tmp/"
+            if tmpDir:sub(-1) ~= "/" then tmpDir = tmpDir .. "/" end
+            return tmpDir .. "brutal-mule-td-test-" .. dir .. "-" .. name
+        end
+        return name
+    end,
     getTimer = function() return 0 end,  -- Mock timer for testing
     DocumentsDirectory = "docs",
     TemporaryDirectory = "tmp",
@@ -280,7 +327,8 @@ _G.timer = {
 }
 
 _G.audio = {
-    loadSound = function() end,
+    -- Return a handle so code that preloads sounds behaves as on device
+    loadSound = function(filename) return { _mockSound = filename } end,
     loadStream = function() end,
     play = function() end,
     stop = function() end,
@@ -378,3 +426,25 @@ _G.Class = require("lib.middleclass")
 _G.Stateful = require("lib.stateful")
 
 -- Any other global mocks needed for the specific project logic
+
+--- Snapshot a module table so a test can monkeypatch its functions safely.
+-- Call the returned function in after_each: it restores every field, so a
+-- test that fails before its own cleanup cannot leak stubs into later tests.
+-- @param mod table The module table to snapshot
+-- @return function Restores the module to the snapshot
+function _G.snapshotModule(mod)
+    local saved = {}
+    for key, value in pairs(mod) do
+        saved[key] = value
+    end
+    return function()
+        for key in pairs(mod) do
+            if saved[key] == nil then
+                mod[key] = nil
+            end
+        end
+        for key, value in pairs(saved) do
+            mod[key] = value
+        end
+    end
+end

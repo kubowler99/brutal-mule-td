@@ -224,15 +224,14 @@ describe("Config Loader Properties", function()
           assert.are.equal(count, config_loader.get("spawner.spawnCount"),
             "config_loader should return spawnCount " .. count)
 
-          -- After initialize, difficulty scaling overrides spawnInterval/spawnCount
-          -- but the config values were read (verified above via config_loader.get)
+          -- Difficulty scaling uses the config values as its base
           spawner_system.initialize(mockPool, 1)
 
-          -- At heroLevel 1 (< 5), difficulty sets spawnInterval=3.0, spawnCount=1
-          assert.are.equal(3.0, spawner_system.spawnInterval,
-            "After difficulty scaling at level 1, spawnInterval should be 3.0")
-          assert.are.equal(1, spawner_system.spawnCount,
-            "After difficulty scaling at level 1, spawnCount should be 1")
+          -- At heroLevel 1 (< 5), difficulty uses the config values unchanged
+          assert.are.equal(interval, spawner_system.spawnInterval,
+            "After difficulty scaling at level 1, spawnInterval should be " .. interval)
+          assert.are.equal(count, spawner_system.spawnCount,
+            "After difficulty scaling at level 1, spawnCount should be " .. count)
         end
       end)
     end)
@@ -368,8 +367,8 @@ describe("Config Loader Properties", function()
             "wall.maxHealth should be 100 from game_config.json")
           assert.are.equal(3.0, config_loader.get("spawner.spawnInterval"),
             "spawner.spawnInterval should be 3.0 from game_config.json")
-          assert.are.equal(1, config_loader.get("spawner.spawnCount"),
-            "spawner.spawnCount should be 1 from game_config.json")
+          assert.are.equal(2, config_loader.get("spawner.spawnCount"),
+            "spawner.spawnCount should be 2 from game_config.json")
           assert.are.equal(50, config_loader.get("spawner.maxConcurrent"),
             "spawner.maxConcurrent should be 50 from game_config.json")
           assert.are.equal(20, config_loader.get("collision.projectileEnemyThreshold"),

@@ -4,6 +4,15 @@
 require("tests.spec_helper")
 
 local ability_data_loader = require("src.models.ability_data_loader")
+local json = _G.json or require("json")
+
+-- Read base stats straight from data/abilities.json so tests track data changes
+local function readFileBaseStats(abilityId)
+  local file = assert(io.open("data/abilities.json", "r"))
+  local contents = file:read("*a")
+  file:close()
+  return json.decode(contents)[abilityId].baseStats
+end
 
 describe("Ability Data Loader", function()
 
@@ -117,11 +126,12 @@ describe("Ability Data Loader", function()
       local stats = ability_data_loader.getBaseStats("arcane_bolt")
 
       assert.is_not_nil(stats)
-      assert.are.equal(1.0, stats.cooldown)
-      assert.are.equal(10, stats.damage)
-      assert.are.equal(400, stats.projectileSpeed)
-      assert.are.equal(0, stats.pierceCount)
-      assert.are.equal(1, stats.projectileCount)
+      local expected = readFileBaseStats("arcane_bolt")
+      assert.are.equal(expected.cooldown, stats.cooldown)
+      assert.are.equal(expected.damage, stats.damage)
+      assert.are.equal(expected.projectileSpeed, stats.projectileSpeed)
+      assert.are.equal(expected.pierceCount, stats.pierceCount)
+      assert.are.equal(expected.projectileCount, stats.projectileCount)
     end)
 
     it("returns nil for unknown ability", function()

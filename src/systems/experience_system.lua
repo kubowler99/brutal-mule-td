@@ -11,10 +11,33 @@ experience_system.hero = nil
 experience_system.onLevelUp = nil
 experience_system.enemyConfig = nil
 
+local XP_GAIN_SOUND_PATH = "assets/audio/sfx/xp_gain.wav"
+
+-- XP gain sound handle, loaded once in initialize() and disposed in cleanup()
+local xpGainSound = nil
+
+--- Load the XP gain sound if the file exists
+-- Audio is optional, so a missing file or load failure leaves the handle nil.
+local function loadXPGainSound()
+  local success, handle = pcall(function()
+    if system.pathForFile(XP_GAIN_SOUND_PATH, system.ResourceDirectory) then
+      return audio.loadSound(XP_GAIN_SOUND_PATH)
+    end
+  end)
+  if success then
+    return handle
+  end
+  return nil
+end
+
 -- Initialize the level system
 function experience_system.initialize(hero, onLevelUpCallback)
   experience_system.hero = hero
   experience_system.onLevelUp = onLevelUpCallback
+
+  if not xpGainSound then
+    xpGainSound = loadXPGainSound()
+  end
 
   -- Load enemy configuration from data/enemies.json
   local success, config = pcall(function()
@@ -192,18 +215,9 @@ function experience_system.showXPFeedback(amount, x, y)
       end
     })
 
-    -- Play XP gain sound effect (wrapped in pcall since audio file may not exist)
-    local audioSuccess, audioErr = pcall(function()
-      -- Check if audio file exists before attempting to play
-      local audioPath = system.pathForFile("assets/audio/sfx/xp_gain.wav", system.ResourceDirectory)
-      if audioPath then
-        audio.play(audio.loadSound("assets/audio/sfx/xp_gain.wav"))
-      end
-    end)
-
-    if not audioSuccess then
-      -- Silently fail for audio - not critical for gameplay
-      -- Audio file may not exist yet, which is acceptable
+    -- Play the preloaded XP gain sound. Audio is optional, so failures are ignored.
+    if xpGainSound then
+      pcall(audio.play, xpGainSound)
     end
   end)
 
@@ -272,6 +286,11 @@ end
 function experience_system.cleanup()
   experience_system.hero = nil
   experience_system.onLevelUp = nil
+
+  if xpGainSound then
+    pcall(audio.dispose, xpGainSound)
+    xpGainSound = nil
+  end
 end
 
 return experience_system

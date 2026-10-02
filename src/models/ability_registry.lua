@@ -2,7 +2,7 @@
 -- Central registry for all abilities in the game
 -- Loads ability definitions from external JSON and manages instantiation
 
-local json = require("json")
+local json = _G.json or require("json")
 
 local M = {}
 

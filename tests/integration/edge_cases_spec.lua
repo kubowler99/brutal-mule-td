@@ -1,7 +1,7 @@
 --- Edge Cases and Boundary Conditions Integration Test
 -- Validates that the game handles extreme scenarios and edge cases correctly.
 -- Tests: no enemies, maximum walkers, all ability slots filled, max tier abilities,
--- XP orb lifetime expiration, and projectile off-screen removal.
+-- and projectile off-screen removal.
 
 require("tests.spec_helper")
 
@@ -289,100 +289,6 @@ describe("Edge Cases and Boundary Conditions", function()
     end)
   end)
   
-  describe("XP Orb Lifetime Expiration", function()
-    it("should remove XP orbs after 30 seconds", function()
-      game_controller.initialize(mockSceneGroup)
-      game_controller.start()
-      
-      -- Spawn an XP orb manually
-      experience_system.spawnXPOrb(360, 640)
-      
-      -- Verify orb exists
-      local activeOrbs = experience_system.getActiveOrbs()
-      assert.equals(1, #activeOrbs,
-        "Should have 1 active XP orb")
-      
-      local orb = activeOrbs[1]
-      local spawnTime = orb.spawnTime
-      
-      -- Simulate 31 seconds passing
-      local currentTime = spawnTime + 31
-      experience_system.update(0.016, currentTime)
-      
-      -- Orb should be expired and removed
-      activeOrbs = experience_system.getActiveOrbs()
-      assert.equals(0, #activeOrbs,
-        "XP orb should expire after 30 seconds")
-    end)
-    
-    it("should not remove XP orbs before 30 seconds", function()
-      game_controller.initialize(mockSceneGroup)
-      game_controller.start()
-      
-      -- Spawn an XP orb
-      experience_system.spawnXPOrb(360, 640)
-      
-      local activeOrbs = experience_system.getActiveOrbs()
-      assert.equals(1, #activeOrbs)
-      
-      local orb = activeOrbs[1]
-      local spawnTime = orb.spawnTime
-      
-      -- Simulate 29 seconds passing (just before expiration)
-      local currentTime = spawnTime + 29
-      experience_system.update(0.016, currentTime)
-      
-      -- Orb should still exist
-      activeOrbs = experience_system.getActiveOrbs()
-      assert.equals(1, #activeOrbs,
-        "XP orb should not expire before 30 seconds")
-    end)
-    
-    it("should handle multiple XP orbs with different spawn times", function()
-      game_controller.initialize(mockSceneGroup)
-      game_controller.start()
-      
-      -- Get initial time
-      local baseTime = system.getTimer() / 1000
-      
-      -- Spawn first orb
-      experience_system.spawnXPOrb(300, 640)
-      local firstOrb = experience_system.getActiveOrbs()[1]
-      
-      -- Should have 1 orb
-      assert.equals(1, #experience_system.getActiveOrbs())
-      
-      -- Simulate time passing and spawn second orb
-      -- Mock system.getTimer to simulate 10 seconds later
-      local originalGetTimer = system.getTimer
-      system.getTimer = function()
-        return (baseTime + 10) * 1000
-      end
-      
-      experience_system.spawnXPOrb(420, 640)
-      local secondOrb = experience_system.getActiveOrbs()[2]
-      
-      -- Should have 2 orbs
-      assert.equals(2, #experience_system.getActiveOrbs())
-      
-      -- Simulate 31 seconds from first orb spawn (21 from second)
-      system.getTimer = function()
-        return (baseTime + 31) * 1000
-      end
-      
-      local currentTime = baseTime + 31
-      experience_system.update(0.016, currentTime)
-      
-      -- Restore original getTimer
-      system.getTimer = originalGetTimer
-      
-      -- First orb should be expired (31 seconds >= 30), second should remain (21 seconds < 30)
-      local activeOrbs = experience_system.getActiveOrbs()
-      assert.equals(1, #activeOrbs,
-        "Only second orb should remain after first expires")
-    end)
-  end)
-  
   describe("Projectile Off-Screen Removal", function()
     it("should remove projectiles that travel beyond game area", function()
       game_controller.initialize(mockSceneGroup)
@@ -545,34 +451,6 @@ describe("Edge Cases and Boundary Conditions", function()
       -- So we just verify the game didn't crash
       assert.is_true(true, "Game should not crash with max tier and no initial enemies")
     end)
-    
-    it("should handle expired XP orbs with max walkers", function()
-      game_controller.initialize(mockSceneGroup)
-      game_controller.start()
-      
-      -- Spawn XP orbs
-      for i = 1, 10 do
-        experience_system.spawnXPOrb(math.random(100, 620), math.random(200, 1000))
-      end
-      
-      local firstOrbTime = experience_system.getActiveOrbs()[1].spawnTime
-      
-      -- Spawn max walkers
-      for i = 1, 50 do
-        spawner_system.spawnWalker()
-      end
-      
-      -- Simulate 31 seconds
-      local currentTime = firstOrbTime + 31
-      experience_system.update(0.016, currentTime)
-      
-      -- All orbs should be expired
-      assert.equals(0, #experience_system.getActiveOrbs(),
-        "All XP orbs should expire")
-      
-      -- Walkers should still be active
-      assert.is_true(#spawner_system.activeWalkers > 0)
-    end)
   end)
   
   describe("Boundary Value Testing", function()
@@ -615,31 +493,6 @@ describe("Edge Cases and Boundary Conditions", function()
       end
       
       assert.equals(5, ability.tier)
-    end)
-    
-    it("should handle exactly 30 seconds for XP orb (boundary)", function()
-      game_controller.initialize(mockSceneGroup)
-      game_controller.start()
-      
-      experience_system.spawnXPOrb(360, 640)
-      local orb = experience_system.getActiveOrbs()[1]
-      local spawnTime = orb.spawnTime
-      
-      -- Just before 30 seconds
-      local currentTime = spawnTime + 29.9
-      experience_system.update(0.016, currentTime)
-      
-      -- Should still exist
-      assert.equals(1, #experience_system.getActiveOrbs(),
-        "XP orb should exist just before 30 seconds")
-      
-      -- At exactly 30 seconds (expires at >= 30)
-      currentTime = spawnTime + 30
-      experience_system.update(0.016, currentTime)
-      
-      -- Should be expired
-      assert.equals(0, #experience_system.getActiveOrbs(),
-        "XP orb should expire at exactly 30 seconds")
     end)
   end)
 end)

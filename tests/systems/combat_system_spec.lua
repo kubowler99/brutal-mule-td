@@ -180,12 +180,14 @@ describe("Combat System", function()
     it("tracks newly created projectiles from pool", function()
       combat_system.initialize(hero, projectilePool, enemies)
 
-      -- Manually create some active projectiles
+      -- Manually create some active projectiles and register them
       local proj1 = projectilePool:get()
       proj1.isActive = true
       local proj2 = projectilePool:get()
       proj2.isActive = true
 
+      combat_system.trackProjectile(proj1)
+      combat_system.trackProjectile(proj2)
       combat_system.refreshActiveProjectiles()
 
       local activeProjectiles = combat_system.getActiveProjectiles()
@@ -200,6 +202,8 @@ describe("Combat System", function()
       local proj2 = projectilePool:get()
       proj2.isActive = false
 
+      combat_system.trackProjectile(proj1)
+      combat_system.trackProjectile(proj2)
       combat_system.refreshActiveProjectiles()
 
       local activeProjectiles = combat_system.getActiveProjectiles()
@@ -225,7 +229,7 @@ describe("Combat System", function()
       local proj = projectilePool:get()
       proj:activate(100, 100, 200, 200, 100, 10, 0)
 
-      combat_system.refreshActiveProjectiles()
+      combat_system.trackProjectile(proj)
 
       local initialX = proj.x
       local initialY = proj.y
@@ -243,7 +247,7 @@ describe("Combat System", function()
       local proj = projectilePool:get()
       proj:activate(100, 100, 200, 200, 100, 10, 0)
 
-      combat_system.refreshActiveProjectiles()
+      combat_system.trackProjectile(proj)
 
       -- Deactivate the projectile
       proj:deactivate()
@@ -261,7 +265,7 @@ describe("Combat System", function()
       -- Position far off-screen
       proj:activate(-500, -500, -600, -600, 100, 10, 0)
 
-      combat_system.refreshActiveProjectiles()
+      combat_system.trackProjectile(proj)
 
       -- Update should detect off-screen and deactivate
       combat_system.updateProjectiles(0.016)
@@ -458,6 +462,163 @@ describe("Combat System", function()
       local activeProjectiles = combat_system.getActiveProjectiles()
       assert.are.equal(0, #activeProjectiles)
     end)
+
+    it("returns in-flight projectiles to the pool so their display objects can be destroyed", function()
+      local realPool = pool.new(function() return Projectile:new() end)
+      combat_system.initialize(hero, realPool, enemies)
+
+      local ability = ArcaneBolt:new()
+      ability.lastActivation = 0
+      hero.abilities = {ability}
+
+      table.insert(enemies, {x = 360, y = 600, isActive = true})
+
+      combat_system.activateAbilities(2.0)
+      local inFlight = combat_system.getActiveProjectiles()
+      local inFlightCount = #inFlight
+      assert.is_true(inFlightCount > 0)
+      local projectile = inFlight[1]
+
+      combat_system.cleanup()
+
+      assert.are.equal(inFlightCount, #realPool._available)
+      assert.is_false(projectile.isActive)
+      assert.are.equal(projectile, realPool._available[1])
+    end)
+  end)
+
+  describe("applyDamage kill reporting", function()
+    it("returns true and calls onEnemyKilled once when a hit kills an enemy", function()
+      local killed = {}
+      combat_system.onEnemyKilled = function(enemy) table.insert(killed, enemy) end
+      local walker = Walker:new()
+      walker:activate(100, 100, 100)
+      walker.health = 10
+
+      assert.is_true(combat_system.applyDamage(walker, 10))
+      assert.is_false(combat_system.applyDamage(walker, 10))
+
+      assert.are.same({walker}, killed)
+      combat_system.onEnemyKilled = nil
+    end)
+
+    it("returns false for a hit that does not kill", function()
+      local walker = Walker:new()
+      walker:activate(100, 100, 100)
+      walker.health = 30
+
+      assert.is_false(combat_system.applyDamage(walker, 10))
+      assert.are.equal(20, walker.health)
+    end)
+
+    it("does not report the wall as a kill", function()
+      local called = false
+      combat_system.onEnemyKilled = function() called = true end
+      local wall = { health = 5, takeDamage = function(self, amount) self.health = self.health - amount end }
+
+      assert.is_false(combat_system.applyDamage(wall, 10))
+      assert.is_false(called)
+      combat_system.onEnemyKilled = nil
+    end)
+
+    it("clears onEnemyKilled on cleanup", function()
+      combat_system.onEnemyKilled = function() end
+      combat_system.cleanup()
+      assert.is_nil(combat_system.onEnemyKilled)
+    end)
+  end)
+
+  describe("projectile pooling", function()
+    it("returns a spent projectile to the pool when it stops being tracked", function()
+      local realPool = pool.new(function() return Projectile:new() end)
+      combat_system.initialize(hero, realPool, enemies)
+
+      local ability = ArcaneBolt:new()
+      ability.lastActivation = 0
+      hero.abilities = {ability}
+
+      table.insert(enemies, {x = 360, y = 600, isActive = true})
+
+      combat_system.activateAbilities(2.0)
+      local projectile = combat_system.getActiveProjectiles()[1]
+      assert.is_not_nil(projectile)
+
+      -- Simulate a hit that exhausts pierce
+      projectile:deactivate()
+      combat_system.updateProjectiles(0.016)
+
+      assert.are.equal(0, #combat_system.getActiveProjectiles())
+      assert.are.equal(1, #realPool._available)
+      assert.are.equal(projectile, realPool._available[1])
+    end)
+
+    it("returns an off-screen projectile to the pool", function()
+      local realPool = pool.new(function() return Projectile:new() end)
+      combat_system.initialize(hero, realPool, enemies)
+
+      local ability = ArcaneBolt:new()
+      ability.lastActivation = 0
+      hero.abilities = {ability}
+
+      table.insert(enemies, {x = 360, y = 600, isActive = true})
+
+      combat_system.activateAbilities(2.0)
+      local projectile = combat_system.getActiveProjectiles()[1]
+      assert.is_not_nil(projectile)
+
+      projectile.y = -1000
+      combat_system.updateProjectiles(0.016)
+
+      assert.is_false(projectile.isActive)
+      assert.are.equal(1, #realPool._available)
+    end)
+
+    it("reuses a released projectile on the next activation", function()
+      local created = 0
+      local realPool = pool.new(function()
+        created = created + 1
+        return Projectile:new()
+      end)
+      combat_system.initialize(hero, realPool, enemies)
+
+      local ability = ArcaneBolt:new()
+      ability.lastActivation = 0
+      hero.abilities = {ability}
+
+      table.insert(enemies, {x = 360, y = 600, isActive = true})
+
+      combat_system.activateAbilities(2.0)
+      local createdAfterFirst = created
+      for _, projectile in ipairs(combat_system.getActiveProjectiles()) do
+        projectile:deactivate()
+      end
+      combat_system.updateProjectiles(0.016)
+
+      combat_system.activateAbilities(100.0)
+
+      assert.are.equal(createdAfterFirst, created)
+    end)
+
+    it("does not fail when the pool has no release method", function()
+      combat_system.initialize(hero, projectilePool, enemies)
+
+      local ability = ArcaneBolt:new()
+      ability.lastActivation = 0
+      hero.abilities = {ability}
+
+      table.insert(enemies, {x = 360, y = 600, isActive = true})
+
+      combat_system.activateAbilities(2.0)
+      local projectile = combat_system.getActiveProjectiles()[1]
+      projectile:deactivate()
+
+      local success = pcall(function()
+        combat_system.updateProjectiles(0.016)
+        combat_system.cleanup()
+      end)
+
+      assert.is_true(success)
+    end)
   end)
 
   describe("Integration: Full combat cycle", function()
@@ -649,6 +810,7 @@ describe("Combat System", function()
       -- Create an active projectile with a display object that has no parent
       local proj = projectilePool:get()
       proj:activate(100, 100, 200, 200, 100, 10, 0)
+      combat_system.trackProjectile(proj)
       -- Simulate a display object without a parent (newly created, not yet in scene)
       proj.displayObject.parent = nil
 
@@ -877,6 +1039,122 @@ describe("Combat System", function()
         -- Verify no failures
         assert.is_false(lqc.failed)
       end)
+    end)
+
+  end)
+
+  -- Feature: projectile-fire-from-wall
+  -- Unit tests for fire origin integration
+  describe("Fire Origin Integration", function()
+
+    before_each(function()
+      combat_system.cleanup()
+
+      hero = {
+        x = 45,
+        y = 1200,
+        isAlive = true,
+        abilities = {}
+      }
+
+      projectilePool = {
+        pool = {},
+        get = function(self)
+          local proj = Projectile:new()
+          table.insert(self.pool, proj)
+          return proj
+        end
+      }
+
+      enemies = {}
+    end)
+
+    after_each(function()
+      combat_system.cleanup()
+    end)
+
+    -- **Validates: Requirements 1.3**
+    it("getFireOrigin with slot index 0 falls back to hero position", function()
+      combat_system.initialize(hero, projectilePool, enemies)
+      combat_system.setIndicatorPositions({
+        [1] = { x = 120, y = 1200 },
+      })
+
+      local x, y = combat_system.getFireOrigin(0)
+      assert.are.equal(hero.x, x)
+      assert.are.equal(hero.y, y)
+    end)
+
+    -- **Validates: Requirements 1.3**
+    it("getFireOrigin with slot index 6 falls back to hero position", function()
+      combat_system.initialize(hero, projectilePool, enemies)
+      combat_system.setIndicatorPositions({
+        [1] = { x = 120, y = 1200 },
+      })
+
+      local x, y = combat_system.getFireOrigin(6)
+      assert.are.equal(hero.x, x)
+      assert.are.equal(hero.y, y)
+    end)
+
+    -- **Validates: Requirements 1.3**
+    it("getFireOrigin with slot index -1 falls back to hero position", function()
+      combat_system.initialize(hero, projectilePool, enemies)
+      combat_system.setIndicatorPositions({
+        [1] = { x = 120, y = 1200 },
+      })
+
+      local x, y = combat_system.getFireOrigin(-1)
+      assert.are.equal(hero.x, x)
+      assert.are.equal(hero.y, y)
+    end)
+
+    -- **Validates: Requirements 1.3, 2.1**
+    it("setIndicatorPositions called with nil does not crash and falls back to hero", function()
+      combat_system.initialize(hero, projectilePool, enemies)
+      combat_system.setIndicatorPositions(nil)
+
+      local x, y = combat_system.getFireOrigin(1)
+      assert.are.equal(hero.x, x)
+      assert.are.equal(hero.y, y)
+    end)
+
+    -- **Validates: Requirements 1.1, 1.2, 2.1**
+    it("full activation flow spawns projectile at indicator position, not hero position", function()
+      -- Hero at x=45, y=1200
+      hero.x = 45
+      hero.y = 1200
+
+      -- Indicator at a different position for slot 1
+      local indicators = {
+        [1] = { x = 120, y = 1200 },
+      }
+
+      -- Add ArcaneBolt ability to hero
+      local ability = ArcaneBolt:new()
+      ability.lastActivation = 0
+      hero.abilities = { ability }
+
+      -- Add an active enemy
+      table.insert(enemies, { x = 360, y = 600, isActive = true })
+
+      -- Initialize combat system and set indicator positions
+      combat_system.initialize(hero, projectilePool, enemies)
+      combat_system.setIndicatorPositions(indicators)
+
+      -- Activate abilities at time 2.0 (past cooldown)
+      combat_system.activateAbilities(2.0)
+
+      -- Verify a projectile was created
+      assert.are.equal(1, #projectilePool.pool)
+
+      local proj = projectilePool.pool[1]
+      assert.is_true(proj.isActive)
+
+      -- The projectile should have spawned at the indicator position (120, 1200),
+      -- NOT the hero position (45, 1200)
+      assert.are.equal(120, proj.x)
+      assert.are.equal(1200, proj.y)
     end)
 
   end)

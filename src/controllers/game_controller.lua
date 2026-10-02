@@ -30,6 +30,11 @@ local sceneGroup
 local gameLoopListener
 local isPaused = false
 
+-- Longest frame step simulated at once. Solar2D stops sending frames while
+-- the app is suspended, so the first frame back can span minutes; capping it
+-- stops enemies from jumping forward.
+local MAX_FRAME_DT = 0.1
+
 --- Initialize the game controller and set up game session
 -- Creates hero, initializes object pools, and sets up all systems
 -- @param group table The scene group to add display objects to
@@ -116,6 +121,7 @@ function M.initialize(group)
   -- combat_system receives the live activeWalkers reference
   spawner_system.initialize(walkerPool, hero.level)
   combat_system.initialize(hero, projectilePool, spawner_system.getActiveWalkers(), sceneGroup)
+  combat_system.onEnemyKilled = M.onEnemyKilled
   experience_system.initialize(hero, M.onLevelUp)
   upgrade_system.initialize(hero, M.onUpgradeSelected)
 end
@@ -144,7 +150,7 @@ function M.update(event)
   
   -- Calculate delta time (event.time is in milliseconds)
   local currentTime = event.time / 1000  -- Convert to seconds
-  local dt = (event.time - (M.lastFrameTime or event.time)) / 1000
+  local dt = math.min((event.time - (M.lastFrameTime or event.time)) / 1000, MAX_FRAME_DT)
   M.lastFrameTime = event.time
   
   -- Update game state elapsed time
@@ -175,17 +181,16 @@ function M.update(event)
   for _, collision in ipairs(projectileCollisions) do
     local projectile = collision.projectile
     local enemy = collision.enemy
-    
-    -- Apply damage to enemy
-    combat_system.applyDamage(enemy, projectile.damage)
-    
-    -- Handle projectile hit (pierce logic)
-    projectile:onHit(enemy)
-    
-    -- If enemy was defeated, award XP immediately
-    if not enemy.isActive then
-      experience_system.awardXP(enemy.type or "walker", enemy.x, enemy.y)
-      game_state.enemiesDefeated = game_state.enemiesDefeated + 1
+
+    -- Collisions are gathered before any damage is applied, so an earlier pair
+    -- this frame may have killed the enemy or spent the projectile's pierce.
+    -- Skip those pairs so a kill is only rewarded once.
+    if enemy.isActive and projectile.isActive then
+      -- Apply damage to enemy (kills are rewarded through onEnemyKilled)
+      combat_system.applyDamage(enemy, projectile.damage)
+
+      -- Handle projectile hit (pierce logic)
+      projectile:onHit(enemy)
     end
   end
   
@@ -213,6 +218,14 @@ function M.update(event)
   
   -- 5. Combat system (ability activation and projectile updates)
   combat_system.update(dt, currentTime)
+end
+
+--- Reward a kill from any damage source
+-- Awards XP and counts the kill. Set as combat_system.onEnemyKilled.
+-- @param enemy table The enemy that was killed
+function M.onEnemyKilled(enemy)
+  experience_system.awardXP(enemy.type or "walker", enemy.x, enemy.y)
+  game_state.enemiesDefeated = game_state.enemiesDefeated + 1
 end
 
 --- Pause the game

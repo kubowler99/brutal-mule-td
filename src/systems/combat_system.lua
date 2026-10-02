@@ -12,6 +12,22 @@ local projectilePool = nil
 local activeProjectiles = {}
 local enemies = {}
 local sceneGroup = nil
+local indicatorPositions = {}
+
+-- Called with the enemy whenever applyDamage() kills an active enemy
+M.onEnemyKilled = nil
+
+--- Deactivate a projectile and return it to the projectile pool
+-- @param projectile table The projectile entity to release
+local function releaseProjectile(projectile)
+  if projectile.isActive and projectile.deactivate then
+    projectile:deactivate()
+  end
+
+  if projectilePool and projectilePool.release then
+    projectilePool:release(projectile)
+  end
+end
 
 --- Initialize the combat system
 -- Sets up references to the hero, projectile pool, enemies array, and scene group.
@@ -74,7 +90,7 @@ function M.activateAbilities(currentTime)
   end
   
   -- Iterate through hero abilities with pcall wrapper for critical operations
-  for _, ability in ipairs(hero.abilities) do
+  for i, ability in ipairs(hero.abilities) do
     if ability and ability.canActivate and ability:canActivate(currentTime) then
       -- Create a tracking wrapper around the pool to capture created projectiles
       local trackingPool = {
@@ -91,9 +107,12 @@ function M.activateAbilities(currentTime)
         end
       }
       
+      -- Resolve fire origin from indicator position (or fallback to hero)
+      local originX, originY = M.getFireOrigin(i)
+      
       -- Wrap ability activation in pcall for error handling
       local success, result = pcall(function()
-        return ability:activate(hero.x, hero.y, enemies, trackingPool)
+        return ability:activate(originX, originY, enemies, trackingPool, sceneGroup)
       end)
       
       if success then
@@ -160,40 +179,46 @@ function M.updateProjectiles(dt)
       if not success then
         print("Warning: Projectile update failed:", err)
         -- Deactivate problematic projectile
-        if projectile.deactivate then
-          projectile:deactivate()
-        end
+        releaseProjectile(projectile)
         table.remove(activeProjectiles, i)
       else
         -- Check projectile bounds (deactivate if > 200px off-screen)
         -- Note: isOffScreen already checks 200px boundary internally
         if projectile.isOffScreen and projectile:isOffScreen() then
-          if projectile.deactivate then
-            projectile:deactivate()
-          end
+          releaseProjectile(projectile)
           table.remove(activeProjectiles, i)
         -- Remove from tracking if no longer active (off-screen or hit)
         elseif not projectile.isActive then
+          releaseProjectile(projectile)
           table.remove(activeProjectiles, i)
         end
       end
     else
       -- Remove inactive projectiles from tracking
+      if projectile then
+        releaseProjectile(projectile)
+      end
       table.remove(activeProjectiles, i)
     end
   end
 end
 
 --- Apply damage to an entity
--- Validates the damage amount and applies it to the entity.
+-- Validates the damage amount and applies it to the entity. When the hit kills
+-- an active enemy, calls M.onEnemyKilled so every damage source rewards kills
+-- the same way.
 --
 -- @param entity table The entity to damage (must have takeDamage method)
 -- @param amount number The damage amount to apply
+-- @return boolean True if this hit killed the entity
 function M.applyDamage(entity, amount)
   -- Validate entity
   if not entity or not entity.takeDamage then
-    return
+    return false
   end
+  
+  -- Only entities that track isActive (enemies) can be killed by a hit
+  local wasActive = entity.isActive == true
   
   -- Validate damage values (clamp to minimum 0)
   local validAmount = 0
@@ -208,7 +233,14 @@ function M.applyDamage(entity, amount)
   
   if not success then
     print("Warning: Damage application failed:", err)
+    return false
   end
+  
+  local killed = wasActive and not entity.isActive
+  if killed and M.onEnemyKilled then
+    M.onEnemyKilled(entity)
+  end
+  return killed
 end
 
 --- Get active projectiles array
@@ -219,15 +251,38 @@ function M.getActiveProjectiles()
   return activeProjectiles
 end
 
+--- Update indicator positions reference
+-- Called when indicators are created or repositioned after initialization.
+--
+-- @param indicators table Array of AbilityIndicator objects (or nil)
+function M.setIndicatorPositions(indicators)
+  indicatorPositions = indicators or {}
+end
+
+--- Get the fire origin for a given ability slot
+-- Returns indicator position if available, otherwise hero position, otherwise (0, 0).
+--
+-- @param slotIndex number The ability slot (1-5)
+-- @return number x, number y The fire origin coordinates
+function M.getFireOrigin(slotIndex)
+  local indicator = indicatorPositions and indicatorPositions[slotIndex]
+  if indicator and indicator.x and indicator.y then
+    return indicator.x, indicator.y
+  end
+  if hero then
+    return hero.x, hero.y
+  end
+  return 0, 0
+end
+
 --- Cleanup combat system resources
 -- Deactivates all active projectiles and clears all references.
 function M.cleanup()
-  -- Deactivate and hide all tracked projectiles
+  -- Deactivate, hide, and return all tracked projectiles to the pool so the
+  -- pool owner can destroy their display objects
   for _, projectile in ipairs(activeProjectiles) do
     if projectile then
-      if projectile.deactivate then
-        projectile:deactivate()
-      end
+      releaseProjectile(projectile)
       -- Ensure display object is hidden even if deactivate didn't handle it
       if projectile.displayObject then
         projectile.displayObject.isVisible = false
@@ -240,6 +295,8 @@ function M.cleanup()
   activeProjectiles = {}
   enemies = {}
   sceneGroup = nil
+  M.onEnemyKilled = nil
+  indicatorPositions = {}
 end
 
 return M

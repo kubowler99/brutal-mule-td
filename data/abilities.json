@@ -47,5 +47,48 @@
       "4": { "damageBonus": 10, "cooldownReduction": 0.1 },
       "5": { "damageBonus": 10, "pierceBonus": 1, "projectileCountBonus": 1 }
     }
+  },
+  "frost_nova": {
+    "name": "Frost Nova",
+    "description": "Pulses frost along the wall, damaging and slowing nearby enemies",
+    "module": "src.entities.abilities.frost_nova",
+    "unlocked": true,
+    "maxTier": 5,
+    "icon": "assets/images/abilities/frost_nova.png",
+    "baseStats": {
+      "cooldown": 4.0,
+      "damage": 8,
+      "range": 250,
+      "slowFactor": 0.5,
+      "slowDuration": 2.0
+    },
+    "upgrades": {
+      "damage_increase": {
+        "name": "Frost Nova Damage",
+        "description": "+4 damage per pulse",
+        "iconType": "damage",
+        "damageIncrease": 4
+      },
+      "range_increase": {
+        "name": "Frost Nova Range",
+        "description": "+50 range",
+        "iconType": "radius",
+        "rangeIncrease": 50
+      },
+      "attack_speed": {
+        "name": "Frost Nova Cooldown",
+        "description": "-0.5s cooldown",
+        "iconType": "speed",
+        "cooldownReduction": 0.5,
+        "minCooldown": 1.5
+      },
+      "slow_increase": {
+        "name": "Frost Nova Chill",
+        "description": "Slows enemies 10% more",
+        "iconType": "speed",
+        "slowReduction": 0.1,
+        "minSlowFactor": 0.2
+      }
+    }
   }
 }
