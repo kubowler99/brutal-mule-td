@@ -1,0 +1,35 @@
+name: Tests
+
+on:
+  pull_request:
+  push:
+    branches: [develop, main]
+
+permissions:
+  contents: read
+
+jobs:
+  busted:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Solar2D runs Lua 5.1, so test on LuaJIT 2.1 (5.1-compatible)
+      - uses: leafo/gh-actions-lua@v13
+        with:
+          luaVersion: "luajit-2.1"
+
+      - uses: leafo/gh-actions-luarocks@v6
+
+      - name: Install test dependencies
+        run: |
+          luarocks install busted
+          luarocks install lua-quickcheck
+          luarocks install dkjson
+
+      - name: Run tests
+        run: busted tests
+
+      # Catch tests that depend on run order
+      - name: Run tests in random order
+        run: busted --shuffle tests
