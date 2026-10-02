@@ -70,6 +70,10 @@ local function updateUI()
   local currentTime = system.getTimer() / 1000
   for i, indicator in ipairs(abilityIndicators) do
     local ability = hero.abilities[i]
+    -- Abilities picked from level-up cards appear here after the scene shows
+    if indicator.ability ~= ability then
+      indicator:setAbility(ability)
+    end
     if ability then
       -- Calculate remaining cooldown
       local timeSinceActivation = currentTime - (ability.lastActivation or 0)
