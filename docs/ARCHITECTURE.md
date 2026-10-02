@@ -57,7 +57,7 @@ The template includes the `middleclass` library to support formal OOP. While Sol
 - **Inheritance**: Sharing logic between similar objects (e.g., a base `Enemy` class extended by `FastEnemy`).
 - **States**: Managing entity behavior via `Stateful` (e.g., a player switching between `Idle`, `Running`, and `Jumping`).
 
-See `src/entities/player.lua` for a practical implementation example.
+See `src/entities/walker.lua` and `src/entities/abilities/` for practical `middleclass` examples.
 
 ## 8. Unit Testing (`tests/`)
 
