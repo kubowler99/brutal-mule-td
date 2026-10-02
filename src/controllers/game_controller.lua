@@ -175,17 +175,22 @@ function M.update(event)
   for _, collision in ipairs(projectileCollisions) do
     local projectile = collision.projectile
     local enemy = collision.enemy
-    
-    -- Apply damage to enemy
-    combat_system.applyDamage(enemy, projectile.damage)
-    
-    -- Handle projectile hit (pierce logic)
-    projectile:onHit(enemy)
-    
-    -- If enemy was defeated, award XP immediately
-    if not enemy.isActive then
-      experience_system.awardXP(enemy.type or "walker", enemy.x, enemy.y)
-      game_state.enemiesDefeated = game_state.enemiesDefeated + 1
+
+    -- Collisions are gathered before any damage is applied, so an earlier pair
+    -- this frame may have killed the enemy or spent the projectile's pierce.
+    -- Skip those pairs so a kill is only rewarded once.
+    if enemy.isActive and projectile.isActive then
+      -- Apply damage to enemy
+      combat_system.applyDamage(enemy, projectile.damage)
+
+      -- Handle projectile hit (pierce logic)
+      projectile:onHit(enemy)
+
+      -- If enemy was defeated, award XP immediately
+      if not enemy.isActive then
+        experience_system.awardXP(enemy.type or "walker", enemy.x, enemy.y)
+        game_state.enemiesDefeated = game_state.enemiesDefeated + 1
+      end
     end
   end
   

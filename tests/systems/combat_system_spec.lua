@@ -180,12 +180,14 @@ describe("Combat System", function()
     it("tracks newly created projectiles from pool", function()
       combat_system.initialize(hero, projectilePool, enemies)
 
-      -- Manually create some active projectiles
+      -- Manually create some active projectiles and register them
       local proj1 = projectilePool:get()
       proj1.isActive = true
       local proj2 = projectilePool:get()
       proj2.isActive = true
 
+      combat_system.trackProjectile(proj1)
+      combat_system.trackProjectile(proj2)
       combat_system.refreshActiveProjectiles()
 
       local activeProjectiles = combat_system.getActiveProjectiles()
@@ -200,6 +202,8 @@ describe("Combat System", function()
       local proj2 = projectilePool:get()
       proj2.isActive = false
 
+      combat_system.trackProjectile(proj1)
+      combat_system.trackProjectile(proj2)
       combat_system.refreshActiveProjectiles()
 
       local activeProjectiles = combat_system.getActiveProjectiles()
@@ -225,7 +229,7 @@ describe("Combat System", function()
       local proj = projectilePool:get()
       proj:activate(100, 100, 200, 200, 100, 10, 0)
 
-      combat_system.refreshActiveProjectiles()
+      combat_system.trackProjectile(proj)
 
       local initialX = proj.x
       local initialY = proj.y
@@ -243,7 +247,7 @@ describe("Combat System", function()
       local proj = projectilePool:get()
       proj:activate(100, 100, 200, 200, 100, 10, 0)
 
-      combat_system.refreshActiveProjectiles()
+      combat_system.trackProjectile(proj)
 
       -- Deactivate the projectile
       proj:deactivate()
@@ -261,7 +265,7 @@ describe("Combat System", function()
       -- Position far off-screen
       proj:activate(-500, -500, -600, -600, 100, 10, 0)
 
-      combat_system.refreshActiveProjectiles()
+      combat_system.trackProjectile(proj)
 
       -- Update should detect off-screen and deactivate
       combat_system.updateProjectiles(0.016)
@@ -458,6 +462,122 @@ describe("Combat System", function()
       local activeProjectiles = combat_system.getActiveProjectiles()
       assert.are.equal(0, #activeProjectiles)
     end)
+
+    it("returns in-flight projectiles to the pool so their display objects can be destroyed", function()
+      local realPool = pool.new(function() return Projectile:new() end)
+      combat_system.initialize(hero, realPool, enemies)
+
+      local ability = ArcaneBolt:new()
+      ability.lastActivation = 0
+      hero.abilities = {ability}
+
+      table.insert(enemies, {x = 360, y = 600, isActive = true})
+
+      combat_system.activateAbilities(2.0)
+      local inFlight = combat_system.getActiveProjectiles()
+      local inFlightCount = #inFlight
+      assert.is_true(inFlightCount > 0)
+      local projectile = inFlight[1]
+
+      combat_system.cleanup()
+
+      assert.are.equal(inFlightCount, #realPool._available)
+      assert.is_false(projectile.isActive)
+      assert.are.equal(projectile, realPool._available[1])
+    end)
+  end)
+
+  describe("projectile pooling", function()
+    it("returns a spent projectile to the pool when it stops being tracked", function()
+      local realPool = pool.new(function() return Projectile:new() end)
+      combat_system.initialize(hero, realPool, enemies)
+
+      local ability = ArcaneBolt:new()
+      ability.lastActivation = 0
+      hero.abilities = {ability}
+
+      table.insert(enemies, {x = 360, y = 600, isActive = true})
+
+      combat_system.activateAbilities(2.0)
+      local projectile = combat_system.getActiveProjectiles()[1]
+      assert.is_not_nil(projectile)
+
+      -- Simulate a hit that exhausts pierce
+      projectile:deactivate()
+      combat_system.updateProjectiles(0.016)
+
+      assert.are.equal(0, #combat_system.getActiveProjectiles())
+      assert.are.equal(1, #realPool._available)
+      assert.are.equal(projectile, realPool._available[1])
+    end)
+
+    it("returns an off-screen projectile to the pool", function()
+      local realPool = pool.new(function() return Projectile:new() end)
+      combat_system.initialize(hero, realPool, enemies)
+
+      local ability = ArcaneBolt:new()
+      ability.lastActivation = 0
+      hero.abilities = {ability}
+
+      table.insert(enemies, {x = 360, y = 600, isActive = true})
+
+      combat_system.activateAbilities(2.0)
+      local projectile = combat_system.getActiveProjectiles()[1]
+      assert.is_not_nil(projectile)
+
+      projectile.y = -1000
+      combat_system.updateProjectiles(0.016)
+
+      assert.is_false(projectile.isActive)
+      assert.are.equal(1, #realPool._available)
+    end)
+
+    it("reuses a released projectile on the next activation", function()
+      local created = 0
+      local realPool = pool.new(function()
+        created = created + 1
+        return Projectile:new()
+      end)
+      combat_system.initialize(hero, realPool, enemies)
+
+      local ability = ArcaneBolt:new()
+      ability.lastActivation = 0
+      hero.abilities = {ability}
+
+      table.insert(enemies, {x = 360, y = 600, isActive = true})
+
+      combat_system.activateAbilities(2.0)
+      local createdAfterFirst = created
+      for _, projectile in ipairs(combat_system.getActiveProjectiles()) do
+        projectile:deactivate()
+      end
+      combat_system.updateProjectiles(0.016)
+
+      combat_system.activateAbilities(100.0)
+
+      assert.are.equal(createdAfterFirst, created)
+    end)
+
+    it("does not fail when the pool has no release method", function()
+      combat_system.initialize(hero, projectilePool, enemies)
+
+      local ability = ArcaneBolt:new()
+      ability.lastActivation = 0
+      hero.abilities = {ability}
+
+      table.insert(enemies, {x = 360, y = 600, isActive = true})
+
+      combat_system.activateAbilities(2.0)
+      local projectile = combat_system.getActiveProjectiles()[1]
+      projectile:deactivate()
+
+      local success = pcall(function()
+        combat_system.updateProjectiles(0.016)
+        combat_system.cleanup()
+      end)
+
+      assert.is_true(success)
+    end)
   end)
 
   describe("Integration: Full combat cycle", function()
@@ -649,6 +769,7 @@ describe("Combat System", function()
       -- Create an active projectile with a display object that has no parent
       local proj = projectilePool:get()
       proj:activate(100, 100, 200, 200, 100, 10, 0)
+      combat_system.trackProjectile(proj)
       -- Simulate a display object without a parent (newly created, not yet in scene)
       proj.displayObject.parent = nil
 

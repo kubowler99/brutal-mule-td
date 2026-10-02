@@ -13,6 +13,18 @@ local activeProjectiles = {}
 local enemies = {}
 local sceneGroup = nil
 
+--- Deactivate a projectile and return it to the projectile pool
+-- @param projectile table The projectile entity to release
+local function releaseProjectile(projectile)
+  if projectile.isActive and projectile.deactivate then
+    projectile:deactivate()
+  end
+
+  if projectilePool and projectilePool.release then
+    projectilePool:release(projectile)
+  end
+end
+
 --- Initialize the combat system
 -- Sets up references to the hero, projectile pool, enemies array, and scene group.
 --
@@ -160,25 +172,25 @@ function M.updateProjectiles(dt)
       if not success then
         print("Warning: Projectile update failed:", err)
         -- Deactivate problematic projectile
-        if projectile.deactivate then
-          projectile:deactivate()
-        end
+        releaseProjectile(projectile)
         table.remove(activeProjectiles, i)
       else
         -- Check projectile bounds (deactivate if > 200px off-screen)
         -- Note: isOffScreen already checks 200px boundary internally
         if projectile.isOffScreen and projectile:isOffScreen() then
-          if projectile.deactivate then
-            projectile:deactivate()
-          end
+          releaseProjectile(projectile)
           table.remove(activeProjectiles, i)
         -- Remove from tracking if no longer active (off-screen or hit)
         elseif not projectile.isActive then
+          releaseProjectile(projectile)
           table.remove(activeProjectiles, i)
         end
       end
     else
       -- Remove inactive projectiles from tracking
+      if projectile then
+        releaseProjectile(projectile)
+      end
       table.remove(activeProjectiles, i)
     end
   end
@@ -222,12 +234,11 @@ end
 --- Cleanup combat system resources
 -- Deactivates all active projectiles and clears all references.
 function M.cleanup()
-  -- Deactivate and hide all tracked projectiles
+  -- Deactivate, hide, and return all tracked projectiles to the pool so the
+  -- pool owner can destroy their display objects
   for _, projectile in ipairs(activeProjectiles) do
     if projectile then
-      if projectile.deactivate then
-        projectile:deactivate()
-      end
+      releaseProjectile(projectile)
       -- Ensure display object is hidden even if deactivate didn't handle it
       if projectile.displayObject then
         projectile.displayObject.isVisible = false
