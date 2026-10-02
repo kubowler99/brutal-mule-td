@@ -154,22 +154,8 @@ function ArcaneBolt:upgrade(upgradeType)
     self.tier = math.min(self.tier + 1, 5)
   end
 
-  -- Apply tier-based bonuses from data loader
-  local tierParams = ability_data_loader.getTierParams("arcane_bolt", self.tier)
-  if tierParams then
-    if tierParams.damageBonus then
-      self.damage = self.damage + tierParams.damageBonus
-    end
-    if tierParams.cooldownReduction then
-      self.cooldown = math.max(self.cooldown - tierParams.cooldownReduction, DEFAULT_MIN_COOLDOWN)
-    end
-    if tierParams.projectileCountBonus then
-      self.projectileCount = self.projectileCount + tierParams.projectileCountBonus
-    end
-    if tierParams.pierceBonus then
-      self.pierceCount = self.pierceCount + tierParams.pierceBonus
-    end
-  end
+  -- Tier only tracks how many upgrades were taken. An upgrade applies exactly
+  -- the effect its card describes; tier bonuses are not stacked on top.
 end
 
 return ArcaneBolt

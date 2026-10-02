@@ -423,6 +423,32 @@ describe("ArcaneBolt Ability", function()
             assert.is.equal(1, ability.pierceCount)
             assert.is.equal(4, ability.tier)
         end)
+
+        describe("with tier data loaded from abilities.json", function()
+            local ability_data_loader = require("src.models.ability_data_loader")
+
+            before_each(function()
+                ability_data_loader.initialize()
+                ability = ArcaneBolt:new(ability_data_loader.getBaseStats("arcane_bolt"))
+            end)
+
+            it("applies only the card effect for damage_increase, with no tier bonus", function()
+                local initialCooldown = ability.cooldown
+                local initialDamage = ability.damage
+                ability:upgrade("damage_increase")
+                assert.is.equal(initialDamage + 5, ability.damage)
+                assert.is.equal(initialCooldown, ability.cooldown)
+            end)
+
+            it("applies only the card effect for projectile_count, with no tier bonus", function()
+                ability:upgrade("damage_increase")
+                local damageBefore = ability.damage
+                local countBefore = ability.projectileCount
+                ability:upgrade("projectile_count")
+                assert.is.equal(countBefore + 1, ability.projectileCount)
+                assert.is.equal(damageBefore, ability.damage)
+            end)
+        end)
     end)
 
     -- **Validates: Requirements 2.8**
