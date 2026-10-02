@@ -241,7 +241,8 @@ describe("Upgrade System - New Ability Cards", function()
 
     describe("integration with generateCards", function()
         it("should include new ability cards in generated cards", function()
-            local cards = upgrade_system.generateCards(3)
+            -- Request every available card so the result does not depend on the random draw
+            local cards = upgrade_system.generateCards(#upgrade_system.getAvailableUpgrades())
             
             -- Check if any card is a new ability
             local hasNewAbilityCard = false
