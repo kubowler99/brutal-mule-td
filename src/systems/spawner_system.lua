@@ -6,12 +6,16 @@ local config_loader = require("src.models.config_loader")
 
 local M = {}
 
+-- Fallbacks when game_config.json has no spawner values (match the shipped config)
+local DEFAULT_SPAWN_INTERVAL = 3.0
+local DEFAULT_SPAWN_COUNT = 2
+
 -- State
 M.walkerPool = nil
 M.activeWalkers = {}
 M.spawnTimer = 0
-M.spawnInterval = 3.0
-M.spawnCount = 1
+M.spawnInterval = DEFAULT_SPAWN_INTERVAL
+M.spawnCount = DEFAULT_SPAWN_COUNT
 M.maxConcurrent = 50
 M.runnerMinLevel = 3
 M.runnerChance = 0.3
@@ -38,8 +42,8 @@ function M.initialize(walkerPool, heroLevel)
     M.walkerPool = walkerPool
     M.activeWalkers = {}
     M.spawnTimer = 0
-    M.spawnInterval = config_loader.positiveNumber(config_loader.get("spawner.spawnInterval"), 3.0)
-    M.spawnCount = config_loader.positiveNumber(config_loader.get("spawner.spawnCount"), 1)
+    M.spawnInterval = config_loader.positiveNumber(config_loader.get("spawner.spawnInterval"), DEFAULT_SPAWN_INTERVAL)
+    M.spawnCount = config_loader.positiveNumber(config_loader.get("spawner.spawnCount"), DEFAULT_SPAWN_COUNT)
     M.maxConcurrent = config_loader.positiveNumber(config_loader.get("spawner.maxConcurrent"), 50)
     M.runnerMinLevel = config_loader.positiveNumber(config_loader.get("spawner.runnerMinLevel"), 3)
     M.runnerChance = math.min(1, config_loader.positiveNumber(config_loader.get("spawner.runnerChance"), 0.3))
@@ -214,8 +218,8 @@ function M.updateDifficulty(heroLevel)
     M.heroLevel = heroLevel
     
     -- Read base values from config
-    local baseInterval = config_loader.positiveNumber(config_loader.get("spawner.spawnInterval"), 2.0)
-    local baseCount = config_loader.positiveNumber(config_loader.get("spawner.spawnCount"), 3)
+    local baseInterval = config_loader.positiveNumber(config_loader.get("spawner.spawnInterval"), DEFAULT_SPAWN_INTERVAL)
+    local baseCount = config_loader.positiveNumber(config_loader.get("spawner.spawnCount"), DEFAULT_SPAWN_COUNT)
     
     -- Difficulty scales on top of config values
     if heroLevel < 5 then
