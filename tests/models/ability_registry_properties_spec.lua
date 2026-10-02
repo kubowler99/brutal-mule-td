@@ -101,6 +101,8 @@ describe("Ability Registry - Property Tests", function()
           return true
         end
       }
+
+      checkProperties()
     end)
 
     it("should maintain consistent structure across all registered abilities", function()
@@ -141,6 +143,8 @@ describe("Ability Registry - Property Tests", function()
           return true
         end
       }
+
+      checkProperties()
     end)
 
     it("should have valid module paths that can be loaded and instantiated", function()
@@ -191,6 +195,8 @@ describe("Ability Registry - Property Tests", function()
           return true
         end
       }
+
+      checkProperties()
     end)
   end)
 
@@ -238,8 +244,8 @@ describe("Ability Registry - Property Tests", function()
           end
 
           -- Verify all required fields are present and intact
-          if retrievedDef.class == nil then
-            return false, "Retrieved definition for '" .. abilityId .. "' missing 'class' field"
+          if retrievedDef.module == nil then
+            return false, "Retrieved definition for '" .. abilityId .. "' missing 'module' field"
           end
 
           if retrievedDef.unlocked == nil then
@@ -251,8 +257,8 @@ describe("Ability Registry - Property Tests", function()
           end
 
           -- Verify field types are correct
-          if type(retrievedDef.class) ~= "table" then
-            return false, "Retrieved definition for '" .. abilityId .. "' has invalid 'class' type"
+          if type(retrievedDef.module) ~= "string" or retrievedDef.module == "" then
+            return false, "Retrieved definition for '" .. abilityId .. "' has invalid 'module' value"
           end
 
           if type(retrievedDef.unlocked) ~= "boolean" then
@@ -266,6 +272,8 @@ describe("Ability Registry - Property Tests", function()
           return true
         end
       }
+
+      checkProperties()
     end)
 
     it("should return nil for invalid or non-existent ability IDs", function()
@@ -309,6 +317,8 @@ describe("Ability Registry - Property Tests", function()
           return true
         end
       }
+
+      checkProperties()
     end)
 
     it("should maintain referential integrity (same reference for multiple calls)", function()
@@ -357,6 +367,8 @@ describe("Ability Registry - Property Tests", function()
           return true
         end
       }
+
+      checkProperties()
     end)
   end)
 
@@ -444,6 +456,8 @@ describe("Ability Registry - Property Tests", function()
           return true
         end
       }
+
+      checkProperties()
     end)
 
     it("should return nil for invalid or non-existent ability IDs", function()
@@ -488,6 +502,8 @@ describe("Ability Registry - Property Tests", function()
           return true
         end
       }
+
+      checkProperties()
     end)
 
     it("should create instances that are independent (modifying one does not affect others)", function()
@@ -549,6 +565,8 @@ describe("Ability Registry - Property Tests", function()
           return true
         end
       }
+
+      checkProperties()
     end)
   end)
 
@@ -604,6 +622,8 @@ describe("Ability Registry - Property Tests", function()
           return true
         end
       }
+
+      checkProperties()
     end)
 
     it("should return nil for invalid or non-existent ability IDs", function()
@@ -647,6 +667,8 @@ describe("Ability Registry - Property Tests", function()
           return true
         end
       }
+
+      checkProperties()
     end)
 
     it("should maintain referential integrity (same reference for multiple calls)", function()
@@ -695,6 +717,8 @@ describe("Ability Registry - Property Tests", function()
           return true
         end
       }
+
+      checkProperties()
     end)
 
     it("should return false for invalid or non-existent ability IDs", function()
@@ -744,6 +768,8 @@ describe("Ability Registry - Property Tests", function()
           return true
         end
       }
+
+      checkProperties()
     end)
 
     it("should maintain consistency across multiple calls for the same ability", function()
@@ -792,6 +818,8 @@ describe("Ability Registry - Property Tests", function()
           return true
         end
       }
+
+      checkProperties()
     end)
   end)
 end)

@@ -41,11 +41,6 @@ local function randomValidAbilityEntry(id)
         cooldownReduction = math.random(1, 30) / 100,
         minCooldown = 0.25
       }
-    },
-    tiers = {
-      ["1"] = {},
-      ["2"] = { damageBonus = math.random(1, 10) },
-      ["3"] = { damageBonus = math.random(1, 10), projectileCountBonus = 1 }
     }
   }
 end
@@ -273,10 +268,6 @@ describe("Ability Data Loader Properties", function()
         local upgrade = ability_data_loader.getUpgradeParams("arcane_bolt", "damage_increase")
         assert.is_nil(upgrade,
           "getUpgradeParams should return nil when data not initialized")
-
-        local tier = ability_data_loader.getTierParams("arcane_bolt", 1)
-        assert.is_nil(tier,
-          "getTierParams should return nil when data not initialized")
       end
     end)
 
@@ -406,32 +397,11 @@ describe("Ability Data Loader Properties", function()
           "getUpgradeParams should return nil for missing upgrade type " .. missingType)
       end
     end)
-
-    it("should return nil for tier params when tier is missing", function()
-      for _ = 1, 100 do
-        ability_data_loader._data = {
-          test_ability = {
-            name = "Test",
-            module = "test.module",
-            unlocked = true,
-            maxTier = 5,
-            baseStats = { cooldown = 1.0, damage = 10, projectileSpeed = 400, pierceCount = 0, projectileCount = 1 },
-            tiers = {}
-          }
-        }
-
-        local missingTier = math.random(1, 99)
-        local params = ability_data_loader.getTierParams("test_ability", missingTier)
-
-        assert.is_nil(params,
-          "getTierParams should return nil for missing tier " .. missingTier)
-      end
-    end)
   end)
 
   -- Feature: game-visual-and-data-improvements, Property 11: Upgrade and tier parameters read from JSON
   -- **Validates: Requirements 4.2, 5.2**
-  describe("Property 11: Upgrade and tier parameters read from JSON", function()
+  describe("Property 11: Upgrade parameters read from JSON", function()
     it("should return upgrade parameters matching injected JSON content", function()
       for _ = 1, 100 do
         local abilityId = "test_" .. math.random(1, 1000)
@@ -506,61 +476,7 @@ describe("Ability Data Loader Properties", function()
       end
     end)
 
-    it("should return tier parameters matching injected JSON content", function()
-      for _ = 1, 100 do
-        local abilityId = "test_" .. math.random(1, 1000)
-        local tier = math.random(1, 5)
-        local damageBonus = math.random(0, 20)
-        local cooldownReduction = math.random(0, 30) / 100
-        local pierceBonus = math.random(0, 3)
-        local projectileCountBonus = math.random(0, 2)
-
-        local tierData = {}
-        if damageBonus > 0 then tierData.damageBonus = damageBonus end
-        if cooldownReduction > 0 then tierData.cooldownReduction = cooldownReduction end
-        if pierceBonus > 0 then tierData.pierceBonus = pierceBonus end
-        if projectileCountBonus > 0 then tierData.projectileCountBonus = projectileCountBonus end
-
-        local tiers = {}
-        tiers[tostring(tier)] = tierData
-
-        ability_data_loader._data = {
-          [abilityId] = {
-            name = "Test",
-            module = "test.module",
-            unlocked = true,
-            maxTier = 5,
-            baseStats = randomValidBaseStats(),
-            tiers = tiers
-          }
-        }
-
-        local loaded = ability_data_loader.getTierParams(abilityId, tier)
-
-        assert.is_not_nil(loaded,
-          "getTierParams should return params for tier " .. tier)
-
-        -- Verify each field matches what was injected
-        if damageBonus > 0 then
-          assert.are.equal(damageBonus, loaded.damageBonus,
-            "damageBonus mismatch at tier " .. tier)
-        end
-        if cooldownReduction > 0 then
-          assert.are.equal(cooldownReduction, loaded.cooldownReduction,
-            "cooldownReduction mismatch at tier " .. tier)
-        end
-        if pierceBonus > 0 then
-          assert.are.equal(pierceBonus, loaded.pierceBonus,
-            "pierceBonus mismatch at tier " .. tier)
-        end
-        if projectileCountBonus > 0 then
-          assert.are.equal(projectileCountBonus, loaded.projectileCountBonus,
-            "projectileCountBonus mismatch at tier " .. tier)
-        end
-      end
-    end)
-
-    it("should return upgrade and tier params from actual abilities.json", function()
+    it("should return upgrade params from actual abilities.json", function()
       ability_data_loader.initialize("data/abilities.json")
 
       for _ = 1, 100 do
@@ -573,18 +489,6 @@ describe("Ability Data Loader Properties", function()
         assert.is_not_nil(spdParams)
         assert.are.equal(0.15, spdParams.cooldownReduction)
         assert.are.equal(0.25, spdParams.minCooldown)
-
-        -- Verify tier params from real file
-        local tier2 = ability_data_loader.getTierParams("arcane_bolt", 2)
-        assert.is_not_nil(tier2)
-        assert.are.equal(5, tier2.damageBonus)
-        assert.are.equal(0.15, tier2.cooldownReduction)
-
-        local tier5 = ability_data_loader.getTierParams("arcane_bolt", 5)
-        assert.is_not_nil(tier5)
-        assert.are.equal(10, tier5.damageBonus)
-        assert.are.equal(1, tier5.pierceBonus)
-        assert.are.equal(1, tier5.projectileCountBonus)
       end
     end)
   end)

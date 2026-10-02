@@ -245,6 +245,8 @@ describe("AbilityIndicator - Property-Based Tests", function()
           return true
         end
       }
+
+      checkProperties()
     end)
     
     it("should hide icon when no ability is set", function()
@@ -283,6 +285,8 @@ describe("AbilityIndicator - Property-Based Tests", function()
           return true
         end
       }
+
+      checkProperties()
     end)
   end)
 end)

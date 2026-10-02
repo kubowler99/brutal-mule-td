@@ -6,7 +6,6 @@ require("tests.spec_helper")
 
 local experience_system = require("src.systems.experience_system")
 local Hero = require("src.entities.hero")
-local XPOrb = require("src.entities.xp_orb")
 
 -- **Validates: Requirements 1.2, 2.3**
 -- Property 2: No XP Orbs Spawned

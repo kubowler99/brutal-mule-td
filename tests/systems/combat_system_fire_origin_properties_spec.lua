@@ -49,8 +49,7 @@ describe("Combat System Fire Origin Properties", function()
         end
       }
 
-      lqc.check()
-      assert.is_false(lqc.failed)
+      checkProperties()
     end)
   end)
 
@@ -88,8 +87,7 @@ describe("Combat System Fire Origin Properties", function()
         end
       }
 
-      lqc.check()
-      assert.is_false(lqc.failed)
+      checkProperties()
     end)
   end)
 
@@ -131,8 +129,7 @@ describe("Combat System Fire Origin Properties", function()
         end
       }
 
-      lqc.check()
-      assert.is_false(lqc.failed)
+      checkProperties()
     end)
   end)
 
@@ -196,8 +193,7 @@ describe("Combat System Fire Origin Properties", function()
         end
       }
 
-      lqc.check()
-      assert.is_false(lqc.failed)
+      checkProperties()
     end)
   end)
 

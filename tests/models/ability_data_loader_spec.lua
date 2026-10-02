@@ -1,5 +1,5 @@
 -- Tests for Ability Data Loader
--- Validates loading, validation, base stats, upgrades, tiers, and fallback behavior
+-- Validates loading, validation, base stats, upgrades, and fallback behavior
 
 require("tests.spec_helper")
 
@@ -266,72 +266,6 @@ describe("Ability Data Loader", function()
       }
 
       local params = ability_data_loader.getUpgradeParams("test_ability", "damage_increase")
-
-      assert.is_nil(params)
-    end)
-  end)
-
-  describe("getTierParams", function()
-    before_each(function()
-      ability_data_loader.initialize("data/abilities.json")
-    end)
-
-    it("returns tier params for valid ability and tier", function()
-      local params = ability_data_loader.getTierParams("arcane_bolt", 2)
-
-      assert.is_not_nil(params)
-      assert.are.equal(5, params.damageBonus)
-      assert.are.equal(0.15, params.cooldownReduction)
-    end)
-
-    it("returns empty table for tier 1 (no bonuses)", function()
-      local params = ability_data_loader.getTierParams("arcane_bolt", 1)
-
-      assert.is_not_nil(params)
-      assert.is_table(params)
-    end)
-
-    it("returns tier 5 params with multiple bonuses", function()
-      local params = ability_data_loader.getTierParams("arcane_bolt", 5)
-
-      assert.is_not_nil(params)
-      assert.are.equal(10, params.damageBonus)
-      assert.are.equal(1, params.pierceBonus)
-      assert.are.equal(1, params.projectileCountBonus)
-    end)
-
-    it("returns nil for unknown tier", function()
-      local params = ability_data_loader.getTierParams("arcane_bolt", 99)
-
-      assert.is_nil(params)
-    end)
-
-    it("returns nil for unknown ability", function()
-      local params = ability_data_loader.getTierParams("unknown_ability", 1)
-
-      assert.is_nil(params)
-    end)
-
-    it("returns nil when data not initialized", function()
-      ability_data_loader._data = nil
-
-      local params = ability_data_loader.getTierParams("arcane_bolt", 1)
-
-      assert.is_nil(params)
-    end)
-
-    it("returns nil when ability has no tiers section", function()
-      ability_data_loader._data = {
-        test_ability = {
-          name = "Test",
-          module = "test.module",
-          unlocked = true,
-          maxTier = 5,
-          baseStats = { cooldown = 1.0, damage = 10, projectileSpeed = 400, pierceCount = 0, projectileCount = 1 }
-        }
-      }
-
-      local params = ability_data_loader.getTierParams("test_ability", 1)
 
       assert.is_nil(params)
     end)

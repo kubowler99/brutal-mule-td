@@ -71,8 +71,7 @@ describe("Projectile Trajectory Origin Properties", function()
         end
       }
 
-      lqc.check()
-      assert.is_false(lqc.failed)
+      checkProperties()
     end)
   end)
 

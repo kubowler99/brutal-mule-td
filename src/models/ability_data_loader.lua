@@ -1,5 +1,5 @@
 -- Ability Data Loader
--- Reads ability base stats, upgrade parameters, and tier-based scaling from abilities.json
+-- Reads ability base stats and upgrade parameters from abilities.json
 -- Provides validated data with fallback defaults when data is missing or invalid
 
 local json = _G.json or require("json")
@@ -210,30 +210,6 @@ function M.getUpgradeParams(abilityId, upgradeType)
   end
 
   return upgradeData
-end
-
---- Get tier parameters for an ability at a specific tier
--- @param abilityId string
--- @param tier number 1-5
--- @return table Tier delta params or nil
-function M.getTierParams(abilityId, tier)
-  if not M._data then
-    return nil
-  end
-
-  local abilityData = M._data[abilityId]
-  if not abilityData or type(abilityData.tiers) ~= "table" then
-    return nil
-  end
-
-  -- Tiers are stored with string keys in JSON ("1", "2", etc.)
-  local tierKey = tostring(tier)
-  local tierData = abilityData.tiers[tierKey]
-  if type(tierData) ~= "table" then
-    return nil
-  end
-
-  return tierData
 end
 
 return M

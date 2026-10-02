@@ -141,6 +141,8 @@ describe("HealthBar - Property-Based Tests", function()
           return math.abs(actualWidth - expectedWidth) < tolerance
         end
       }
+
+      checkProperties()
     end)
   end)
 end)

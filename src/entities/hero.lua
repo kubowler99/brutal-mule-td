@@ -21,9 +21,6 @@ function Hero:initialize(x, y)
   -- Alive state
   self.isAlive = true
   
-  -- Collection radius for XP orbs
-  self.pickupRadius = 40
-  
   -- Visual representation using placeholder graphics
   self.displayObject = placeholder_graphics.createHeroSprite(self.x, self.y)
 end

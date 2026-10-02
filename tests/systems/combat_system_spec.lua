@@ -945,10 +945,8 @@ describe("Combat System", function()
         }
         
         -- Run all registered properties
-        lqc.check()
+        checkProperties()
         
-        -- Verify no failures
-        assert.is_false(lqc.failed)
       end)
     end)
 
@@ -989,10 +987,8 @@ describe("Combat System", function()
         }
         
         -- Run all registered properties
-        lqc.check()
+        checkProperties()
         
-        -- Verify no failures
-        assert.is_false(lqc.failed)
       end)
       
       it("deactivates projectile when it travels beyond game boundaries", function()
@@ -1034,10 +1030,8 @@ describe("Combat System", function()
         }
         
         -- Run all registered properties
-        lqc.check()
+        checkProperties()
         
-        -- Verify no failures
-        assert.is_false(lqc.failed)
       end)
     end)
 

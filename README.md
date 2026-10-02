@@ -1,184 +1,85 @@
-# Solar2D Professional Project Template
+# Arcane Survivor
 
-A professional, production-ready scaffolding for Solar2D (formerly Corona SDK) games. This template implements best practices for project organization, scene management, data persistence, and cross-platform compatibility.
+A stationary-hero defense game built with [Solar2D](https://solar2d.com/). The hero holds a wall at the bottom of the screen while enemies advance from the top. Abilities fire automatically. Defeating enemies awards XP, and each level-up offers three random cards: a new ability or an upgrade to one you have. The run ends when the wall falls.
 
-## Project Structure
+See [docs/arcane-survivor/game-concept.md](docs/arcane-survivor/game-concept.md) for the full game concept.
+
+## Current content
+
+- **Abilities** (up to 5, each upgradeable to tier 5)
+  - **Arcane Bolt**: fires at the nearest enemy. Upgrades: damage, attack speed, projectile count, pierce.
+  - **Frost Nova**: pulses along the wall, damaging and slowing every enemy within range. Upgrades: damage, range, cooldown, slow.
+- **Enemies**
+  - **Walker**: the basic melee enemy.
+  - **Runner**: half the health and double the speed of a walker. Joins the spawn mix from hero level 3.
+- **Stat upgrades**: wall repair, wall fortify, XP boost.
+- **Screens**: main menu with your best run, game with pause, game over with run stats and a "NEW BEST!" highlight.
+
+## Running the game
+
+1. Install the [Solar2D Simulator](https://solar2d.com/).
+2. Open this folder (the one with `main.lua`) in the simulator.
+
+The game is designed for 720x1280 portrait (see `config.lua`).
+
+## Project structure
 
 ```text
-MyGame/
-├── main.lua                    # Entry point
-├── config.lua                  # App configuration
-├── build.settings              # Build settings
-├── .luarc.json                 # Lua Language Server configuration
-├── config.ld                   # LDoc documentation configuration
-├── *.rockspec                  # LuaRocks package specification
-├── Icon.png                    # App icon (1024x1024)
-├── Icon-Small.png             # Small icon
-│
-├── src/
-│   ├── scenes/                # Scene files
-│   │   ├── menu.lua
-│   │   ├── game.lua
-│   │   ├── pause.lua
-│   │   └── gameover.lua
-│   │
-│   ├── entities/              # Game objects/entities
-│   │   ├── player.lua
-│   │   └── enemy.lua
-│   │
-│   ├── controllers/           # Business logic / Game loop controllers
-│   │   └── gameController.lua
-│   │
-│   ├── models/                # Data models and state management
-│   │   ├── data.lua           # Persistent game data
-│   │   └── settings.lua       # User settings
-│   │
-│   ├── systems/               # Core game systems
-│   │   ├── physics.lua
-│   │   ├── collision.lua
-│   │   └── particles.lua
-│   │
-│   ├── ui/                    # UI components
-│   │   ├── button.lua
-│   │   ├── panel.lua
-│   │   └── healthbar.lua
-│   │
-│   ├── constants/             # Global constants
-│   │   └── colors.lua
-│   │
-│   └── utils/                 # Utility modules
-│       ├── helpers.lua        # UI Facade and shortcuts
-│       ├── screen.lua         # Screen metric utilities
-│       ├── device.lua         # Device/Platform flags
-│       ├── math.lua           # Game-specific math
-│       ├── string.lua         # String helpers
-│       ├── taskQueue.lua      # Time-aware task scheduling
-│       ├── pool.lua           # Object pooling system
-│       ├── i18n.lua           # Localization
-│       └── logger.lua         # Custom logging
-│
-├── lib/                       # Third-party libraries
-│   ├── middleclass.lua        # OOP Class system
-│   └── stateful.lua           # State Machine for classes
-├── assets/
-│   ├── images/
-│   │   ├── backgrounds/
-│   │   ├── sprites/
-│   │   ├── ui/
-│   │   └── effects/
-│   ├── audio/
-│   │   ├── music/
-│   │   └── sfx/
-│   ├── fonts/
-│   └── particles/             # Particle definitions (.json)
-│
-├── data/                      # Game data files
-│   ├── levels.json
-│   ├── enemies.json
-│   └── strings.json           # Localization strings
-│
-├── docs/                      # Project documentation and design notes
-│   ├── design.md
-│   ├── ARCHITECTURE.md
-│   └── PROJECT-STRUCTURE.md
-│
-├── tests/                     # Unit tests
-│   ├── spec_helper.lua        # Test environment and Solar2D mocks
-│   ├── utils/                 # Tests for src/utils/
-│   │   ├── math_spec.lua
-│   │   └── string_spec.lua
-│   └── models/                # Tests for src/models/
-│       └── data_spec.lua
-└── Icon.png                   # App icon (1024x1024)
+main.lua              Entry point: error handling, save data, scene routing
+config.lua            Content size and scaling
+build.settings        Platform build settings
+data/                 Game data (edit these to tune balance)
+  abilities.json      Ability base stats and upgrade cards
+  enemies.json        Enemy stats and XP values
+  game_config.json    Wall, spawner, collision, and XP settings
+assets/images/        Sprites and sprite sheet data
+src/
+  scenes/             menu, game, gameover (Composer scenes)
+  controllers/        game_controller: game loop and system wiring
+  systems/            spawner, combat, collision, experience, upgrade
+  entities/           hero, wall, walker (all enemy types), projectile
+    abilities/        arcane_bolt, frost_nova
+  models/             game state, save data, config and ability loaders
+  ui/                 health bar, XP bar, ability indicators, upgrade cards
+  utils/              object pool, helpers, placeholder graphics
+lib/                  middleclass (OOP) and stateful
+tests/                busted specs and Solar2D mocks (spec_helper.lua)
+docs/                 Game concept and architecture notes
 ```
 
----
+## Tuning
 
-## Core Files
+Most balance values live in `data/`, so you can change them without touching code:
 
-### 1. config.lua
+- `game_config.json`: spawn interval, spawn count, runner level and chance, wall health, XP curve.
+- `enemies.json`: health, speed, damage, attack cooldown, and XP value per enemy type.
+- `abilities.json`: base stats and upgrade amounts per ability. Set `"unlocked": false` to stop an ability from being offered.
 
-Standard configuration for 720x1280 resolution with letterbox scaling and adaptive high-resolution asset support.
+## Tests
 
-### 2. build.settings
+The specs run outside Solar2D with [busted](https://lunarmodules.github.io/busted/). `tests/spec_helper.lua` mocks the Solar2D APIs.
 
-Modern build settings including:
+Solar2D uses Lua 5.1, so run the tests on LuaJIT 2.1 (or Lua 5.1). `lua-quickcheck` does not install on newer Lua versions.
 
-- Android permissions (`INTERNET`, `BILLING`).
-- iOS Privacy descriptions (Camera, Photo Library).
-- Desktop window settings.
+Install (macOS with Homebrew):
 
-### 3. main.lua
+```bash
+brew install luajit luarocks
+```
 
-The entry point of the application, featuring:
+```bash
+for rock in busted lua-quickcheck dkjson; do luarocks --lua-version=5.1 --lua-dir="$(brew --prefix luajit)" install --local "$rock"; done
+```
 
-- Global unhandled error handling to prevent crashes.
-- Android hardware back button management.
-- Intelligent platform detection to silence iOS simulator warnings.
-- Game data initialization and scene routing.
+Run from the repository root:
 
-### 4. .luarc.json
+```bash
+eval "$(luarocks --lua-version=5.1 path --local)" && ~/.luarocks/bin/busted tests
+```
 
-Configuration file for the [Lua Language Server](https://github.com/LuaLS/lua-language-server). It pre-defines Solar2D globals (like `display`, `transition`, `Runtime`) to provide better autocomplete and linting in IDEs like VS Code and IntelliJ IDEA.
+Add `--shuffle` to check that no test depends on run order. GitHub Actions runs the suite in both normal and shuffled order on every pull request (`.github/workflows/tests.yml`).
 
-### 5. solar2d-game-template-0.1.0-1.rockspec
+## Libraries
 
-A template for [LuaRocks](https://luarocks.org/), the package manager for Lua. This allows you to define project metadata and manage external Lua dependencies if your project uses them.
-
-### 6. config.ld
-
-Configuration file for [LDoc](https://github.com/lunarmodules/LDoc), the documentation generator for Lua. It defines which files to document and where to output the generated HTML.
-
-### 7. middleclass.lua
-
-A lightweight Object-Orientation library for Lua. It provides a standard `class()` function to create classes with inheritance, mixins, and constructors (`initialize`).
-
-### 8. stateful.lua
-
-An extension for `middleclass` that adds state machine support to classes. It allows objects to change their behavior by switching between different states (e.g., `Moving`, `Attacking`, `Idle`).
-
----
-
-## Utility Modules
-
-- **src/models/data.lua**: Handles persistent game data (save/load) with dot-notation access and sandbox mode support.
-- **src/utils/helpers.lua**: UI shortcuts and a robust `newButton` implementation.
-- **src/utils/screen.lua**: Standardized display metrics and safe area handling.
-- **src/utils/device.lua**: Platform and device detection flags.
-- **src/utils/math.lua**: Common mathematical functions like `clamp`, `lerp`, and `lengthDir`.
-- **src/utils/string.lua**: String manipulation helpers (split, trim, etc.).
-- **src/utils/taskQueue.lua**: Frame-independent task scheduling (supports time-scaling).
-- **src/utils/pool.lua**: Generic object pooling system.
-
----
-
-## Getting Started
-
-1. **Install Solar2D**: Download from [https://solar2d.com/](https://solar2d.com/)
-2. **Clone/Copy This Template**: Use this repository as the base for your new game project.
-3. **Add Assets**: Place your images, sounds, and fonts in the `assets/` folder.
-4. **Configure**: Adjust `config.lua` and `build.settings` for your specific game requirements.
-5. **Build Scenes**: Create your game scenes in `src/scenes/` using the Composer library.
-6. **Test**: Run in the Solar2D Simulator and test on physical devices early and often.
-7. **Build**: Use the Solar2D Simulator to create builds for iOS, Android, or Desktop.
-
-## Best Practices
-
-- **Centralized State**: Use modules (like `src/models/data.lua`) instead of global variables (`_G`) for data persistence.
-- **Scene Management**: Use Composer and strictly follow the lifecycle (`create`, `show`, `hide`, `destroy`).
-- **Memory Management**: Always clean up timers, transitions, and event listeners in `scene:hide` (phase "will") or `scene:destroy`.
-- **Content Scaling**: Use a high base resolution (e.g., 720x1280) and `display.contentCenterX` etc., for responsive UI.
-- **Localization**: Implement a string look-up system early to support multiple languages.
-- **Android Back Button**: Always implement a "key" event listener to handle the hardware back button (demonstrated in `main.lua`).
-- **Class/Inheritance**: Provided by `middleclass.lua` and registered as a global `Class` in `main.lua`.
-- **State Management**: Use `stateful.lua` (registered as `Stateful`) for complex entity behavior and state machines.
-- **Safe I/O**: Use `pcall` when encoding/decoding JSON and check for file existence to prevent crashes.
-- **Dependency Management**: A `.rockspec` template is included. For a professional workflow, consider using LuaRocks to install:
-  - **busted**: For unit testing.
-  - **luacheck**: For static analysis and catching common Lua errors.
-  - **ldoc**: For generating API documentation from source code comments.
-- **Profiling**: Regularly use the Solar2D Profiler to check for memory leaks and high CPU usage.
-- **Unit Testing**: A standardized `tests/` directory is provided. Use [Busted](https://olivinelabs.com/busted/) for unit testing logic in `src/`. Mocks for Solar2D globals are provided in `tests/spec_helper.lua`.
-- **Asset Optimization**: Use `@2x` and `@4x` suffixes for high-resolution assets to save memory on older devices.
-- **Error Handling**: Use a custom logger that can be disabled in production builds.
-- **Plugin Management**: Only include necessary plugins in `build.settings` to keep the binary size small.
+- [middleclass](https://github.com/kikito/middleclass): classes and inheritance
+- [stateful](https://github.com/kikito/stateful.lua): state machines for middleclass objects

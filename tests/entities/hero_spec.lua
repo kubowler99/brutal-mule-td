@@ -45,10 +45,6 @@ describe("Hero Entity", function()
             assert.is.equal(100, hero.xpRequired)
         end)
 
-        it("should initialize with pickup radius of 40", function()
-            assert.is.equal(40, hero.pickupRadius)
-        end)
-
         it("should create a display object", function()
             assert.is_not_nil(hero.displayObject)
         end)

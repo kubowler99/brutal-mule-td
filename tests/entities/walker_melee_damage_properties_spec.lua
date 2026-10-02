@@ -87,13 +87,16 @@ describe("Walker - Melee Damage Properties", function()
           return true
         end
       }
+
+      checkProperties()
     end)
     
     it("should respect 1.0 second attack cooldown regardless of time step", function()
       -- **Validates: Requirements 4.2**
       
-      -- Property: Walker attack cooldown should be exactly 1.0 seconds
-      property "Walker attack cooldown is exactly 1.0 seconds" {
+      -- Property: attacks are never closer together than the cooldown, and never
+      -- later than one time step after it (attacks can only land on a frame)
+      property "Walker attacks respect the cooldown for any time step" {
         generators = {
           lqc_gen.choose(5, 20)  -- Time steps between 0.5 and 2.0 seconds (will divide by 10)
         },
@@ -110,36 +113,38 @@ describe("Walker - Melee Damage Properties", function()
           local initialHealth = wall.health
           local currentTime = 0
           walker.lastAttackTime = 0
-          local attackCount = 0
+          local attackTimes = {}
+          local epsilon = 1e-9
           
-          -- Simulate 5 seconds of combat with variable time steps
+          -- Simulate 5 seconds of combat with a fixed time step, using the same
+          -- cooldown check as game_controller.update
           while currentTime < 5.0 do
             currentTime = currentTime + timeStep
             
-            -- Check if walker can attack
             if currentTime - walker.lastAttackTime >= walker.attackCooldown then
               wall:takeDamage(walker.damage)
               walker.lastAttackTime = currentTime
-              attackCount = attackCount + 1
+              table.insert(attackTimes, currentTime)
             end
           end
           
-          -- CRITICAL PROPERTY: Should have attacked approximately 5 times in 5 seconds
-          -- (allowing for timing precision issues)
-          local expectedAttacks = math.floor(5.0 / walker.attackCooldown)
-          
-          if attackCount < expectedAttacks or attackCount > expectedAttacks + 1 then
-            walker:destroy()
-            wall:destroy()
-            return false, string.format(
-              "Expected ~%d attacks in 5 seconds, got %d (timeStep=%.2f)",
-              expectedAttacks, attackCount, timeStep
-            )
+          -- CRITICAL PROPERTY: each gap is at least the cooldown and at most
+          -- one time step longer
+          local previous = 0
+          for _, attackTime in ipairs(attackTimes) do
+            local gap = attackTime - previous
+            if gap < walker.attackCooldown - epsilon or gap > walker.attackCooldown + timeStep + epsilon then
+              walker:destroy()
+              wall:destroy()
+              return false
+            end
+            previous = attackTime
           end
+          local attackCount = #attackTimes
           
           -- Verify damage matches attack count
           local actualDamage = initialHealth - wall.health
-          local expectedDamage = attackCount * 5
+          local expectedDamage = attackCount * walker.damage
           
           if actualDamage ~= expectedDamage then
             walker:destroy()
@@ -155,6 +160,8 @@ describe("Walker - Melee Damage Properties", function()
           return true
         end
       }
+
+      checkProperties()
     end)
     
     it("should only attack when within 30 pixel melee range", function()
@@ -223,6 +230,8 @@ describe("Walker - Melee Damage Properties", function()
           return true
         end
       }
+
+      checkProperties()
     end)
     
     it("should deal consistent 5 damage per attack regardless of wall health", function()
@@ -284,6 +293,8 @@ describe("Walker - Melee Damage Properties", function()
           return true
         end
       }
+
+      checkProperties()
     end)
     
     it("should not attack before cooldown expires", function()
@@ -343,6 +354,8 @@ describe("Walker - Melee Damage Properties", function()
           return true
         end
       }
+
+      checkProperties()
     end)
     
     it("should maintain independent attack timers for multiple walkers", function()
@@ -404,6 +417,8 @@ describe("Walker - Melee Damage Properties", function()
           return true
         end
       }
+
+      checkProperties()
     end)
   end)
 end)

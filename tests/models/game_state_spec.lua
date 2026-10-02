@@ -238,10 +238,8 @@ describe("Game State Model", function()
             }
             
             -- Run all registered properties
-            lqc.check()
+            checkProperties()
             
-            -- Verify no failures
-            assert.is_false(lqc.failed)
         end)
         
         it("does not increase elapsed time when paused", function()
@@ -270,10 +268,8 @@ describe("Game State Model", function()
             }
             
             -- Run all registered properties
-            lqc.check()
+            checkProperties()
             
-            -- Verify no failures
-            assert.is_false(lqc.failed)
         end)
         
         it("resumes time tracking after unpause", function()
@@ -320,10 +316,8 @@ describe("Game State Model", function()
             }
             
             -- Run all registered properties
-            lqc.check()
+            checkProperties()
             
-            -- Verify no failures
-            assert.is_false(lqc.failed)
         end)
     end)
 end)

@@ -60,24 +60,6 @@ describe("Placeholder Graphics", function()
         end)
     end)
     
-    describe("createXPOrbSprite", function()
-        it("should create a display group", function()
-            local sprite = placeholderGraphics.createXPOrbSprite(300, 400)
-            
-            assert.is_not_nil(sprite)
-            assert.equals("group", sprite._type)
-            assert.equals(300, sprite.x)
-            assert.equals(400, sprite.y)
-        end)
-        
-        it("should contain multiple display objects for glow effect", function()
-            local sprite = placeholderGraphics.createXPOrbSprite(0, 0)
-            
-            -- Should have at least 3 objects (outer glow, inner glow, core)
-            assert.is_true(sprite.numChildren >= 3)
-        end)
-    end)
-    
     describe("createBackground", function()
         it("should create a display group", function()
             local bg = placeholderGraphics.createBackground(720, 1280)
