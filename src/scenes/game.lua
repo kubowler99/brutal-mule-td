@@ -213,6 +213,15 @@ function scene.quitToMenu()
   return true
 end
 
+--- Pause when the app is suspended (home button, incoming call)
+-- The player returns to the pause overlay instead of a running game.
+-- @param event table Runtime "system" event
+function scene.onSystemEvent(event)
+  if event.type == "applicationSuspend" then
+    scene.pauseGame()
+  end
+end
+
 --- Scene create event
 function scene:create(event)
   local sceneGroup = self.view
@@ -439,6 +448,9 @@ function scene:show(event)
     
     -- Start UI update loop
     uiUpdateListener = Runtime:addEventListener("enterFrame", updateUI)
+    
+    -- Auto-pause when the app is suspended
+    Runtime:addEventListener("system", scene.onSystemEvent)
   end
 end
 
@@ -454,6 +466,7 @@ function scene:hide(event)
       Runtime:removeEventListener("enterFrame", updateUI)
       uiUpdateListener = nil
     end
+    Runtime:removeEventListener("system", scene.onSystemEvent)
     
     -- Check if the session ended (game over or quit to menu)
     if endSessionOnHide then
@@ -521,6 +534,7 @@ function scene:destroy(event)
     Runtime:removeEventListener("enterFrame", updateUI)
     uiUpdateListener = nil
   end
+  Runtime:removeEventListener("system", scene.onSystemEvent)
 end
 
 -- Add scene event listeners

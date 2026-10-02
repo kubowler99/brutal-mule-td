@@ -30,6 +30,11 @@ local sceneGroup
 local gameLoopListener
 local isPaused = false
 
+-- Longest frame step simulated at once. Solar2D stops sending frames while
+-- the app is suspended, so the first frame back can span minutes; capping it
+-- stops enemies from jumping forward.
+local MAX_FRAME_DT = 0.1
+
 --- Initialize the game controller and set up game session
 -- Creates hero, initializes object pools, and sets up all systems
 -- @param group table The scene group to add display objects to
@@ -145,7 +150,7 @@ function M.update(event)
   
   -- Calculate delta time (event.time is in milliseconds)
   local currentTime = event.time / 1000  -- Convert to seconds
-  local dt = (event.time - (M.lastFrameTime or event.time)) / 1000
+  local dt = math.min((event.time - (M.lastFrameTime or event.time)) / 1000, MAX_FRAME_DT)
   M.lastFrameTime = event.time
   
   -- Update game state elapsed time

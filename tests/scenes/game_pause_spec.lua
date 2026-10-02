@@ -115,4 +115,59 @@ describe("Game Scene pause", function()
     assert.is_true(gameScene.gameLayer.isVisible)
     assert.is_true(gameScene.pauseGame())
   end)
+
+  describe("app suspend", function()
+    it("pauses when the app is suspended", function()
+      gameScene.onSystemEvent({ type = "applicationSuspend" })
+
+      assert.are.equal("paused", game_state.state)
+      assert.is_false(gameScene.gameLayer.isVisible)
+    end)
+
+    it("stays paused when the app resumes", function()
+      gameScene.onSystemEvent({ type = "applicationSuspend" })
+      gameScene.onSystemEvent({ type = "applicationResume" })
+
+      assert.are.equal("paused", game_state.state)
+    end)
+
+    it("ignores other system events", function()
+      gameScene.onSystemEvent({ type = "applicationStart" })
+
+      assert.are.equal("playing", game_state.state)
+    end)
+
+    it("listens for system events only while the scene is shown", function()
+      local originalAdd = Runtime.addEventListener
+      local originalRemove = Runtime.removeEventListener
+      local added, removed = {}, {}
+      Runtime.addEventListener = function(self, name, listener)
+        if name == "system" then table.insert(added, listener) end
+      end
+      Runtime.removeEventListener = function(self, name, listener)
+        if name == "system" then table.insert(removed, listener) end
+      end
+
+      gameScene:show({ name = "show", phase = "did" })
+      gameScene:hide({ name = "hide", phase = "will" })
+
+      Runtime.addEventListener = originalAdd
+      Runtime.removeEventListener = originalRemove
+
+      assert.are.same({ gameScene.onSystemEvent }, added)
+      assert.are.same({ gameScene.onSystemEvent }, removed)
+    end)
+  end)
+
+  describe("frame step cap", function()
+    it("simulates at most 0.1s for a long gap between frames", function()
+      runFrames(1, 1)
+      local before = game_state.elapsedTime
+
+      -- First frame after a 60 second suspend
+      game_controller.update({ time = 60000 })
+
+      assert.is_true(game_state.elapsedTime - before <= 0.1 + 1e-9)
+    end)
+  end)
 end)
