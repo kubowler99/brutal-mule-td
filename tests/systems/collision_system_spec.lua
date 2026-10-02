@@ -29,6 +29,31 @@ describe("Collision System", function()
       assert.are.equal(0, dist)
     end)
   end)
+
+  describe("checkDistanceSquared", function()
+    it("returns the square of checkDistance", function()
+      assert.are.equal(25, collision_system.checkDistanceSquared(0, 0, 3, 4))
+      assert.are.equal(200, collision_system.checkDistanceSquared(-5, -5, 5, 5))
+      assert.are.equal(0, collision_system.checkDistanceSquared(100, 200, 100, 200))
+    end)
+
+    it("detects a projectile exactly at the 20px threshold", function()
+      -- 12-16-20 triangle: distance is exactly the threshold
+      local collisions = collision_system.checkProjectileCollisions(
+        {{x = 0, y = 0, isActive = true}},
+        {{x = 12, y = 16, isActive = true}}
+      )
+      assert.are.equal(1, #collisions)
+    end)
+
+    it("does not detect a projectile just past the 20px threshold", function()
+      local collisions = collision_system.checkProjectileCollisions(
+        {{x = 0, y = 0, isActive = true}},
+        {{x = 20.01, y = 0, isActive = true}}
+      )
+      assert.are.equal(0, #collisions)
+    end)
+  end)
   
   describe("checkProjectileCollisions", function()
     it("detects collision when projectile is within threshold", function()

@@ -16,6 +16,10 @@ local HERO_ENEMY_MELEE_THRESHOLD = config_loader.positiveNumber(
   config_loader.get("collision.heroEnemyMeleeThreshold"), 30
 )
 
+-- Squared thresholds let the per-frame checks skip math.sqrt
+local PROJECTILE_ENEMY_THRESHOLD_SQ = PROJECTILE_ENEMY_THRESHOLD * PROJECTILE_ENEMY_THRESHOLD
+local HERO_ENEMY_MELEE_THRESHOLD_SQ = HERO_ENEMY_MELEE_THRESHOLD * HERO_ENEMY_MELEE_THRESHOLD
+
 --- Calculate distance between two points using the distance formula
 -- @param x1 number X coordinate of first point
 -- @param y1 number Y coordinate of first point
@@ -26,6 +30,19 @@ function M.checkDistance(x1, y1, x2, y2)
   local dx = x2 - x1
   local dy = y2 - y1
   return math.sqrt(dx * dx + dy * dy)
+end
+
+--- Calculate squared distance between two points
+-- Cheaper than checkDistance; compare against a squared threshold.
+-- @param x1 number X coordinate of first point
+-- @param y1 number Y coordinate of first point
+-- @param x2 number X coordinate of second point
+-- @param y2 number Y coordinate of second point
+-- @return number The squared distance between the two points
+function M.checkDistanceSquared(x1, y1, x2, y2)
+  local dx = x2 - x1
+  local dy = y2 - y1
+  return dx * dx + dy * dy
 end
 
 --- Check for collisions between projectiles and enemies
@@ -58,13 +75,13 @@ function M.checkProjectileCollisions(projectiles, enemies)
         if enemy and enemy.isActive and 
            type(enemy.x) == "number" and type(enemy.y) == "number" then
           
-          local distance = M.checkDistance(
+          local distanceSq = M.checkDistanceSquared(
             projectile.x, projectile.y,
             enemy.x, enemy.y
           )
           
           -- Check if collision occurred
-          if distance <= PROJECTILE_ENEMY_THRESHOLD then
+          if distanceSq <= PROJECTILE_ENEMY_THRESHOLD_SQ then
             table.insert(collisions, {
               projectile = projectile,
               enemy = enemy
@@ -106,13 +123,13 @@ function M.checkMeleeRange(hero, enemies)
     if enemy and enemy.isActive and 
        type(enemy.x) == "number" and type(enemy.y) == "number" then
       
-      local distance = M.checkDistance(
+      local distanceSq = M.checkDistanceSquared(
         hero.x, hero.y,
         enemy.x, enemy.y
       )
       
       -- Check if enemy is within melee range
-      if distance <= HERO_ENEMY_MELEE_THRESHOLD then
+      if distanceSq <= HERO_ENEMY_MELEE_THRESHOLD_SQ then
         table.insert(meleeEnemies, enemy)
       end
     end
