@@ -199,19 +199,23 @@ function M.updateDifficulty(heroLevel)
     heroLevel = math.max(1, math.floor(heroLevel))
     M.heroLevel = heroLevel
     
-    -- Difficulty curve based on requirements
+    -- Read base values from config
+    local baseInterval = config_loader.positiveNumber(config_loader.get("spawner.spawnInterval"), 2.0)
+    local baseCount = config_loader.positiveNumber(config_loader.get("spawner.spawnCount"), 3)
+    
+    -- Difficulty scales on top of config values
     if heroLevel < 5 then
-        M.spawnInterval = 3.0
-        M.spawnCount = 1
+        M.spawnInterval = baseInterval
+        M.spawnCount = baseCount
     elseif heroLevel < 10 then
-        M.spawnInterval = 3.0
-        M.spawnCount = 2
+        M.spawnInterval = baseInterval
+        M.spawnCount = baseCount + 1
     elseif heroLevel < 15 then
-        M.spawnInterval = 2.0
-        M.spawnCount = 3
+        M.spawnInterval = math.max(1.0, baseInterval - 0.5)
+        M.spawnCount = baseCount + 2
     else
-        M.spawnInterval = 2.0
-        M.spawnCount = 4
+        M.spawnInterval = math.max(1.0, baseInterval - 1.0)
+        M.spawnCount = baseCount + 3
     end
 end
 

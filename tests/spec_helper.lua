@@ -246,6 +246,43 @@ _G.display = {
     getCurrentStage = function() return { setFocus = function() end } end
 }
 
+-- Mock graphics library (Solar2D built-in)
+_G.graphics = {
+    newImageSheet = function(filename, sheetData)
+        return { _filename = filename, _type = "imageSheet" }
+    end
+}
+
+-- Add display.newSprite mock
+_G.display.newSprite = function(imageSheet, sequenceData)
+    local sprite = {
+        x = 0,
+        y = 0,
+        xScale = 1,
+        yScale = 1,
+        isVisible = true,
+        _type = "sprite",
+        _currentSequence = nil,
+        _isPlaying = false,
+        setSequence = function(self, name)
+            self._currentSequence = name
+        end,
+        play = function(self)
+            self._isPlaying = true
+        end,
+        pause = function(self)
+            self._isPlaying = false
+        end,
+        setFillColor = function() end,
+        removeSelf = function() end,
+        toFront = function() end,
+        toBack = function() end,
+        addEventListener = function() end,
+        removeEventListener = function() end
+    }
+    return sprite
+end
+
 _G.system = {
     getInfo = function(key)
         if key == "platform" then return "macos" end
