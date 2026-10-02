@@ -13,6 +13,8 @@ M.spawnTimer = 0
 M.spawnInterval = 3.0
 M.spawnCount = 1
 M.maxConcurrent = 50
+M.runnerMinLevel = 3
+M.runnerChance = 0.3
 M.heroLevel = 1
 M.gameStartTime = nil
 M.hasSpawnedInitial = false
@@ -39,6 +41,8 @@ function M.initialize(walkerPool, heroLevel)
     M.spawnInterval = config_loader.positiveNumber(config_loader.get("spawner.spawnInterval"), 3.0)
     M.spawnCount = config_loader.positiveNumber(config_loader.get("spawner.spawnCount"), 1)
     M.maxConcurrent = config_loader.positiveNumber(config_loader.get("spawner.maxConcurrent"), 50)
+    M.runnerMinLevel = config_loader.positiveNumber(config_loader.get("spawner.runnerMinLevel"), 3)
+    M.runnerChance = math.min(1, config_loader.positiveNumber(config_loader.get("spawner.runnerChance"), 0.3))
     M.heroLevel = heroLevel or 1
     M.gameStartTime = nil
     M.hasSpawnedInitial = false
@@ -172,7 +176,7 @@ function M.spawnWalker()
     
     -- Activate walker with spawn position and lane
     local success, err = pcall(function()
-        walker:activate(spawnX, spawnY, spawnX)
+        walker:activate(spawnX, spawnY, spawnX, M.chooseEnemyType())
     end)
     
     -- Error handling: Handle activation failure
@@ -184,6 +188,16 @@ function M.spawnWalker()
     
     -- Add to active walkers
     table.insert(M.activeWalkers, walker)
+end
+
+---Pick the type for the next spawned enemy
+---Runners join the mix once the hero reaches runnerMinLevel.
+---@return string Enemy type key in enemies.json
+function M.chooseEnemyType()
+    if M.heroLevel >= M.runnerMinLevel and math.random() < M.runnerChance then
+        return "runner"
+    end
+    return "walker"
 end
 
 ---Update difficulty scaling based on hero level
