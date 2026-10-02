@@ -162,6 +162,8 @@ describe("Upgrade System - New Ability Card Structure Property Tests", function(
           return true
         end
       }
+
+      checkProperties()
     end)
 
     it("should have id field matching format 'new_ability_<abilityId>' for any new ability card", function()
@@ -207,6 +209,8 @@ describe("Upgrade System - New Ability Card Structure Property Tests", function(
           return true
         end
       }
+
+      checkProperties()
     end)
 
     it("should have a valid apply function that can be called for any new ability card", function()
@@ -280,6 +284,8 @@ describe("Upgrade System - New Ability Card Structure Property Tests", function(
           return true
         end
       }
+
+      checkProperties()
     end)
 
     it("should reference only unlocked abilities in the abilityId field for any new ability card", function()
@@ -324,6 +330,8 @@ describe("Upgrade System - New Ability Card Structure Property Tests", function(
           return true
         end
       }
+
+      checkProperties()
     end)
 
     it("should not reference abilities the hero already has for any new ability card", function()
@@ -371,6 +379,8 @@ describe("Upgrade System - New Ability Card Structure Property Tests", function(
           return true
         end
       }
+
+      checkProperties()
     end)
 
     it("should have consistent field types across all new ability cards", function()
@@ -430,6 +440,8 @@ describe("Upgrade System - New Ability Card Structure Property Tests", function(
           return true
         end
       }
+
+      checkProperties()
     end)
   end)
 end)

@@ -448,3 +448,47 @@ function _G.snapshotModule(mod)
         end
     end
 end
+
+--- Run every lua-quickcheck property defined since the last call, then fail
+-- the current test if any property failed.
+-- lqc.check() alone only records failures in its report and never raises, and
+-- it keeps every property ever registered, so each call would re-run old ones.
+-- Call this at the end of each test that defines properties.
+local lqc = require("lqc.quickcheck")
+local lqc_report = require("lqc.report")
+
+-- Silence lua-quickcheck's progress dots; failures are raised below instead
+lqc_report.report = function() end
+
+-- Properties read the iteration count when they are defined, so set a default
+-- for specs that do not call lqc.init themselves
+lqc.init(100, 100)
+
+local function formatValues(values)
+    local parts = {}
+    for i, value in ipairs(values or {}) do
+        parts[i] = tostring(value)
+    end
+    return "{" .. table.concat(parts, ", ") .. "}"
+end
+
+function _G.checkProperties()
+    local properties = lqc.properties
+    lqc.properties = {}
+
+    local failures = {}
+    for _, prop in ipairs(properties) do
+        local result = prop:check()
+        if result then
+            table.insert(failures, string.format(
+                'Property "%s" failed. Generated values: %s. Shrunk to: %s',
+                result.property.description,
+                formatValues(result.generated_values),
+                formatValues(result.shrunk_values)))
+        end
+    end
+
+    if #failures > 0 then
+        error(table.concat(failures, "\n"), 2)
+    end
+end

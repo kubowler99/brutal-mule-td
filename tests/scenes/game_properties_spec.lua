@@ -63,7 +63,7 @@ describe("Game Scene Properties", function()
         end
       }
       
-      lqc.check()
+      checkProperties()
     end)
     
     it("formats specific time values correctly", function()
@@ -107,7 +107,7 @@ describe("Game Scene Properties", function()
         end
       }
       
-      lqc.check()
+      checkProperties()
     end)
     
     it("increments enemy defeat counter correctly", function()
@@ -399,7 +399,7 @@ describe("Game Scene Properties", function()
         end
       }
       
-      lqc.check()
+      checkProperties()
     end)
     
     it("Property: First-time initialization always creates valid game state", function()
@@ -467,7 +467,7 @@ describe("Game Scene Properties", function()
         end
       }
       
-      lqc.check()
+      checkProperties()
     end)
   end)
   
@@ -568,7 +568,7 @@ describe("Game Scene Properties", function()
         end
       }
       
-      lqc.check()
+      checkProperties()
     end)
   end)
 end)

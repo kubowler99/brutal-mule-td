@@ -77,6 +77,8 @@ describe("Hero - Ability Slot Properties", function()
           return countMatches and addsMatch and correctRejection
         end
       }
+
+      checkProperties()
     end)
     
     it("should return false when attempting to add a 6th ability", function()
@@ -129,6 +131,8 @@ describe("Hero - Ability Slot Properties", function()
           return true
         end
       }
+
+      checkProperties()
     end)
     
     it("should maintain ability slot limit across different hero instances", function()
@@ -182,6 +186,8 @@ describe("Hero - Ability Slot Properties", function()
           return allValid
         end
       }
+
+      checkProperties()
     end)
   end)
 end)

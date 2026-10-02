@@ -403,6 +403,8 @@ describe("Game Controller - Property Tests", function()
           return true
         end
       }
+
+      checkProperties()
     end)
   end)
   
@@ -454,6 +456,8 @@ describe("Game Controller - Property Tests", function()
           return true
         end
       }
+
+      checkProperties()
     end)
   end)
 end)

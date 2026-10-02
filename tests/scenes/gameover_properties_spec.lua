@@ -82,6 +82,8 @@ describe("Game Over Scene - Property Tests", function()
           return true
         end
       }
+
+      checkProperties()
     end)
     
     it("should handle edge case statistics values", function()
@@ -162,6 +164,8 @@ describe("Game Over Scene - Property Tests", function()
           return true
         end
       }
+
+      checkProperties()
     end)
     
     it("should handle missing or partial statistics gracefully", function()

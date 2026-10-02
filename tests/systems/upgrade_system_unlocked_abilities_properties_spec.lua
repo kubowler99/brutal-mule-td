@@ -80,6 +80,8 @@ describe("Upgrade System - Unlocked Abilities Only Property Tests", function()
           return true
         end
       }
+
+      checkProperties()
     end)
 
     it("should only reference unlocked abilities in new_ability cards from getAvailableUpgrades", function()
@@ -142,6 +144,8 @@ describe("Upgrade System - Unlocked Abilities Only Property Tests", function()
           return true
         end
       }
+
+      checkProperties()
     end)
 
     it("should verify that all new_ability cards reference abilities that exist in the registry", function()
@@ -209,6 +213,8 @@ describe("Upgrade System - Unlocked Abilities Only Property Tests", function()
           return true
         end
       }
+
+      checkProperties()
     end)
 
     it("should maintain consistency between isUnlocked and ability definition's unlocked field", function()
@@ -276,6 +282,8 @@ describe("Upgrade System - Unlocked Abilities Only Property Tests", function()
           return true
         end
       }
+
+      checkProperties()
     end)
 
     it("should never generate new_ability cards for locked abilities across multiple iterations", function()
@@ -327,6 +335,8 @@ describe("Upgrade System - Unlocked Abilities Only Property Tests", function()
           return true
         end
       }
+
+      checkProperties()
     end)
 
     it("should only offer abilities that can be successfully instantiated via createInstance", function()
@@ -389,6 +399,8 @@ describe("Upgrade System - Unlocked Abilities Only Property Tests", function()
           return true
         end
       }
+
+      checkProperties()
     end)
   end)
 end)

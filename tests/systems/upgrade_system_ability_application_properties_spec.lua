@@ -102,6 +102,8 @@ describe("Upgrade System - Ability Application Property Tests", function()
           return true
         end
       }
+
+      checkProperties()
     end)
 
     it("should add the new ability to the end of the abilities array for any hero with available slots", function()
@@ -189,6 +191,8 @@ describe("Upgrade System - Ability Application Property Tests", function()
           return true
         end
       }
+
+      checkProperties()
     end)
   end)
 
@@ -290,6 +294,8 @@ describe("Upgrade System - Ability Application Property Tests", function()
           return true
         end
       }
+
+      checkProperties()
     end)
 
     it("should create a unique instance for each application (not reuse references)", function()
@@ -389,6 +395,8 @@ describe("Upgrade System - Ability Application Property Tests", function()
           return true
         end
       }
+
+      checkProperties()
     end)
   end)
 
@@ -478,6 +486,8 @@ describe("Upgrade System - Ability Application Property Tests", function()
           return true
         end
       }
+
+      checkProperties()
     end)
 
     it("should verify all new abilities start at tier 1 across multiple applications", function()
@@ -565,6 +575,8 @@ describe("Upgrade System - Ability Application Property Tests", function()
           return true
         end
       }
+
+      checkProperties()
     end)
 
     it("should verify tier 1 for abilities created directly via createInstance", function()
@@ -620,6 +632,8 @@ describe("Upgrade System - Ability Application Property Tests", function()
           return true
         end
       }
+
+      checkProperties()
     end)
   end)
 
@@ -714,6 +728,8 @@ describe("Upgrade System - Ability Application Property Tests", function()
           return true
         end
       }
+
+      checkProperties()
     end)
 
     it("should leave abilities array unchanged when slot limit is reached", function()
@@ -805,6 +821,8 @@ describe("Upgrade System - Ability Application Property Tests", function()
           return true
         end
       }
+
+      checkProperties()
     end)
 
     it("should enforce slot limit through applyUpgrade validation", function()
@@ -867,6 +885,8 @@ describe("Upgrade System - Ability Application Property Tests", function()
           return true
         end
       }
+
+      checkProperties()
     end)
 
     it("should consistently enforce 5-ability limit across multiple attempts", function()
@@ -932,6 +952,8 @@ describe("Upgrade System - Ability Application Property Tests", function()
           return true
         end
       }
+
+      checkProperties()
     end)
   end)
 end)

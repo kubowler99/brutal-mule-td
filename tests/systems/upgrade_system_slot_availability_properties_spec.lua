@@ -103,6 +103,8 @@ describe("Upgrade System - New Ability Availability Based on Slots Property Test
           return true
         end
       }
+
+      checkProperties()
     end)
 
     it("should not include new_ability type cards when hero has exactly 5 abilities", function()
@@ -153,6 +155,8 @@ describe("Upgrade System - New Ability Availability Based on Slots Property Test
           return true
         end
       }
+
+      checkProperties()
     end)
 
     it("should include new_ability cards in getAvailableUpgrades when hero has fewer than 5 abilities", function()
@@ -238,6 +242,8 @@ describe("Upgrade System - New Ability Availability Based on Slots Property Test
           return true
         end
       }
+
+      checkProperties()
     end)
 
     it("should not include new_ability cards in getAvailableUpgrades when hero has exactly 5 abilities", function()
@@ -288,6 +294,8 @@ describe("Upgrade System - New Ability Availability Based on Slots Property Test
           return true
         end
       }
+
+      checkProperties()
     end)
 
     it("should correctly report slot availability via canOfferNewAbility", function()
@@ -333,6 +341,8 @@ describe("Upgrade System - New Ability Availability Based on Slots Property Test
           return true
         end
       }
+
+      checkProperties()
     end)
 
     it("should maintain consistency between canOfferNewAbility and actual card generation", function()
@@ -414,6 +424,8 @@ describe("Upgrade System - New Ability Availability Based on Slots Property Test
           return true
         end
       }
+
+      checkProperties()
     end)
   end)
 end)
