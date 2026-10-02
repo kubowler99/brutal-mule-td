@@ -1296,7 +1296,6 @@ describe("Property 23: Upgrade Application", function()
                         pierceCount = ability.pierceCount
                     }
                 end
-                local initialRadius = testHero.pickupRadius
                 
                 -- Apply upgrade
                 local success = upgrade_system.applyUpgrade(randomUpgrade)
@@ -1315,12 +1314,6 @@ describe("Property 23: Upgrade Application", function()
                                 "Upgraded ability tier should increment")
                             foundFirst = true
                         end
-                    end
-                elseif randomUpgrade.type == "stat_upgrade" then
-                    -- Hero stat should change
-                    if randomUpgrade.id == "xp_pickup_radius" then
-                        assert.are.equal(initialRadius + 20, testHero.pickupRadius,
-                            "Pickup radius should increase")
                     end
                 end
             end

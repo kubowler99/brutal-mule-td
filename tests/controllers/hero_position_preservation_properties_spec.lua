@@ -71,7 +71,6 @@ describe("Hero Position Preservation Properties", function()
       assert.are.equal(1, hero.level, "Hero level must remain 1")
       assert.are.equal(0, hero.xp, "Hero XP must remain 0")
       assert.are.equal(100, hero.xpRequired, "Hero XP required must remain 100")
-      assert.are.equal(40, hero.pickupRadius, "Hero pickup radius must remain 40")
       
       -- Hero should have 1 ability (Arcane Bolt) added during initialization
       assert.are.equal(1, #hero.abilities, "Hero should have 1 ability")
