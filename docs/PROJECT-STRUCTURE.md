@@ -1,555 +1,162 @@
-# Solar2D Professional Project Scaffolding
+# Project Structure
 
-## Project Structure
+How Arcane Survivor's code is organized, how a run flows through it, and where to make common changes. For what the game is, see the [README](../README.md) and the [game concept](arcane-survivor/game-concept.md).
 
-```
-MyGame/
-├── main.lua                    # Entry point
-├── config.lua                  # App configuration
-├── build.settings              # Build settings
-├── .luarc.json                 # Lua Language Server configuration
-├── config.ld                   # LDoc documentation configuration
-├── *.rockspec                  # LuaRocks package specification
-├── Icon.png                    # App icon (1024x1024)
-├── Icon-Small.png             # Small icon
-│
-├── src/
-│   ├── scenes/                # Scene files
-│   │   ├── menu.lua
-│   │   ├── game.lua
-│   │   ├── pause.lua
-│   │   └── gameover.lua
-│   │
-│   ├── entities/              # Game objects/entities
-│   │   ├── player.lua
-│   │   └── enemy.lua
-│   │
-│   ├── controllers/           # Business logic / Game loop controllers
-│   │   └── gameController.lua
-│   │
-│   ├── models/                # Data models and state management
-│   │   ├── data.lua           # Persistent game data
-│   │   └── settings.lua       # User settings
-│   │
-│   ├── systems/               # Core game systems
-│   │   ├── physics.lua
-│   │   ├── collision.lua
-│   │   └── particles.lua
-│   │
-│   ├── ui/                    # UI components
-│   │   ├── button.lua
-│   │   ├── panel.lua
-│   │   └── healthbar.lua
-│   │
-│   ├── constants/             # Global constants
-│   │   └── colors.lua
-│   │
-│   └── utils/                 # Utility modules
-│       ├── helpers.lua        # UI Facade and shortcuts
-│       ├── screen.lua         # Screen metric utilities
-│       ├── device.lua         # Device/Platform flags
-│       ├── math.lua           # Game-specific math
-│       ├── string.lua         # String helpers
-│       ├── taskQueue.lua      # Time-aware task scheduling
-│       ├── pool.lua           # Object pooling system
-│       ├── i18n.lua           # Localization
-│       └── logger.lua         # Custom logging
-│
-├── lib/                       # Third-party libraries
-│   ├── middleclass.lua        # OOP Class system
-│   └── stateful.lua           # State Machine for classes
-├── assets/
-│   ├── images/
-│   │   ├── backgrounds/
-│   │   ├── sprites/
-│   │   ├── ui/
-│   │   └── effects/
-│   ├── audio/
-│   │   ├── music/
-│   │   └── sfx/
-│   ├── fonts/
-│   └── particles/             # Particle definitions (.json)
-│
-├── data/                      # Game data files
-│   ├── levels.json
-│   ├── enemies.json
-│   └── strings.json           # Localization strings
-│
-├── docs/                      # Project documentation and design notes
-│   ├── design.md
-│   ├── ARCHITECTURE.md
-│   └── PROJECT-STRUCTURE.md
-│
-├── tests/                     # Unit tests
-│   ├── spec_helper.lua        # Test environment and Solar2D mocks
-│   ├── utils/                 # Tests for src/utils/
-│   │   ├── math_spec.lua
-│   │   └── string_spec.lua
-│   └── models/                # Tests for src/models/
-│       └── data_spec.lua
-└── Icon.png                   # App icon (1024x1024)
+## Folder layout
 
----
-
-## Core Files
-
-### 1. config.lua
-```lua
-application = {
-    content = {
-        width = 720,
-        height = 1280,
-        scale = "letterbox",
-        fps = 60,
-        
-        xAlign = "center",
-        yAlign = "center",
-
-        imageSuffix = {
-            ["@2x"] = 2,
-            ["@4x"] = 4,
-        },
-    },
-    -- Use adaptive FPS for better battery life when possible
-    -- (Requires specific plugins or implementation)
-}
+```text
+main.lua                 Entry point
+config.lua               Content size (720x1280 portrait, letterbox) and image suffixes
+build.settings           Platform build settings (orientation, permissions, icons)
+.luarc.json              Lua Language Server setup (Lua 5.1, Solar2D globals)
+config.ld                LDoc settings for generated API docs (docs/api, ignored by git)
+*.rockspec               LuaRocks metadata (left over from the project template)
+.github/workflows/       CI: runs the test suite on every pull request
+data/                    Game data; most balance changes happen here
+  abilities.json         Abilities: base stats, synergy tags, upgrade cards
+  enemies.json           Enemy types: health, speed, damage, range, XP, boss flags
+  game_config.json       Wall, spawner (spawn table, elites, bosses), synergy, collision, XP
+  meta.json              Gold rates, permanent upgrades, heroes
+assets/images/sprites/   Zombie sprite sheets (PNG plus sheet data .lua)
+src/
+  scenes/                Composer scenes (screens)
+  controllers/           game_controller: one run's setup, game loop, and events
+  systems/               Per-frame game systems and feedback
+  entities/              Hero, wall, enemies, projectiles
+    abilities/           One module per ability class
+  models/                Data loading, save data, run state, meta progression
+  ui/                    Reusable in-game UI pieces
+  utils/                 Helpers (pooling, buttons, placeholder graphics, math, strings)
+lib/                     middleclass (classes) and stateful
+tests/                   busted specs and Solar2D mocks
+docs/                    This document, architecture notes, game concept
 ```
 
-### 2. build.settings
-```lua
-settings = {
-    orientation = {
-        default = "portrait",
-        supported = { "portrait", "portraitUpsideDown" }
-    },
-    
-    android = {
-        usesPermissions = {
-            "android.permission.INTERNET",
-            "com.android.vending.BILLING", -- Common for games
-        },
-        versionCode = "1",
-    },
-    
-    iphone = {
-        xcassets = "Images.xcassets",
-        plist = {
-            UIStatusBarHidden = true,
-            UILaunchStoryboardName = "LaunchScreen",
-            -- Privacy descriptions (Mandatory for modern iOS)
-            NSCameraUsageDescription = "This app does not use the camera.",
-            NSPhotoLibraryUsageDescription = "This app does not use the photo library.",
-            -- NSAdvertisingAttributionReportEndpoint = "https://postbacks-is.com", -- For SkAdNetwork (Note: Warning in simulator is normal)
-            CFBundleIconFiles = {
-                "Icon.png",
-                "Icon@2x.png",
-                "Icon-60.png",
-                "Icon-60@2x.png",
-                "Icon-60@3x.png",
-                "Icon-76.png",
-                "Icon-76@2x.png",
-                "Icon-Small-40.png",
-                "Icon-Small-40@2x.png",
-                "Icon-Small.png",
-                "Icon-Small@2x.png",
-                "Icon-Small@3x.png"
-            },
-        },
-    },
+## Startup and screens
 
-    window = {
-        defaultMode = "normal",
-        defaultViewWidth = 360,
-        defaultViewHeight = 640,
-        resizable = true,
-        titleText = {
-            default = "My Game",
-        },
-    },
-    
-    plugins = {
-        -- Example: ["plugin.json"] = { publisherId = "com.coronalabs" },
-    },
-}
-```
+`main.lua` registers `Class` (middleclass) and `Stateful` as globals, installs an unhandled-error handler and the Android back button, loads save data (`src/models/data.lua`), initializes the ability registry, and opens the menu.
 
-### 3. main.lua
-```lua
--- Global modules
-_G.Class = require("lib.middleclass")
-_G.Stateful = require("lib.stateful")
-local composer = require("composer")
-local state = require("src.models.data")
+Screens are Composer scenes in `src/scenes/`:
 
--- Hide status bar
-display.setStatusBar(display.HiddenStatusBar)
+| Scene | Purpose | Goes to |
+|---|---|---|
+| `menu` | Title, best run, gold | `hero_select` (PLAY), `upgrades` (UPGRADES) |
+| `hero_select` | Pick an unlocked hero or buy a locked one | `game` with `params.heroId`, or `menu` |
+| `upgrades` | Buy permanent upgrades with gold | `menu` |
+| `game` | The run: HUD, ability indicators, level-up cards, pause, boss bar | `gameover`, or `menu` (quit from pause) |
+| `gameover` | VICTORY! or GAME OVER, run stats, best run, gold earned; saves stats and gold | `game` (Play Again, same hero) or `menu` |
 
--- Seed random
-math.randomseed(os.time())
+The game scene builds its UI once in `create` and starts a new run in `show` ("will"), so Play Again works with Composer's cached scene.
 
--- Global Error Handler
-local function onUnhandledError(event)
-    print("[ERROR] Unhandled Error: " .. tostring(event.errorMessage))
-    -- Log to analytics or file
-    return true -- Prevents app from crashing in some environments
-end
-Runtime:addEventListener("unhandledError", onUnhandledError)
+## A run
 
--- Android Back Button Handler
-local function onKeyEvent(event)
-    if event.keyName == "back" and event.phase == "up" then
-        local currentScene = composer.getSceneName("current")
-        if currentScene == "src.scenes.menu" then
-            native.requestExit()
-        else
-            composer.gotoScene("src.scenes.menu", { effect = "fade", time = 300 })
-        end
-        return true
-    end
-    return false
-end
+`src/controllers/game_controller.lua` owns one run.
 
--- Only add the key listener on Android and Simulator (excluding iOS skins) to avoid warnings
-local platform = system.getInfo("platform")
-local env = system.getInfo("environment")
-if (platform == "android") or (env == "simulator" and platform ~= "ios") then
-    Runtime:addEventListener("key", onKeyEvent)
-end
+**`initialize(group, heroId)`** loads the data files, then:
+1. reads the hero and run bonuses from `meta_progression` (permanent upgrades plus hero bonuses);
+2. creates the wall and the hero with its starting ability;
+3. creates object pools for enemies and projectiles;
+4. initializes the systems and connects their callbacks.
 
--- Initialize and Load Game Data
-state.load()
+**`update(event)`** runs every frame. It caps the frame step at 0.1s, then:
+1. `spawner_system` spawns enemies and bosses;
+2. difficulty follows the hero level;
+3. enemies move (and slow effects tick);
+4. collisions: projectile hits deal damage, enemies at the wall attack it;
+5. `combat_system` fires abilities whose cooldown is ready, runs per-frame abilities, and moves projectiles;
+6. `effects` advances screen shake.
 
--- Go to menu scene
-composer.gotoScene("src.scenes.menu")
-```
+**Ending a run:** the wall reaching 0 health calls `onGameOver`; killing the final boss calls `onVictory`. Both pass the run statistics to the game scene, which opens `gameover`.
 
----
+**Pausing:** the pause button, the level-up panel, and app suspend all call `game_controller.pause()`; the game loop skips frames while paused.
 
-## Utility Modules
+## Systems (`src/systems/`)
 
-### src/models/data.lua
-```lua
-local json = require("json")
-local M = {}
+| Module | Responsibility |
+|---|---|
+| `spawner_system` | Spawns from the weighted spawn table, rolls elites, spawns bosses at their levels, scales spawn rate with hero level |
+| `combat_system` | Fires abilities at their wall slot, runs per-frame abilities, tracks and recycles projectiles, applies damage |
+| `collision_system` | Distance checks: projectile vs enemy, enemy reaching its attack position at the wall |
+| `experience_system` | Awards XP (with elite and hero multipliers), levels the hero up, XP feedback |
+| `upgrade_system` | Builds the level-up card pool and draws cards, weighted toward synergies |
+| `effects` | Damage numbers, hit sparks, screen shake |
+| `sound` | Sound effects and music from `assets/audio/` when the files exist |
 
-M.filename = "gamedata.json"
-M.defaultData = {
-    settings = {
-        soundOn = true,
-        musicOn = true,
-    },
-    score = 0,
-    highScore = 0,
-    sessions = 0,
-    firstRun = os.time(),
-}
+Systems talk to the controller through callbacks rather than requiring it:
 
-M.data = {}
-local isSandboxMode = false
-local sandboxData = nil
+| Callback | Set by | Called when |
+|---|---|---|
+| `combat_system.onEnemyKilled` | game_controller | any damage source kills an enemy (awards XP, counts the kill, checks victory) |
+| `combat_system.onEnemyDamaged` | game_controller | any hit on an enemy (damage number, spark, sound) |
+| `spawner_system.onBossSpawned` | game_controller | a boss spawns (sound, shake, scene banner) |
+| `game_controller.onLevelUpCallback` | game scene | the hero levels up (show cards) |
+| `game_controller.onGameOverCallback` | game scene | the run ends (go to gameover) |
+| `game_controller.onBossSpawnedCallback` | game scene | a boss spawns (banner) |
 
--- Getter with dot notation support
-function M.get(path)
-    -- implementation details...
-end
+## Entities (`src/entities/`)
 
--- Setter with dot notation support
-function M.set(path, value, shouldSave)
-    -- implementation details...
-end
+- **`hero.lua`**: stationary at the wall's left edge. Holds up to 5 abilities. `Hero:getStats()` combines base stats (permanent upgrades and hero bonus), passive abilities, and synergy bonuses into a `damageMultiplier` and `cooldownMultiplier`.
+- **`wall.lua`**: the thing to protect. The run ends when its health reaches 0.
+- **`walker.lua`**: every enemy type. `activate(x, y, lane, enemyType)` loads that type's stats from `enemies.json`. It also handles elites (`makeElite`), slows (`applySlow`), ranged stopping (`attackRange`), the sprite animation, and per-type tint and size.
+- **`projectile.lua`**: a pooled projectile with damage, pierce, and an optional on-hit slow.
 
-function M.load()
-    -- Safe load and session tracking...
-end
+### Abilities (`src/entities/abilities/`)
 
-function M.save()
-    -- Safe save with sandbox protection...
-end
+An ability is a middleclass object with an `id` and a `tier` (1 to 5). The combat system calls these methods when they exist:
 
-function M.startSandbox()
-    -- Initialize sandboxData...
-end
+| Method | Used for |
+|---|---|
+| `canActivate(currentTime, heroStats)` | Whether the cooldown has elapsed (cooldown scaled by `heroStats.cooldownMultiplier`) |
+| `activate(x, y, enemies, projectilePool, displayGroup, heroStats)` | Fire once; `x, y` is the ability's slot on the wall |
+| `update(dt, x, y, enemies, displayGroup, heroStats)` | Per-frame abilities such as Orbiting Blades |
+| `upgrade(upgradeType)` | Apply one level-up card |
+| `applyStats(stats)` | Passives: change the hero stats table |
+| `destroy()` | Remove display objects the ability owns |
 
-return M
-```
+| Module | Ability |
+|---|---|
+| `arcane_bolt.lua` | Projectile at the nearest enemy, with predictive aim |
+| `frost_shard.lua` | Arcane Bolt subclass; piercing shards that slow on hit |
+| `frost_nova.lua` | Pulse along the wall that damages and slows |
+| `orbiting_blades.lua` | Blades circling the ability's slot (uses `update`) |
+| `passive.lua` | One class for every passive; `abilities.json` sets the stat and amount per tier |
 
-### src/utils/helpers.lua
-```lua
-local M = {}
+## Models (`src/models/`)
 
--- Display shortcuts
-M.centerX = display.contentCenterX
-M.centerY = display.contentCenterY
-M.width = display.contentWidth
-M.height = display.contentHeight
-M.screenOriginX = display.screenOriginX
-M.screenOriginY = display.screenOriginY
-M.actualWidth = display.actualContentWidth
-M.actualHeight = display.actualContentHeight
+| Module | Responsibility |
+|---|---|
+| `data` | Save data (`gamedata.json` in the documents directory) with dot-path `get`/`set`, and a sandbox mode for tests |
+| `game_state` | The current run: state, elapsed time, kills, victory |
+| `config_loader` | Reads `game_config.json` (`get("spawner.spawnInterval")`) |
+| `ability_data_loader` | Reads and validates `abilities.json` (base stats, upgrade parameters) |
+| `ability_registry` | Ability definitions and instances by id (`createInstance(id)`) |
+| `synergy` | Ability tags, shared-tag damage bonus, draft weights |
+| `meta_progression` | Gold, permanent upgrades, heroes, and the run bonuses they give; definitions from `meta.json` |
 
--- Create a simple button
-function M.newButton(options)
-    local btn = display.newRect(
-        options.x or 0,
-        options.y or 0,
-        options.width or 100,
-        options.height or 40
-    )
-    btn:setFillColor(unpack(options.fillColor or {0.2, 0.5, 1}))
-    btn.strokeWidth = 2
-    btn:setStrokeColor(1, 1, 1)
-    
-    local label = display.newText({
-        text = options.label or "Button",
-        x = btn.x,
-        y = btn.y,
-        font = native.systemFontBold,
-        fontSize = options.fontSize or 18
-    })
-    
-    local function touch(event)
-        local phase = event.phase
-        if phase == "began" then
-            display.getCurrentStage():setFocus(btn)
-            btn.isFocus = true
-            btn:setFillColor(0.1, 0.3, 0.8)
-        elseif btn.isFocus then
-            if phase == "moved" then
-                -- Optional: change color if finger moves out of bounds
-                local bounds = btn.contentBounds
-                local x, y = event.x, event.y
-                if (x < bounds.xMin or x > bounds.xMax or y < bounds.yMin or y > bounds.yMax) then
-                    btn:setFillColor(unpack(options.fillColor or {0.2, 0.5, 1}))
-                else
-                    btn:setFillColor(0.1, 0.3, 0.8)
-                end
-            elseif phase == "ended" or phase == "cancelled" then
-                display.getCurrentStage():setFocus(nil)
-                btn.isFocus = false
-                btn:setFillColor(unpack(options.fillColor or {0.2, 0.5, 1}))
-                
-                if phase == "ended" then
-                    local bounds = btn.contentBounds
-                    local x, y = event.x, event.y
-                    if (x >= bounds.xMin and x <= bounds.xMax and y >= bounds.yMin and y <= bounds.yMax) then
-                        if options.onRelease then
-                            options.onRelease(event)
-                        end
-                    end
-                end
-            end
-        end
-        return true
-    end
-    
-    btn:addEventListener("touch", touch)
-    
-    btn.label = label
-    return btn
-end
+## Common changes
 
--- Clean up display group
-function M.cleanGroup(group)
-    if group then
-        while group.numChildren > 0 do
-            display.remove(group[1])
-        end
-    end
-end
+**Tune balance:** edit the files in `data/`; no code changes needed. The [README](../README.md#tuning) lists what each file controls.
 
--- Print table contents (debug)
-function M.printTable(t, indent)
-    indent = indent or 0
-    local spacing = string.rep("  ", indent)
-    
-    for k, v in pairs(t) do
-        if type(v) == "table" then
-            print(spacing .. tostring(k) .. ":")
-            M.printTable(v, indent + 1)
-        else
-            print(spacing .. tostring(k) .. ": " .. tostring(v))
-        end
-    end
-end
+**Add an enemy type**
+1. Add an entry to `data/enemies.json` (health, speed, damage, attackCooldown, xpValue; optional attackRange, isBoss, isFinalBoss).
+2. Add it to `spawner.enemyTable` in `data/game_config.json` with a weight, unlock level, and group size.
+3. Add fallback stats and a tint/size to `DEFAULT_STATS` and `TYPE_STYLES` in `src/entities/walker.lua`.
 
-return M
-```
+**Add an ability**
+1. Create a module in `src/entities/abilities/` with the methods above.
+2. Add an entry to `data/abilities.json` with `module`, `unlocked: true`, `baseStats`, `tags`, and `upgrades`. The upgrade cards and the new-ability card come from this entry.
+3. Optionally give it an indicator color in `src/ui/ability_indicator.lua`.
 
-### src/utils/math.lua
-```lua
-local M = {}
+**Add a passive:** only a `data/abilities.json` entry is needed. Use `"module": "src.entities.abilities.passive"`, a `"passive": { "stat": ..., "perTier": ... }` section, and one upgrade.
 
--- Clamp value between min and max
-function M.clamp(value, min, max)
-    return math.max(min, math.min(max, value))
-end
+**Add a hero or permanent upgrade:** add an entry to `heroes` or `upgrades` in `data/meta.json`.
 
--- Linear interpolation
-function M.lerp(a, b, t)
-    return a + (b - a) * t
-end
+## Tests
 
--- Distance between two points
-function M.distance(x1, y1, x2, y2)
-    local dx = x2 - x1
-    local dy = y2 - y1
-    return math.sqrt(dx * dx + dy * dy)
-end
+`tests/` mirrors `src/` (`controllers/`, `entities/`, `models/`, `scenes/`, `systems/`, `ui/`, `utils/`), plus `integration/`, `performance/`, and `generators/` (random data for property tests).
 
--- Angle between two points (in degrees)
-function M.angleBetween(x1, y1, x2, y2)
-    return math.deg(math.atan2(y2 - y1, x2 - x1))
-end
-
--- Round to nearest integer
-function M.round(num)
-    return math.floor(num + 0.5)
-end
-
--- Random float between min and max
-function M.randomFloat(min, max)
-    return min + math.random() * (max - min)
-end
-
-return M
-```
-
----
-
-## Scene Template
-
-### src/scenes/menu.lua
-```lua
-local composer = require("composer")
-local helpers = require("src.utils.helpers")
-local state = require("src.models.data")
-
-local scene = composer.newScene()
-
--- Scene variables
-local background
-local titleText
-local playButton
-
--- Scene lifecycle functions
-
-function scene:create(event)
-    local sceneGroup = self.view
-    local params = event.params or {} -- Access passed parameters
-    
-    -- Background
-    background = display.newRect(
-        sceneGroup,
-        helpers.centerX,
-        helpers.centerY,
-        helpers.width,
-        helpers.height
-    )
-    background:setFillColor(0.1, 0.1, 0.2)
-    
-    -- Title
-    titleText = display.newText({
-        parent = sceneGroup,
-        text = "My Game",
-        x = helpers.centerX,
-        y = 100,
-        font = native.systemFontBold,
-        fontSize = 48
-    })
-    
-    -- Play button
-    playButton = helpers.newButton({
-        x = helpers.centerX,
-        y = helpers.centerY,
-        width = 200,
-        height = 60,
-        label = "PLAY",
-        fontSize = 24,
-        onRelease = function()
-            composer.gotoScene("src.scenes.game", {
-                effect = "fade",
-                time = 300,
-                params = { difficulty = "easy" } -- Example parameter passing
-            })
-        end
-    })
-    sceneGroup:insert(playButton)
-    sceneGroup:insert(playButton.label)
-end
-
-function scene:show(event)
-    local sceneGroup = self.view
-    local phase = event.phase
-    
-    if phase == "will" then
-        -- Code here runs when scene is still off screen
-    elseif phase == "did" then
-        -- Code here runs when scene is on screen
-        -- Start timers, music, or physics
-    end
-end
-
-function scene:hide(event)
-    local sceneGroup = self.view
-    local phase = event.phase
-    
-    if phase == "will" then
-        -- Code here runs when scene is still on screen
-        -- Stop timers, music, or physics
-    elseif phase == "did" then
-        -- Code here runs when scene is off screen
-    end
-end
-
-function scene:destroy(event)
-    local sceneGroup = self.view
-    -- Clean up scene resources, remove listeners
-    if playButton then
-        -- The label is not a child of playButton but was inserted into sceneGroup separately
-        -- so it will be cleaned up by composer, but it's good practice to nil references.
-        playButton = nil
-    end
-end
-
--- Scene event listeners
-scene:addEventListener("create", scene)
-scene:addEventListener("show", scene)
-scene:addEventListener("hide", scene)
-scene:addEventListener("destroy", scene)
-
-return scene
-```
-
----
-
-## Getting Started
-
-1. **Install Solar2D**: Download from https://solar2d.com/
-2. **Create Project**: Use the Solar2D Simulator to create a new project
-3. **Copy Structure**: Implement the folder structure above
-4. **Add Assets**: Place your images, sounds, and fonts in the assets folder
-5. **Configure**: Adjust config.lua and build.settings for your game
-6. **Build Scenes**: Create your game scenes using Composer
-7. **Test**: Run in simulator, test on devices
-8. **Build**: Create builds for iOS/Android
-
-## Best Practices
-
-- **Centralized State**: Use modules (like `src/models/data.lua`) instead of global variables (`_G`) for data persistence.
-- **Scene Management**: Use Composer and strictly follow the lifecycle (`create`, `show`, `hide`, `destroy`).
-- **Memory Management**: Always clean up timers, transitions, and event listeners in `scene:hide` (phase "will") or `scene:destroy`.
-- **Content Scaling**: Use a high base resolution (e.g., 720x1280) and `display.contentCenterX` etc., for responsive UI.
-- **Localization**: Implement a string look-up system early to support multiple languages.
-- **Android Back Button**: Always implement a "key" event listener to handle the hardware back button (demonstrated in `main.lua`).
-- **Class/Inheritance**: Provided by `middleclass.lua` and registered as a global `Class` in `main.lua`.
-- **State Management**: Use `stateful.lua` (registered as `Stateful`) for complex entity behavior and state machines.
-- **Safe I/O**: Use `pcall` when encoding/decoding JSON and check for file existence to prevent crashes.
-- **IDE Support**: A `.luarc.json` file is provided to pre-define Solar2D globals, enabling better autocomplete and linting in modern editors.
-- **Dependency Management**: A `.rockspec` template is included. For a professional workflow, consider using LuaRocks to install:
-    - **busted**: For unit testing (logic in `src/`).
-    - **luacheck**: For static analysis and identifying potential bugs.
-    - **ldoc**: For generating API documentation from source code comments.
-- **Profiling**: Regularly use the Solar2D Profiler to check for memory leaks and high CPU usage.
-- **Asset Optimization**: Use `@2x` and `@4x` suffixes for high-resolution assets to save memory on older devices.
-- **Error Handling**: Use a custom logger that can be disabled in production builds.
-- **Plugin Management**: Only include necessary plugins in `build.settings` to keep the binary size small.
+- `tests/spec_helper.lua` mocks the Solar2D APIs (display, system, audio, transition, composer). It also provides:
+  - `snapshotModule(mod)`: restore a module's stubbed functions after a test;
+  - `checkProperties()`: run the lua-quickcheck properties a test defined and fail the test if one fails.
+- Writable paths (save data) resolve to the OS temp directory, so tests never touch the working tree.
+- See the [README](../README.md#tests) for setup and commands. CI runs the suite in normal and shuffled order.
