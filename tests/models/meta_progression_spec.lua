@@ -1,0 +1,151 @@
+require("tests.spec_helper")
+
+local data = require("src.models.data")
+local meta = require("src.models.meta_progression")
+local game_controller = require("src.controllers.game_controller")
+
+describe("Meta progression", function()
+    before_each(function()
+        meta.setDefinitions(nil)
+        data.startSandbox()
+        data.set("meta", {})
+    end)
+
+    after_each(function()
+        data.stopSandbox(false)
+    end)
+
+    describe("definitions", function()
+        it("loads upgrades and heroes from data/meta.json", function()
+            assert.are.equal(4, #meta.getUpgrades())
+            assert.are.equal(3, #meta.getHeroes())
+            assert.are.equal("arcane_wanderer", meta.getHeroes()[1].id)
+        end)
+    end)
+
+    describe("gold", function()
+        it("earns gold for kills and level, plus a victory bonus", function()
+            assert.are.equal(30 + 6 * 5, meta.goldForRun({ enemiesDefeated = 30, finalLevel = 6 }))
+            assert.are.equal(30 + 20 * 5 + 100,
+                meta.goldForRun({ enemiesDefeated = 30, finalLevel = 20, victoryCondition = true }))
+        end)
+
+        it("adds gold and never goes below zero", function()
+            meta.addGold(40)
+            meta.addGold(-100)
+            assert.are.equal(0, meta.getGold())
+        end)
+    end)
+
+    describe("upgrades", function()
+        it("buys the next level when there is enough gold", function()
+            meta.addGold(120)
+
+            assert.is_true(meta.purchaseUpgrade("wall_health"))
+            assert.are.equal(1, meta.getUpgradeLevel("wall_health"))
+            assert.are.equal(70, meta.getGold())
+            assert.are.equal(100, meta.getUpgradeCost("wall_health"))
+        end)
+
+        it("refuses without enough gold", function()
+            meta.addGold(10)
+            local ok, reason = meta.purchaseUpgrade("wall_health")
+            assert.is_false(ok)
+            assert.are.equal("gold", reason)
+            assert.are.equal(0, meta.getUpgradeLevel("wall_health"))
+        end)
+
+        it("refuses past the max level", function()
+            data.set("meta.upgrades.wall_health", 5)
+            meta.addGold(10000)
+            assert.is_nil(meta.getUpgradeCost("wall_health"))
+            local ok, reason = meta.purchaseUpgrade("wall_health")
+            assert.is_false(ok)
+            assert.are.equal("maxed", reason)
+        end)
+
+        it("refuses unknown upgrades", function()
+            local ok, reason = meta.purchaseUpgrade("nope")
+            assert.is_false(ok)
+            assert.are.equal("unknown", reason)
+        end)
+    end)
+
+    describe("heroes", function()
+        it("starts with only the free hero unlocked and selected", function()
+            assert.is_true(meta.isHeroUnlocked("arcane_wanderer"))
+            assert.is_false(meta.isHeroUnlocked("frost_witch"))
+            assert.are.equal("arcane_wanderer", meta.getSelectedHeroId())
+        end)
+
+        it("unlocks a hero with gold", function()
+            meta.addGold(350)
+            assert.is_true(meta.unlockHero("frost_witch"))
+            assert.is_true(meta.isHeroUnlocked("frost_witch"))
+            assert.are.equal(50, meta.getGold())
+        end)
+
+        it("refuses to unlock without enough gold or twice", function()
+            meta.addGold(100)
+            local ok, reason = meta.unlockHero("frost_witch")
+            assert.is_false(ok)
+            assert.are.equal("gold", reason)
+
+            local again, againReason = meta.unlockHero("arcane_wanderer")
+            assert.is_false(again)
+            assert.are.equal("unlocked", againReason)
+        end)
+
+        it("falls back to the first hero when the saved hero is locked", function()
+            data.set("meta.selectedHero", "ember_knight")
+            assert.are.equal("arcane_wanderer", meta.getSelectedHeroId())
+
+            data.set("meta.heroes.ember_knight", true)
+            assert.are.equal("ember_knight", meta.getSelectedHeroId())
+        end)
+    end)
+
+    describe("run bonuses", function()
+        it("combines upgrade levels and hero bonuses", function()
+            data.set("meta.upgrades.wall_health", 2)
+            data.set("meta.upgrades.damage", 1)
+            data.set("meta.upgrades.cooldown", 3)
+
+            local bonuses = meta.getRunBonuses("ember_knight")
+
+            assert.are.equal(40, bonuses.wallHealth)
+            assert.is_true(math.abs(bonuses.damageMultiplier - 1.2) < 1e-9)
+            assert.is_true(math.abs(bonuses.cooldownMultiplier - 0.88) < 1e-9)
+            assert.are.equal(1, bonuses.xpMultiplier)
+        end)
+    end)
+
+    describe("applied to a run", function()
+        local mockGroup = { insert = function() end, numChildren = 0 }
+
+        after_each(function()
+            game_controller.cleanup()
+        end)
+
+        it("starts the hero with its starting ability and bonuses", function()
+            data.set("meta.upgrades.wall_health", 1)
+
+            game_controller.initialize(mockGroup, "frost_witch")
+            local hero = game_controller.getHero()
+
+            assert.are.equal("frost_nova", hero.abilities[1].id)
+            assert.is_true(math.abs(hero:getStats().cooldownMultiplier - 0.9) < 1e-9)
+            assert.are.equal(120, game_controller.getWall().maxHealth)
+            assert.are.equal(120, game_controller.getWall().health)
+        end)
+
+        it("uses the selected hero when none is given", function()
+            game_controller.initialize(mockGroup)
+            local hero = game_controller.getHero()
+
+            assert.are.equal("arcane_wanderer", hero.heroId)
+            assert.are.equal("arcane_bolt", hero.abilities[1].id)
+            assert.is_true(math.abs(hero.xpMultiplier - 1.1) < 1e-9)
+        end)
+    end)
+end)

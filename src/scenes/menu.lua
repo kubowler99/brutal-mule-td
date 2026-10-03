@@ -2,6 +2,7 @@ local composer = require("composer")
 local helpers = require("src.utils.helpers")
 local data = require("src.models.data")
 local stringUtils = require("src.utils.string")
+local meta_progression = require("src.models.meta_progression")
 
 local scene = composer.newScene()
 
@@ -9,8 +10,9 @@ local scene = composer.newScene()
 local background
 local titleText
 local bestRunText
+local goldText
 local playButton
-local settingsButton
+local upgradesButton
 
 -- Scene lifecycle functions
 
@@ -48,6 +50,17 @@ function scene:create(event)
     })
     bestRunText:setFillColor(0.8, 0.8, 0.9)
     
+    -- Gold for permanent upgrades and heroes (filled in on show)
+    goldText = display.newText({
+        parent = sceneGroup,
+        text = "",
+        x = helpers.centerX,
+        y = 320,
+        font = native.systemFontBold,
+        fontSize = 24
+    })
+    goldText:setFillColor(1, 0.85, 0.3)
+    
     -- Play button (handler will be added in show phase)
     playButton = helpers.newButton({
         x = helpers.centerX,
@@ -60,18 +73,18 @@ function scene:create(event)
     sceneGroup:insert(playButton)
     sceneGroup:insert(playButton.label)
     
-    -- Settings button (placeholder, no functionality)
-    settingsButton = helpers.newButton({
+    -- Upgrades button: spend gold on permanent upgrades
+    upgradesButton = helpers.newButton({
         x = helpers.centerX,
         y = helpers.centerY + 80,
         width = 200,
         height = 60,
-        label = "SETTINGS",
+        label = "UPGRADES",
         fontSize = 24,
-        fillColor = {0.5, 0.5, 0.5}
+        fillColor = {0.6, 0.5, 0.2}
     })
-    sceneGroup:insert(settingsButton)
-    sceneGroup:insert(settingsButton.label)
+    sceneGroup:insert(upgradesButton)
+    sceneGroup:insert(upgradesButton.label)
 end
 
 function scene:show(event)
@@ -90,19 +103,34 @@ function scene:show(event)
                 bestRunText.text = ""
             end
         end
+        
+        if goldText then
+            goldText.text = "Gold: " .. tostring(meta_progression.getGold())
+        end
     elseif phase == "did" then
-        -- Add button tap handler when scene is fully visible
+        -- Add button tap handlers when scene is fully visible
+        -- PLAY opens hero select, which starts the run
         local function onPlayTap(event)
-            composer.gotoScene("src.scenes.game", {
+            composer.gotoScene("src.scenes.hero_select", {
                 effect = "fade",
                 time = 300
             })
             return true
         end
         
-        -- Store listener reference for cleanup
+        local function onUpgradesTap(event)
+            composer.gotoScene("src.scenes.upgrades", {
+                effect = "fade",
+                time = 300
+            })
+            return true
+        end
+        
+        -- Store listener references for cleanup
         playButton._tapListener = onPlayTap
         playButton:addEventListener("tap", onPlayTap)
+        upgradesButton._tapListener = onUpgradesTap
+        upgradesButton:addEventListener("tap", onUpgradesTap)
     end
 end
 
@@ -111,9 +139,11 @@ function scene:hide(event)
     
     if phase == "will" then
         -- Remove button listeners before scene transitions
-        if playButton and playButton._tapListener then
-            playButton:removeEventListener("tap", playButton._tapListener)
-            playButton._tapListener = nil
+        for _, button in ipairs({ playButton, upgradesButton }) do
+            if button and button._tapListener then
+                button:removeEventListener("tap", button._tapListener)
+                button._tapListener = nil
+            end
         end
     elseif phase == "did" then
         -- Code here runs when scene is off screen
@@ -127,8 +157,9 @@ function scene:destroy(event)
     background = nil
     titleText = nil
     bestRunText = nil
+    goldText = nil
     playButton = nil
-    settingsButton = nil
+    upgradesButton = nil
 end
 
 -- Scene event listeners

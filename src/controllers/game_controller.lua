@@ -18,6 +18,7 @@ local game_state = require("src.models.game_state")
 local ability_data_loader = require("src.models.ability_data_loader")
 local ability_registry = require("src.models.ability_registry")
 local config_loader = require("src.models.config_loader")
+local meta_progression = require("src.models.meta_progression")
 
 local M = {}
 
@@ -38,7 +39,8 @@ local MAX_FRAME_DT = 0.1
 --- Initialize the game controller and set up game session
 -- Creates hero, initializes object pools, and sets up all systems
 -- @param group table The scene group to add display objects to
-function M.initialize(group)
+-- @param heroId string|nil Hero for this run (default: the selected hero)
+function M.initialize(group, heroId)
   sceneGroup = group
   isPaused = false
   
@@ -50,9 +52,16 @@ function M.initialize(group)
   -- Initialize game state
   game_state.initialize()
   
+  -- Hero choice and permanent upgrades for this run
+  heroId = heroId or meta_progression.getSelectedHeroId()
+  local heroDefinition = heroId and meta_progression.getHero(heroId)
+  local bonuses = meta_progression.getRunBonuses(heroId)
+  
   -- Create wall at fixed position (360, 1200, display.contentWidth)
   -- Wall is positioned at Y=1200 with height 80
   wall = Wall:new(360, 1200, display.contentWidth)
+  wall.maxHealth = wall.maxHealth + bonuses.wallHealth
+  wall.health = wall.maxHealth
   
   -- Add wall display object to scene group FIRST (renders behind hero)
   if wall.displayObject and sceneGroup then
@@ -63,10 +72,18 @@ function M.initialize(group)
   -- Hero is positioned on the left side of the wall at wall's center Y
   -- Positioned at X=60 to maintain 5px gap from first ability indicator (left edge at X=95)
   hero = Hero:new(45, 1200)
+  hero.heroId = heroId
+  hero.baseStats.damageMultiplier = bonuses.damageMultiplier
+  hero.baseStats.cooldownMultiplier = bonuses.cooldownMultiplier
+  hero.xpMultiplier = bonuses.xpMultiplier
+  if heroDefinition and type(heroDefinition.color) == "table" then
+    hero:setColor(heroDefinition.color)
+  end
   
-  -- Add hero's starting ability (Arcane Bolt)
-  local arcaneBolt = ArcaneBolt:new()
-  hero:addAbility(arcaneBolt)
+  -- Add the hero's starting ability (Arcane Bolt if none is defined)
+  local startingAbility = heroDefinition and heroDefinition.startingAbility
+    and ability_registry.createInstance(heroDefinition.startingAbility)
+  hero:addAbility(startingAbility or ArcaneBolt:new())
   
   -- Add hero display object to scene group AFTER wall (renders in front)
   if hero.displayObject and sceneGroup then
@@ -122,6 +139,7 @@ function M.initialize(group)
   spawner_system.initialize(walkerPool, hero.level)
   combat_system.initialize(hero, projectilePool, spawner_system.getActiveWalkers(), sceneGroup)
   combat_system.onEnemyKilled = M.onEnemyKilled
+  spawner_system.onBossSpawned = M.onBossSpawned
   experience_system.initialize(hero, M.onLevelUp)
   upgrade_system.initialize(hero, M.onUpgradeSelected)
 end
@@ -208,6 +226,11 @@ function M.update(event)
       wall:flashDamage()
       enemy.lastAttackTime = currentTime
       
+      -- Ranged enemies show a projectile flying to the wall
+      if (enemy.attackRange or 0) > 0 then
+        M.showRangedAttack(enemy)
+      end
+      
       -- Check if wall died
       if wall:isDead() then
         M.onGameOver()
@@ -224,8 +247,13 @@ end
 -- Awards XP and counts the kill. Set as combat_system.onEnemyKilled.
 -- @param enemy table The enemy that was killed
 function M.onEnemyKilled(enemy)
-  experience_system.awardXP(enemy.type or "walker", enemy.x, enemy.y)
+  experience_system.awardXP(enemy.type or "walker", enemy.x, enemy.y, enemy.xpMultiplier)
   game_state.enemiesDefeated = game_state.enemiesDefeated + 1
+  
+  -- Killing the final boss wins the run
+  if enemy.isFinalBoss then
+    M.onVictory()
+  end
 end
 
 --- Pause the game
@@ -269,6 +297,64 @@ function M.onUpgradeSelected(upgrade)
   end
   
   M.resume()
+end
+
+-- Ranged attack visual
+local SPIT_COLOR = {0.7, 1.0, 0.3}
+local SPIT_TRAVEL_MS = 250
+
+--- Draw a short-lived projectile from a ranged enemy to the wall
+-- The damage is already applied; this is only feedback.
+-- @param enemy table The attacking enemy
+function M.showRangedAttack(enemy)
+  if not sceneGroup then
+    return
+  end
+  pcall(function()
+    local spit = display.newCircle(sceneGroup, enemy.x, enemy.y, 6)
+    spit:setFillColor(SPIT_COLOR[1], SPIT_COLOR[2], SPIT_COLOR[3])
+    transition.to(spit, {
+      time = SPIT_TRAVEL_MS,
+      y = 1160,  -- top edge of the wall
+      onComplete = function()
+        if spit.removeSelf then
+          spit:removeSelf()
+        end
+      end
+    })
+  end)
+end
+
+--- Announce a boss (handled by the scene through onBossSpawnedCallback)
+-- @param boss table The boss enemy that spawned
+function M.onBossSpawned(boss)
+  if M.onBossSpawnedCallback then
+    M.onBossSpawnedCallback(boss)
+  end
+end
+
+--- Handle victory (final boss defeated)
+-- Ends the run as a win and transitions like game over.
+function M.onVictory()
+  M.pause()
+  
+  game_state.finalLevel = hero.level
+  game_state.endGame(true)
+  
+  if M.onGameOverCallback then
+    M.onGameOverCallback(game_state.getStatistics())
+  end
+end
+
+--- Get the active boss, if any
+-- @return table|nil The first active boss enemy
+function M.getActiveBoss()
+  for _, enemy in ipairs(spawner_system.getActiveWalkers()) do
+    if enemy.isActive and enemy.isBoss then
+      return enemy
+    end
+  end
+  return nil
 end
 
 --- Handle game over event

@@ -87,8 +87,9 @@ function M.createInstance(id)
     return nil
   end
   
-  -- Instantiate the ability class
-  return abilityClass:new()
+  -- Instantiate the ability class (the id lets one class serve several
+  -- data-defined abilities, such as passives)
+  return abilityClass:new(id)
 end
 
 -- Check if an ability is unlocked

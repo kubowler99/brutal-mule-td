@@ -1,6 +1,6 @@
 # Arcane Survivor
 
-A stationary-hero defense game built with [Solar2D](https://solar2d.com/). The hero holds a wall at the bottom of the screen while enemies advance from the top. Abilities fire automatically. Defeating enemies awards XP, and each level-up offers three random cards: a new ability or an upgrade to one you have. The run ends when the wall falls.
+A stationary-hero defense game built with [Solar2D](https://solar2d.com/). The hero holds a wall at the bottom of the screen while enemies advance from the top. Abilities fire automatically. Defeating enemies awards XP, and each level-up offers three random cards: a new ability or an upgrade to one you have. A boss arrives at level 10, and the final boss at level 20. Kill the final boss to win; the run ends in defeat if the wall falls.
 
 See [docs/arcane-survivor/game-concept.md](docs/arcane-survivor/game-concept.md) for the full game concept.
 
@@ -9,11 +9,24 @@ See [docs/arcane-survivor/game-concept.md](docs/arcane-survivor/game-concept.md)
 - **Abilities** (up to 5, each upgradeable to tier 5)
   - **Arcane Bolt**: fires at the nearest enemy. Upgrades: damage, attack speed, projectile count, pierce.
   - **Frost Nova**: pulses along the wall, damaging and slowing every enemy within range. Upgrades: damage, range, cooldown, slow.
-- **Enemies**
+  - **Orbiting Blades**: blades circle the ability's spot on the wall and cut enemies they touch. Upgrades: blade count, speed, damage, size.
+  - **Arcane Might** (passive): +10% damage for all abilities per tier.
+  - **Quickening** (passive): 8% shorter cooldowns for all abilities per tier.
+- **Enemies** (the spawn mix is set by `spawner.enemyTable` in `game_config.json`)
   - **Walker**: the basic melee enemy.
-  - **Runner**: half the health and double the speed of a walker. Joins the spawn mix from hero level 3.
+  - **Runner** (level 3+): half the health and double the speed of a walker.
+  - **Swarmling** (level 4+): very weak, spawns in groups of 4.
+  - **Brute** (level 5+): slow and tanky, hits the wall hard.
+  - **Spitter** (level 6+): stops short of the wall and attacks from range.
+  - **Elites** (level 8+): any normal enemy can spawn as a gold elite with 4x health, 2x damage, and 5x XP.
+  - **Bosses**: a boss at level 10 and the final boss at level 20, announced with a banner and a boss health bar.
 - **Stat upgrades**: wall repair, wall fortify, XP boost.
-- **Screens**: main menu with your best run, game with pause, game over with run stats and a "NEW BEST!" highlight.
+- **Heroes** (chosen before each run)
+  - **Arcane Wanderer** (free): starts with Arcane Bolt, +10% XP.
+  - **Frost Witch** (300 gold): starts with Frost Nova, 10% shorter cooldowns.
+  - **Ember Knight** (500 gold): starts with Orbiting Blades, +15% damage.
+- **Meta progression**: each run earns gold (per kill, per level reached, and a bonus for winning). Spend it on heroes and on permanent upgrades: wall health, damage, cooldowns, XP gain.
+- **Screens**: main menu with your best run and gold, hero select, upgrades, game with pause, and an end screen titled VICTORY! or GAME OVER with run stats, gold earned, and a "NEW BEST!" highlight.
 
 ## Running the game
 
@@ -32,14 +45,15 @@ data/                 Game data (edit these to tune balance)
   abilities.json      Ability base stats and upgrade cards
   enemies.json        Enemy stats and XP values
   game_config.json    Wall, spawner, collision, and XP settings
+  meta.json           Gold rates, permanent upgrades, and heroes
 assets/images/        Sprites and sprite sheet data
 src/
-  scenes/             menu, game, gameover (Composer scenes)
+  scenes/             menu, hero_select, upgrades, game, gameover (Composer scenes)
   controllers/        game_controller: game loop and system wiring
   systems/            spawner, combat, collision, experience, upgrade
   entities/           hero, wall, walker (all enemy types), projectile
-    abilities/        arcane_bolt, frost_nova
-  models/             game state, save data, config and ability loaders
+    abilities/        arcane_bolt, frost_nova, orbiting_blades, passive
+  models/             game state, save data, meta progression, config and ability loaders
   ui/                 health bar, XP bar, ability indicators, upgrade cards
   utils/              object pool, helpers, placeholder graphics
 lib/                  middleclass (OOP) and stateful
@@ -51,9 +65,10 @@ docs/                 Game concept and architecture notes
 
 Most balance values live in `data/`, so you can change them without touching code:
 
-- `game_config.json`: spawn interval, spawn count, runner level and chance, wall health, XP curve.
-- `enemies.json`: health, speed, damage, attack cooldown, and XP value per enemy type.
+- `game_config.json`: spawn interval, spawn count, the enemy spawn table (type, weight, unlock level, group size), elite settings, boss levels, wall health, XP curve.
+- `enemies.json`: health, speed, damage, attack cooldown, attack range, and XP value per enemy type; boss flags.
 - `abilities.json`: base stats and upgrade amounts per ability. Set `"unlocked": false` to stop an ability from being offered.
+- `meta.json`: gold per kill, per level, and for winning; permanent upgrade costs and amounts; hero prices, starting abilities, and bonuses.
 
 ## Tests
 

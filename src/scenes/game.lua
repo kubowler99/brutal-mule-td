@@ -30,9 +30,14 @@ local upgradeCards = {}
 local uiUpdateListener = nil
 local pauseButton = nil
 local pausePanel = nil
+local bossBar = nil
+local bossLabel = nil
+local bossBanner = nil
 local isPausedByPlayer = false
 -- Set when the session ends (game over or quit) so scene:hide() cleans up entities
 local endSessionOnHide = false
+-- Hero for the current run; kept so Play Again reuses it
+local currentHeroId = nil
 
 local formatTime = stringUtils.formatTime
 
@@ -67,19 +72,34 @@ local function updateUI()
     enemyCountText.text = "Enemies: " .. tostring(game_state.enemiesDefeated)
   end
   
+  -- Boss health bar, shown while a boss is alive
+  if bossBar then
+    local boss = game_controller.getActiveBoss()
+    bossBar.group.isVisible = boss ~= nil
+    if bossLabel then
+      bossLabel.isVisible = boss ~= nil
+    end
+    if boss then
+      bossBar:update(boss.health, boss.maxHealth)
+    end
+  end
+  
   -- Update ability indicators
   local currentTime = system.getTimer() / 1000
+  local cooldownMultiplier = hero.getStats and hero:getStats().cooldownMultiplier or 1
   for i, indicator in ipairs(abilityIndicators) do
     local ability = hero.abilities[i]
     -- Abilities picked from level-up cards appear here after the scene shows
     if indicator.ability ~= ability then
       indicator:setAbility(ability)
     end
-    if ability then
+    -- Passive abilities have no cooldown to show
+    if ability and ability.cooldown then
       -- Calculate remaining cooldown
+      local cooldown = ability.cooldown * cooldownMultiplier
       local timeSinceActivation = currentTime - (ability.lastActivation or 0)
-      local remaining = math.max(0, ability.cooldown - timeSinceActivation)
-      indicator:updateCooldown(remaining, ability.cooldown)
+      local remaining = math.max(0, cooldown - timeSinceActivation)
+      indicator:updateCooldown(remaining, cooldown)
     end
   end
 end
@@ -164,6 +184,19 @@ local function setPausePanelVisible(visible)
   if scene.gameLayer then
     scene.gameLayer.isVisible = not visible
   end
+end
+
+--- Announce a boss with a banner that fades out
+-- @param boss table The boss enemy that spawned
+function scene.showBossBanner(boss)
+  if not bossBanner then
+    return
+  end
+  bossBanner.text = (boss and boss.isFinalBoss) and "FINAL BOSS" or "BOSS INCOMING"
+  bossBanner.alpha = 1
+  bossBanner.isVisible = true
+  bossBanner:toFront()
+  transition.to(bossBanner, { delay = 1500, time = 1000, alpha = 0 })
 end
 
 --- Pause the game from the pause button
@@ -307,6 +340,32 @@ function scene:create(event)
   })
   upgradeTitle:setFillColor(1, 1, 0)
   
+  -- Boss health bar and label (hidden until a boss spawns)
+  bossLabel = display.newText({
+    parent = sceneGroup,
+    text = "BOSS",
+    x = helpers.centerX,
+    y = 108,
+    fontSize = 16,
+    font = native.systemFontBold
+  })
+  bossLabel:setFillColor(1, 0.4, 0.4)
+  bossLabel.isVisible = false
+  bossBar = HealthBar:new(helpers.centerX, 125, 400, 14, sceneGroup)
+  bossBar.group.isVisible = false
+  
+  -- Boss announcement banner (hidden until a boss spawns)
+  bossBanner = display.newText({
+    parent = sceneGroup,
+    text = "BOSS INCOMING",
+    x = helpers.centerX,
+    y = helpers.centerY - 200,
+    fontSize = 44,
+    font = native.systemFontBold
+  })
+  bossBanner:setFillColor(1, 0.3, 0.3)
+  bossBanner.isVisible = false
+  
   -- Pause button (top center, below the level display)
   pauseButton = helpers.newButton({
     x = helpers.centerX,
@@ -380,6 +439,7 @@ function scene:create(event)
   
   -- Set game controller callbacks
   game_controller.onLevelUpCallback = showUpgradePanel
+  game_controller.onBossSpawnedCallback = scene.showBossBanner
   game_controller.onGameOverCallback = function(stats)
     -- End the session so scene:hide() cleans up entities
     endSessionOnHide = true
@@ -403,7 +463,11 @@ function scene:show(event)
     -- CRITICAL FIX: Initialize game controller every time scene appears
     -- This handles the "Play Again" scenario where scene:create() doesn't run
     -- because Composer caches scenes by default
-    game_controller.initialize(scene.gameLayer)
+    -- Hero select passes the hero; Play Again keeps the last one
+    if event.params and event.params.heroId then
+      currentHeroId = event.params.heroId
+    end
+    game_controller.initialize(scene.gameLayer, currentHeroId)
     
     -- A new session never starts paused
     isPausedByPlayer = false
@@ -529,6 +593,12 @@ function scene:destroy(event)
   timeText = nil
   enemyCountText = nil
   upgradePanel = nil
+  if bossBar then
+    bossBar:destroy()
+    bossBar = nil
+  end
+  bossLabel = nil
+  bossBanner = nil
   pauseButton = nil
   pausePanel = nil
   isPausedByPlayer = false

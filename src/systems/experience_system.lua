@@ -123,7 +123,8 @@ end
 -- @param enemyType string The type of enemy defeated (e.g., "walker")
 -- @param x number X position of defeated enemy
 -- @param y number Y position of defeated enemy
-function experience_system.awardXP(enemyType, x, y)
+-- @param multiplier number|nil Extra XP multiplier for this kill (e.g. elites)
+function experience_system.awardXP(enemyType, x, y, multiplier)
   -- Check for nil hero reference
   if not experience_system.hero then
     print("Error: Cannot award XP, hero is nil")
@@ -143,8 +144,10 @@ function experience_system.awardXP(enemyType, x, y)
     x, y = experience_system.hero.x, experience_system.hero.y
   end
 
-  -- Get XP value for this enemy type
-  local xpAmount = experience_system.getEnemyXPValue(enemyType)
+  -- Get XP value for this enemy type, scaled by this kill's multiplier and
+  -- the hero's XP multiplier (from the XP Boost upgrade)
+  local heroMultiplier = experience_system.hero.xpMultiplier or 1
+  local xpAmount = math.floor(experience_system.getEnemyXPValue(enemyType) * (multiplier or 1) * heroMultiplier)
 
   -- Award XP to hero
   experience_system.addXP(xpAmount)

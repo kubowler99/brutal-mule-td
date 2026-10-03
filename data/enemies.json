@@ -6,7 +6,10 @@
       "speed": "number - Movement speed in pixels per second",
       "damage": "number - Attack damage dealt to player",
       "xpValue": "number - Experience points awarded when defeated",
-      "attackCooldown": "number - Seconds between attacks"
+      "attackCooldown": "number - Seconds between attacks",
+      "attackRange": "number - Optional; ranged enemies stop this far short of the wall",
+      "isBoss": "boolean - Optional; shows the boss health bar",
+      "isFinalBoss": "boolean - Optional; killing it wins the run"
     }
   },
   "walker": {
@@ -22,5 +25,44 @@
     "damage": 3,
     "attackCooldown": 0.8,
     "xpValue": 8
+  },
+  "brute": {
+    "health": 80,
+    "speed": 40,
+    "damage": 12,
+    "attackCooldown": 1.5,
+    "xpValue": 30
+  },
+  "swarmling": {
+    "health": 4,
+    "speed": 110,
+    "damage": 1,
+    "attackCooldown": 0.6,
+    "xpValue": 3
+  },
+  "spitter": {
+    "health": 15,
+    "speed": 70,
+    "damage": 4,
+    "attackCooldown": 2.0,
+    "attackRange": 260,
+    "xpValue": 15
+  },
+  "boss": {
+    "health": 600,
+    "speed": 25,
+    "damage": 25,
+    "attackCooldown": 2.0,
+    "xpValue": 200,
+    "isBoss": true
+  },
+  "final_boss": {
+    "health": 2000,
+    "speed": 20,
+    "damage": 40,
+    "attackCooldown": 2.0,
+    "xpValue": 500,
+    "isBoss": true,
+    "isFinalBoss": true
   }
 }

@@ -154,4 +154,23 @@ describe("experience_system.awardXP()", function()
       assert.are.equal(42, hero.xp, "Should award custom XP value from configuration")
     end)
   end)
+
+  describe("XP multipliers", function()
+    it("applies the hero XP multiplier from the XP Boost upgrade", function()
+      hero.xpMultiplier = 1.25
+      experience_system.awardXP("strong_enemy", 100, 100)
+      assert.are.equal(31, hero.xp)  -- floor(25 * 1.25)
+    end)
+
+    it("applies a per-kill multiplier", function()
+      experience_system.awardXP("walker", 100, 100, 5)
+      assert.are.equal(50, hero.xp)
+    end)
+
+    it("combines both multipliers", function()
+      hero.xpMultiplier = 1.5
+      experience_system.awardXP("walker", 100, 100, 2)
+      assert.are.equal(30, hero.xp)
+    end)
+  end)
 end)

@@ -128,56 +128,129 @@ describe("Enemy types", function()
         end)
     end)
 
-    describe("spawner mix", function()
+    describe("spawn table", function()
+        local config_loader = require("src.models.config_loader")
         local originalRandom
+        local savedConfig
+
+        local TEST_TABLE = {
+            { type = "walker", weight = 7, minLevel = 1, groupSize = 1 },
+            { type = "runner", weight = 3, minLevel = 3, groupSize = 1 },
+            { type = "swarmling", weight = 2, minLevel = 4, groupSize = 4 },
+        }
+
+        local function randomReturning(value)
+            return function(...)
+                if select("#", ...) == 0 then return value end
+                return originalRandom(...)
+            end
+        end
 
         before_each(function()
             originalRandom = math.random
+            savedConfig = config_loader._data
+            config_loader._data = { spawner = { enemyTable = TEST_TABLE } }
             spawner_system.initialize(pool.new(function() return Walker:new(nil) end), 1)
         end)
 
         after_each(function()
             math.random = originalRandom
+            config_loader._data = savedConfig
             spawner_system.cleanup()
         end)
 
-        it("spawns only walkers below the runner level", function()
-            math.random = function(...)
-                if select("#", ...) == 0 then return 0 end
-                return originalRandom(...)
-            end
+        it("loads the spawn table from game_config.json", function()
+            assert.are.equal(3, #spawner_system.enemyTable)
+            assert.are.equal("swarmling", spawner_system.enemyTable[3].type)
+            assert.are.equal(4, spawner_system.enemyTable[3].groupSize)
+        end)
+
+        it("falls back to walkers only without a spawn table", function()
+            config_loader._data = {}
+            spawner_system.initialize(pool.new(function() return Walker:new(nil) end), 10)
+            assert.are.equal(1, #spawner_system.enemyTable)
+            assert.are.equal("walker", spawner_system.chooseEnemyEntry().type)
+        end)
+
+        it("only picks entries the hero level has unlocked", function()
             spawner_system.updateDifficulty(2)
-
-            assert.are.equal("walker", spawner_system.chooseEnemyType())
+            for _, roll in ipairs({0, 0.5, 0.99}) do
+                math.random = randomReturning(roll)
+                assert.are.equal("walker", spawner_system.chooseEnemyEntry().type)
+            end
         end)
 
-        it("mixes in runners from the runner level", function()
+        it("picks by weight among unlocked entries", function()
+            -- Level 3: walker 7, runner 3 (swarmling still locked)
             spawner_system.updateDifficulty(3)
 
-            math.random = function(...)
-                if select("#", ...) == 0 then return 0.1 end
-                return originalRandom(...)
-            end
-            assert.are.equal("runner", spawner_system.chooseEnemyType())
+            math.random = randomReturning(0.65)
+            assert.are.equal("walker", spawner_system.chooseEnemyEntry().type)
 
-            math.random = function(...)
-                if select("#", ...) == 0 then return 0.9 end
-                return originalRandom(...)
-            end
-            assert.are.equal("walker", spawner_system.chooseEnemyType())
+            math.random = randomReturning(0.75)
+            assert.are.equal("runner", spawner_system.chooseEnemyEntry().type)
         end)
 
-        it("activates spawned enemies with the chosen type", function()
-            spawner_system.updateDifficulty(3)
-            local originalChoose = spawner_system.chooseEnemyType
-            spawner_system.chooseEnemyType = function() return "runner" end
+        it("spawns a whole group side by side", function()
+            spawner_system.updateDifficulty(4)
+            local originalChoose = spawner_system.chooseEnemyEntry
+            spawner_system.chooseEnemyEntry = function() return TEST_TABLE[3] end
 
-            spawner_system.spawnWalker()
+            spawner_system.spawnEnemyGroup()
 
-            spawner_system.chooseEnemyType = originalChoose
+            spawner_system.chooseEnemyEntry = originalChoose
+            local spawned = spawner_system.activeWalkers
+            assert.are.equal(4, #spawned)
+            for i = 1, 4 do
+                assert.are.equal("swarmling", spawned[i].type)
+            end
+            assert.are.equal(30, spawned[2].x - spawned[1].x)
+        end)
+
+        it("activates spawned enemies with the given type", function()
+            spawner_system.spawnWalker("runner", 200)
+
             local spawned = spawner_system.activeWalkers[1]
             assert.are.equal("runner", spawned.type)
             assert.are.equal(160, spawned.speed)
+            assert.are.equal(200, spawned.x)
+        end)
+
+        it("does not exceed the concurrent limit when spawning a group", function()
+            spawner_system.maxConcurrent = 2
+            local originalChoose = spawner_system.chooseEnemyEntry
+            spawner_system.chooseEnemyEntry = function() return TEST_TABLE[3] end
+
+            spawner_system.spawnEnemyGroup()
+
+            spawner_system.chooseEnemyEntry = originalChoose
+            assert.are.equal(2, #spawner_system.activeWalkers)
+        end)
+    end)
+
+    describe("brute and swarmling stats", function()
+        it("loads brute stats from enemies.json", function()
+            local brute = Walker:new(nil)
+            brute:activate(100, 0, 100, "brute")
+            assert.are.equal(80, brute.maxHealth)
+            assert.are.equal(40, brute.speed)
+            assert.are.equal(12, brute.damage)
+            assert.are.equal(1.5 * 1.35, brute.displayObject.xScale)
+        end)
+
+        it("loads swarmling stats from enemies.json", function()
+            local swarmling = Walker:new(nil)
+            swarmling:activate(100, 0, 100, "swarmling")
+            assert.are.equal(4, swarmling.maxHealth)
+            assert.are.equal(110, swarmling.speed)
+            assert.are.equal(1, swarmling.damage)
+        end)
+
+        it("awards brute and swarmling XP from enemies.json", function()
+            experience_system.initialize({ xp = 0, level = 1 }, function() end)
+            assert.are.equal(30, experience_system.getEnemyXPValue("brute"))
+            assert.are.equal(3, experience_system.getEnemyXPValue("swarmling"))
+            experience_system.cleanup()
         end)
     end)
 end)

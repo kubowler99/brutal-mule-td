@@ -10,6 +10,75 @@ local M = {}
 local DEFAULT_SPAWN_INTERVAL = 3.0
 local DEFAULT_SPAWN_COUNT = 2
 
+-- Spawn table used when game_config.json has none: walkers only
+local DEFAULT_ENEMY_TABLE = {
+    { type = "walker", weight = 1, minLevel = 1, groupSize = 1 },
+}
+
+-- Horizontal gap between members of a spawned group
+local GROUP_SPACING = 30
+
+-- Bosses spawn at the top center
+local BOSS_SPAWN_X = 360
+
+---Read spawner.elites from game_config.json (elites are off without it)
+---@return table { minLevel, chance, healthMultiplier, damageMultiplier, xpMultiplier }
+local function loadEliteSettings()
+    local configured = config_loader.get("spawner.elites")
+    if type(configured) ~= "table" then
+        return { minLevel = math.huge, chance = 0, healthMultiplier = 1, damageMultiplier = 1, xpMultiplier = 1 }
+    end
+    return {
+        minLevel = config_loader.positiveNumber(configured.minLevel, 1),
+        chance = math.min(1, config_loader.positiveNumber(configured.chance, 0)),
+        healthMultiplier = config_loader.positiveNumber(configured.healthMultiplier, 1),
+        damageMultiplier = config_loader.positiveNumber(configured.damageMultiplier, 1),
+        xpMultiplier = config_loader.positiveNumber(configured.xpMultiplier, 1),
+    }
+end
+
+---Read spawner.bosses from game_config.json (no bosses without it)
+---@return table Array of { level, type }
+local function loadBossSchedule()
+    local configured = config_loader.get("spawner.bosses")
+    local schedule = {}
+    if type(configured) == "table" then
+        for _, entry in ipairs(configured) do
+            if type(entry) == "table" and type(entry.type) == "string" and type(entry.level) == "number" then
+                table.insert(schedule, { level = entry.level, type = entry.type })
+            end
+        end
+    end
+    return schedule
+end
+
+---Read spawner.enemyTable from game_config.json
+---Each entry: { type, weight, minLevel, groupSize }. Invalid entries are skipped.
+---@return table Array of spawn table entries
+local function loadEnemyTable()
+    local configured = config_loader.get("spawner.enemyTable")
+    if type(configured) ~= "table" then
+        return DEFAULT_ENEMY_TABLE
+    end
+    
+    local entries = {}
+    for _, entry in ipairs(configured) do
+        if type(entry) == "table" and type(entry.type) == "string" then
+            table.insert(entries, {
+                type = entry.type,
+                weight = config_loader.positiveNumber(entry.weight, 1),
+                minLevel = config_loader.positiveNumber(entry.minLevel, 1),
+                groupSize = math.floor(config_loader.positiveNumber(entry.groupSize, 1)),
+            })
+        end
+    end
+    
+    if #entries == 0 then
+        return DEFAULT_ENEMY_TABLE
+    end
+    return entries
+end
+
 -- State
 M.walkerPool = nil
 M.activeWalkers = {}
@@ -17,8 +86,13 @@ M.spawnTimer = 0
 M.spawnInterval = DEFAULT_SPAWN_INTERVAL
 M.spawnCount = DEFAULT_SPAWN_COUNT
 M.maxConcurrent = 50
-M.runnerMinLevel = 3
-M.runnerChance = 0.3
+M.enemyTable = DEFAULT_ENEMY_TABLE
+M.elites = nil          -- set in initialize()
+M.bossSchedule = {}     -- set in initialize()
+M.spawnedBossLevels = {}
+
+-- Called with the boss enemy when a boss spawns (set by game_controller)
+M.onBossSpawned = nil
 M.heroLevel = 1
 M.gameStartTime = nil
 M.hasSpawnedInitial = false
@@ -45,8 +119,10 @@ function M.initialize(walkerPool, heroLevel)
     M.spawnInterval = config_loader.positiveNumber(config_loader.get("spawner.spawnInterval"), DEFAULT_SPAWN_INTERVAL)
     M.spawnCount = config_loader.positiveNumber(config_loader.get("spawner.spawnCount"), DEFAULT_SPAWN_COUNT)
     M.maxConcurrent = config_loader.positiveNumber(config_loader.get("spawner.maxConcurrent"), 50)
-    M.runnerMinLevel = config_loader.positiveNumber(config_loader.get("spawner.runnerMinLevel"), 3)
-    M.runnerChance = math.min(1, config_loader.positiveNumber(config_loader.get("spawner.runnerChance"), 0.3))
+    M.enemyTable = loadEnemyTable()
+    M.elites = loadEliteSettings()
+    M.bossSchedule = loadBossSchedule()
+    M.spawnedBossLevels = {}
     M.heroLevel = heroLevel or 1
     M.gameStartTime = nil
     M.hasSpawnedInitial = false
@@ -96,6 +172,9 @@ function M.update(dt, currentTime)
         end
     end
     
+    -- Spawn any boss whose level the hero has reached
+    M.checkBossSpawns()
+    
     -- Handle initial spawn burst (3 walkers within 2 seconds)
     if not M.hasSpawnedInitial then
         if M.gameStartTime == nil then
@@ -135,17 +214,21 @@ function M.update(dt, currentTime)
     while M.spawnTimer >= M.spawnInterval do
         M.spawnTimer = M.spawnTimer - M.spawnInterval
         
-        -- Spawn multiple walkers based on spawn count
+        -- Spawn one group per spawn count, picked from the spawn table
         for i = 1, M.spawnCount do
-            M.spawnWalker()
+            M.spawnEnemyGroup()
         end
     end
 end
 
----Spawn a single walker at a random position along the top edge
-function M.spawnWalker()
+---Spawn a single enemy along the top edge
+---@param enemyType string|nil Enemy type (default "walker")
+---@param spawnX number|nil Spawn X position (default random)
+---@param ignoreLimit boolean|nil Spawn even at the concurrent limit (bosses)
+---@return table|nil The spawned enemy
+function M.spawnWalker(enemyType, spawnX, ignoreLimit)
     -- Error handling: Check maximum concurrent limit (enforce 50 limit)
-    if #M.activeWalkers >= M.maxConcurrent then
+    if #M.activeWalkers >= M.maxConcurrent and not ignoreLimit then
         return
     end
     
@@ -155,8 +238,8 @@ function M.spawnWalker()
         return
     end
     
-    -- Random spawn position along top edge (avoid screen edges)
-    local spawnX = math.random(50, 670)
+    -- Spawn along the top edge (random X unless given), avoiding screen edges
+    spawnX = spawnX or math.random(50, 670)
     local spawnY = 0
     
     -- Error handling: Clamp spawn X position to valid range [50, 670]
@@ -180,7 +263,7 @@ function M.spawnWalker()
     
     -- Activate walker with spawn position and lane
     local success, err = pcall(function()
-        walker:activate(spawnX, spawnY, spawnX, M.chooseEnemyType())
+        walker:activate(spawnX, spawnY, spawnX, enemyType or "walker")
     end)
     
     -- Error handling: Handle activation failure
@@ -190,18 +273,68 @@ function M.spawnWalker()
         return
     end
     
+    -- Some normal enemies spawn as elites once the hero is strong enough
+    local elites = M.elites
+    if elites and not walker.isBoss and M.heroLevel >= elites.minLevel and math.random() < elites.chance then
+        walker:makeElite(elites.healthMultiplier, elites.damageMultiplier, elites.xpMultiplier)
+    end
+    
     -- Add to active walkers
     table.insert(M.activeWalkers, walker)
+    return walker
 end
 
----Pick the type for the next spawned enemy
----Runners join the mix once the hero reaches runnerMinLevel.
----@return string Enemy type key in enemies.json
-function M.chooseEnemyType()
-    if M.heroLevel >= M.runnerMinLevel and math.random() < M.runnerChance then
-        return "runner"
+---Spawn each scheduled boss once, when the hero reaches its level
+function M.checkBossSpawns()
+    for _, boss in ipairs(M.bossSchedule) do
+        if M.heroLevel >= boss.level and not M.spawnedBossLevels[boss.level] then
+            M.spawnedBossLevels[boss.level] = true
+            local spawned = M.spawnWalker(boss.type, BOSS_SPAWN_X, true)
+            if spawned and M.onBossSpawned then
+                M.onBossSpawned(spawned)
+            end
+        end
     end
-    return "walker"
+end
+
+---Pick a spawn table entry for the next spawn
+---Only entries whose minLevel the hero has reached can be picked, weighted by
+---their weight. Falls back to the first entry when none are unlocked.
+---@return table Entry with type, weight, minLevel, groupSize
+function M.chooseEnemyEntry()
+    local totalWeight = 0
+    for _, entry in ipairs(M.enemyTable) do
+        if M.heroLevel >= entry.minLevel then
+            totalWeight = totalWeight + entry.weight
+        end
+    end
+    if totalWeight <= 0 then
+        return M.enemyTable[1]
+    end
+    
+    local roll = math.random() * totalWeight
+    local lastUnlocked = M.enemyTable[1]
+    for _, entry in ipairs(M.enemyTable) do
+        if M.heroLevel >= entry.minLevel then
+            lastUnlocked = entry
+            roll = roll - entry.weight
+            if roll < 0 then
+                return entry
+            end
+        end
+    end
+    return lastUnlocked
+end
+
+---Spawn one group from the spawn table
+---Group members spawn side by side around a random X position.
+function M.spawnEnemyGroup()
+    local entry = M.chooseEnemyEntry()
+    local centerX = math.random(50, 670)
+    for i = 1, entry.groupSize do
+        local offset = (i - (entry.groupSize + 1) / 2) * GROUP_SPACING
+        M.spawnWalker(entry.type, centerX + offset)
+    end
 end
 
 ---Update difficulty scaling based on hero level
@@ -276,6 +409,8 @@ function M.cleanup()
     M.spawnTimer = 0
     M.hasSpawnedInitial = false
     M.initialSpawnCount = 0
+    M.spawnedBossLevels = {}
+    M.onBossSpawned = nil
 end
 
 return M

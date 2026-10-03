@@ -40,11 +40,15 @@ function ArcaneBolt:initialize()
   self.projectileCount = (baseStats and baseStats.projectileCount) or DEFAULT_PROJECTILE_COUNT
 end
 
-function ArcaneBolt:canActivate(currentTime)
+--- Check whether the cooldown has elapsed
+-- @param currentTime number Game time in seconds
+-- @param heroStats table|nil Hero stats; cooldownMultiplier scales the cooldown
+function ArcaneBolt:canActivate(currentTime, heroStats)
   -- Store currentTime so activate() can use the same time source
   self._lastCurrentTime = currentTime
+  local cooldown = self.cooldown * ((heroStats and heroStats.cooldownMultiplier) or 1)
   -- Check if enough time has passed since last activation
-  return (currentTime - self.lastActivation) >= self.cooldown
+  return (currentTime - self.lastActivation) >= cooldown
 end
 
 function ArcaneBolt:findNearestEnemy(heroX, heroY, enemies)
@@ -73,7 +77,9 @@ function ArcaneBolt:findNearestEnemy(heroX, heroY, enemies)
   return nearestEnemy
 end
 
-function ArcaneBolt:activate(heroX, heroY, enemies, projectilePool)
+--- Fire at the nearest enemy
+-- @param heroStats table|nil Hero stats; damageMultiplier scales projectile damage
+function ArcaneBolt:activate(heroX, heroY, enemies, projectilePool, displayGroup, heroStats)
   -- Find the nearest enemy
   local target = self:findNearestEnemy(heroX, heroY, enemies)
 
@@ -119,7 +125,7 @@ function ArcaneBolt:activate(heroX, heroY, enemies, projectilePool)
         targetX,
         targetY,
         self.projectileSpeed,
-        self.damage,
+        self.damage * ((heroStats and heroStats.damageMultiplier) or 1),
         self.pierceCount
       )
     end
