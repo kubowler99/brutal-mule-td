@@ -97,7 +97,7 @@ Systems talk to the controller through callbacks rather than requiring it:
 
 - **`hero.lua`**: stationary at the wall's left edge. Holds up to 5 abilities. `Hero:getStats()` combines base stats (permanent upgrades and hero bonus), passive abilities, and synergy bonuses into a `damageMultiplier` and `cooldownMultiplier`.
 - **`wall.lua`**: the thing to protect. The run ends when its health reaches 0.
-- **`walker.lua`**: every enemy type. `activate(x, y, lane, enemyType)` loads that type's stats from `enemies.json`. It also handles elites (`makeElite`), slows (`applySlow`), ranged stopping (`attackRange`), the sprite animation, and per-type tint and size.
+- **`walker.lua`**: every enemy type. `activate(x, y, lane, enemyType)` loads that type's stats from `enemies.json`. It also handles elites (`makeElite`), slows (`applySlow`), burns (`applyBurn`; the controller applies the collected burn damage each frame), ranged stopping (`attackRange`), the sprite animation, and per-type tint and size.
 - **`projectile.lua`**: a pooled projectile with damage, pierce, and an optional on-hit slow.
 
 ### Abilities (`src/entities/abilities/`)
@@ -118,6 +118,7 @@ An ability is a middleclass object with an `id` and a `tier` (1 to 5). The comba
 | `arcane_bolt.lua` | Projectile at the nearest enemy, with predictive aim |
 | `frost_shard.lua` | Arcane Bolt subclass; piercing shards that slow on hit |
 | `frost_nova.lua` | Pulse along the wall that damages and slows |
+| `flame_slash.lua` | Short-range sweep from its slot; burn upgrade |
 | `orbiting_blades.lua` | Blades circling the ability's slot (uses `update`) |
 | `passive.lua` | One class for every passive; `abilities.json` sets the stat and amount per tier |
 

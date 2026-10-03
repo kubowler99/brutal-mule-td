@@ -189,9 +189,16 @@ end
 
 --- Bonuses for a run: permanent upgrades plus the hero's bonuses
 -- @param heroId string|nil Hero for this run
--- @return table { wallHealth, damageMultiplier, cooldownMultiplier, xpMultiplier }
+-- @return table { wallHealth, damageMultiplier, cooldownMultiplier, xpMultiplier,
+--   lowWallDamageMultiplier }
 function M.getRunBonuses(heroId)
-  local bonuses = { wallHealth = 0, damageMultiplier = 1, cooldownMultiplier = 1, xpMultiplier = 1 }
+  local bonuses = {
+    wallHealth = 0,
+    damageMultiplier = 1,
+    cooldownMultiplier = 1,
+    xpMultiplier = 1,
+    lowWallDamageMultiplier = 0,  -- extra damage while the wall is below half health
+  }
 
   for _, upgrade in ipairs(M.getUpgrades()) do
     local level = M.getUpgradeLevel(upgrade.id)

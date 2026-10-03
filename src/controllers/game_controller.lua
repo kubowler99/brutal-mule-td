@@ -83,6 +83,7 @@ function M.initialize(group, heroId)
   hero.heroId = heroId
   hero.baseStats.damageMultiplier = bonuses.damageMultiplier
   hero.baseStats.cooldownMultiplier = bonuses.cooldownMultiplier
+  hero.baseStats.lowWallDamageBonus = bonuses.lowWallDamageMultiplier
   hero.xpMultiplier = bonuses.xpMultiplier
   if heroDefinition and type(heroDefinition.color) == "table" then
     hero:setColor(heroDefinition.color)
@@ -202,8 +203,17 @@ function M.update(event)
   for _, walker in ipairs(activeWalkers) do
     if walker.isActive then
       walker:update(dt, 1140)
+      
+      -- Burn damage goes through combat_system so burn kills are rewarded
+      local burnDamage = walker.takePendingBurnDamage and walker:takePendingBurnDamage() or 0
+      if burnDamage > 0 then
+        combat_system.applyDamage(walker, burnDamage)
+      end
     end
   end
+  
+  -- Let the hero know how damaged the wall is (some heroes get stronger)
+  hero.wallHealthRatio = wall.health / wall.maxHealth
   
   -- 4. Collision detection
   -- Check projectile-enemy collisions

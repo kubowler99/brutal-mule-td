@@ -64,6 +64,12 @@ local ELITE_SCALE = 1.3
 -- Sprite tint while slowed
 local SLOWED_TINT = {0.5, 0.8, 1.0}
 
+-- Sprite tint while burning (slowed takes priority)
+local BURNING_TINT = {1.0, 0.45, 0.2}
+
+-- Burn damage is dealt in ticks rather than every frame
+local BURN_TICK_INTERVAL = 0.5
+
 -- Load enemy stats from enemies.json (all types) with hard-coded fallbacks
 local _enemiesConfig = nil
 local function _loadEnemiesConfig()
@@ -126,9 +132,13 @@ function Walker:initialize(parentGroup, enemyType)
   self.health = self.maxHealth
   self.lastAttackTime = 0  -- Timestamp of last attack
   
-  -- Slow effect (from Frost Nova)
+  -- Slow effect (from frost abilities)
   self.slowFactor = 1.0
   self.slowRemaining = 0
+  
+  -- Burn effect (from fire abilities); damage waits in pendingBurnDamage
+  -- until the game controller applies it through combat_system
+  self:clearBurn()
   
   -- Wall targeting properties
   self.wallTarget = nil  -- Reference to wall entity
@@ -193,7 +203,12 @@ function Walker:refreshStyle()
   
   if self.displayObject.setFillColor then
     local baseTint = self.isElite and ELITE_TINT or style.tint
-    local tint = self.slowRemaining > 0 and SLOWED_TINT or baseTint
+    local tint = baseTint
+    if self.slowRemaining > 0 then
+      tint = SLOWED_TINT
+    elseif self.burnRemaining > 0 then
+      tint = BURNING_TINT
+    end
     self.displayObject:setFillColor(tint[1], tint[2], tint[3])
   end
 end
@@ -212,6 +227,35 @@ function Walker:applySlow(factor, duration)
   end
   self.slowRemaining = math.max(self.slowRemaining, duration)
   self:refreshStyle()
+end
+
+--- Remove any burn
+function Walker:clearBurn()
+  self.burnDps = 0
+  self.burnRemaining = 0
+  self.burnTickTimer = 0
+  self.pendingBurnDamage = 0
+end
+
+--- Set this enemy on fire
+-- The strongest burn wins; the duration extends to the longest one.
+-- @param damagePerSecond number Burn damage per second
+-- @param duration number Seconds the burn lasts
+function Walker:applyBurn(damagePerSecond, duration)
+  if not self.isActive or damagePerSecond <= 0 then
+    return
+  end
+  self.burnDps = math.max(self.burnDps, damagePerSecond)
+  self.burnRemaining = math.max(self.burnRemaining, duration)
+  self:refreshStyle()
+end
+
+--- Take the burn damage collected since the last call
+-- @return number Damage to apply (0 when none)
+function Walker:takePendingBurnDamage()
+  local damage = self.pendingBurnDamage
+  self.pendingBurnDamage = 0
+  return damage
 end
 
 --- Current movement speed after slow effects
@@ -238,9 +282,10 @@ function Walker:activate(x, y, lane, enemyType)
   -- Reset health
   self.health = self.maxHealth
   
-  -- Clear any slow left over from the previous life
+  -- Clear any slow or burn left over from the previous life
   self.slowFactor = 1.0
   self.slowRemaining = 0
+  self:clearBurn()
   
   -- Reset attack timer
   self.lastAttackTime = 0
@@ -297,6 +342,22 @@ function Walker:update(dt, wallThreshold)
     if self.slowRemaining <= 0 then
       self.slowRemaining = 0
       self.slowFactor = 1.0
+      self:refreshStyle()
+    end
+  end
+  
+  -- Collect burn damage in ticks
+  if self.burnRemaining > 0 then
+    local burning = math.min(dt, self.burnRemaining)
+    self.burnRemaining = self.burnRemaining - dt
+    self.burnTickTimer = self.burnTickTimer + burning
+    while self.burnTickTimer >= BURN_TICK_INTERVAL do
+      self.burnTickTimer = self.burnTickTimer - BURN_TICK_INTERVAL
+      self.pendingBurnDamage = self.pendingBurnDamage + self.burnDps * BURN_TICK_INTERVAL
+    end
+    if self.burnRemaining <= 0 then
+      self.burnRemaining = 0
+      self.burnTickTimer = 0
       self:refreshStyle()
     end
   end
