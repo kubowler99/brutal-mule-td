@@ -19,6 +19,8 @@ local ability_data_loader = require("src.models.ability_data_loader")
 local ability_registry = require("src.models.ability_registry")
 local config_loader = require("src.models.config_loader")
 local meta_progression = require("src.models.meta_progression")
+local effects = require("src.systems.effects")
+local sound = require("src.systems.sound")
 
 local M = {}
 
@@ -35,6 +37,12 @@ local isPaused = false
 -- the app is suspended, so the first frame back can span minutes; capping it
 -- stops enemies from jumping forward.
 local MAX_FRAME_DT = 0.1
+
+-- Screen shake (pixels) for heavy wall hits and boss arrivals
+local HEAVY_HIT_DAMAGE = 10
+local HEAVY_HIT_SHAKE = 4
+local BOSS_HIT_SHAKE = 8
+local BOSS_SPAWN_SHAKE = 6
 
 --- Initialize the game controller and set up game session
 -- Creates hero, initializes object pools, and sets up all systems
@@ -139,6 +147,11 @@ function M.initialize(group, heroId)
   spawner_system.initialize(walkerPool, hero.level)
   combat_system.initialize(hero, projectilePool, spawner_system.getActiveWalkers(), sceneGroup)
   combat_system.onEnemyKilled = M.onEnemyKilled
+  combat_system.onEnemyDamaged = M.onEnemyDamaged
+  
+  -- Feedback: effects draw in the game layer, which also shakes
+  effects.initialize(sceneGroup)
+  sound.initialize()
   spawner_system.onBossSpawned = M.onBossSpawned
   experience_system.initialize(hero, M.onLevelUp)
   upgrade_system.initialize(hero, M.onUpgradeSelected)
@@ -156,6 +169,8 @@ function M.start()
   
   -- Add enterFrame listener for game loop
   gameLoopListener = Runtime:addEventListener("enterFrame", M.update)
+  
+  sound.playMusic()
 end
 
 --- Main game update function (called every frame)
@@ -230,6 +245,14 @@ function M.update(event)
       combat_system.applyDamage(wall, enemy.damage)
       wall:flashDamage()
       enemy.lastAttackTime = currentTime
+      sound.play("wall_hit")
+      
+      -- Heavy hits shake the screen
+      if enemy.isBoss then
+        effects.screenShake(BOSS_HIT_SHAKE, 0.3)
+      elseif enemy.damage >= HEAVY_HIT_DAMAGE then
+        effects.screenShake(HEAVY_HIT_SHAKE, 0.15)
+      end
       
       -- Ranged enemies show a projectile flying to the wall
       if (enemy.attackRange or 0) > 0 then
@@ -246,6 +269,9 @@ function M.update(event)
   
   -- 5. Combat system (ability activation and projectile updates)
   combat_system.update(dt, currentTime)
+  
+  -- 6. Screen shake
+  effects.update(dt)
 end
 
 --- Reward a kill from any damage source
@@ -282,6 +308,7 @@ end
 -- @param level number The new hero level
 function M.onLevelUp(level)
   M.pause()
+  sound.play("level_up")
   
   -- Generate upgrade cards
   local cards = upgrade_system.generateCards(3)
@@ -302,6 +329,17 @@ function M.onUpgradeSelected(upgrade)
   end
   
   M.resume()
+end
+
+--- Hit feedback for any damage source: number, spark, and sound
+-- Set as combat_system.onEnemyDamaged.
+-- @param enemy table The enemy that was hit
+-- @param amount number Damage dealt
+-- @param killed boolean True if the hit killed it
+function M.onEnemyDamaged(enemy, amount, killed)
+  effects.damageNumber(enemy.x, enemy.y, amount, killed)
+  effects.hitSpark(enemy.x, enemy.y)
+  sound.play(killed and "enemy_death" or "hit")
 end
 
 -- Ranged attack visual
@@ -333,6 +371,9 @@ end
 --- Announce a boss (handled by the scene through onBossSpawnedCallback)
 -- @param boss table The boss enemy that spawned
 function M.onBossSpawned(boss)
+  sound.play("boss")
+  effects.screenShake(BOSS_SPAWN_SHAKE, 0.5)
+  
   if M.onBossSpawnedCallback then
     M.onBossSpawnedCallback(boss)
   end
@@ -342,6 +383,7 @@ end
 -- Ends the run as a win and transitions like game over.
 function M.onVictory()
   M.pause()
+  sound.play("victory")
   
   game_state.finalLevel = hero.level
   game_state.endGame(true)
@@ -366,6 +408,7 @@ end
 -- Ends the game session and transitions to game over scene
 function M.onGameOver()
   M.pause()
+  sound.play("defeat")
   
   -- Set final statistics
   game_state.finalLevel = hero.level
@@ -399,6 +442,8 @@ function M.cleanup()
   end
   
   -- Cleanup systems
+  effects.cleanup()
+  sound.cleanup()
   combat_system.cleanup()
   spawner_system.cleanup()
   experience_system.cleanup()

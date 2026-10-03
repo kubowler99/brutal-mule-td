@@ -28,6 +28,7 @@ See [docs/arcane-survivor/game-concept.md](docs/arcane-survivor/game-concept.md)
   - **Frost Witch** (300 gold): starts with Frost Shard, 10% shorter cooldowns.
   - **Ember Knight** (500 gold): starts with Orbiting Blades, +15% damage.
 - **Meta progression**: each run earns gold (per kill, per level reached, and a bonus for winning). Spend it on heroes and on permanent upgrades: wall health, damage, cooldowns, XP gain.
+- **Feedback**: floating damage numbers, hit sparks, and screen shake on heavy wall hits and boss arrivals.
 - **Screens**: main menu with your best run and gold, hero select, upgrades, game with pause, and an end screen titled VICTORY! or GAME OVER with run stats, gold earned, and a "NEW BEST!" highlight.
 
 ## Running the game
@@ -71,6 +72,24 @@ Most balance values live in `data/`, so you can change them without touching cod
 - `enemies.json`: health, speed, damage, attack cooldown, attack range, and XP value per enemy type; boss flags.
 - `abilities.json`: base stats, synergy tags, and upgrade amounts per ability. Set `"unlocked": false` to stop an ability from being offered.
 - `meta.json`: gold per kill, per level, and for winning; permanent upgrade costs and amounts; hero prices, starting abilities, and bonuses.
+
+## Audio
+
+The game plays sounds only when their files exist, so it runs silently until you add them. Add any of these files to enable them:
+
+| File | Plays on |
+|---|---|
+| `assets/audio/sfx/hit.wav` | an enemy is hit |
+| `assets/audio/sfx/enemy_death.wav` | an enemy dies |
+| `assets/audio/sfx/wall_hit.wav` | the wall takes damage |
+| `assets/audio/sfx/boss.wav` | a boss arrives |
+| `assets/audio/sfx/level_up.wav` | level-up |
+| `assets/audio/sfx/xp_gain.wav` | XP is awarded |
+| `assets/audio/sfx/victory.wav` | the run is won |
+| `assets/audio/sfx/defeat.wav` | the wall falls |
+| `assets/audio/music/battle.mp3` | loops during a run |
+
+The `soundOn` and `musicOn` settings in the save data turn them off.
 
 ## Tests
 
