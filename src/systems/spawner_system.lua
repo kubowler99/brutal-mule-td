@@ -18,6 +18,10 @@ local DEFAULT_ENEMY_TABLE = {
 -- Horizontal gap between members of a spawned group
 local GROUP_SPACING = 30
 
+-- Enemies spawn between these X positions (avoiding screen edges)
+local SPAWN_MIN_X = 50
+local SPAWN_MAX_X = 670
+
 -- Bosses spawn at the top center
 local BOSS_SPAWN_X = 360
 
@@ -239,11 +243,11 @@ function M.spawnWalker(enemyType, spawnX, ignoreLimit)
     end
     
     -- Spawn along the top edge (random X unless given), avoiding screen edges
-    spawnX = spawnX or math.random(50, 670)
+    spawnX = spawnX or math.random(SPAWN_MIN_X, SPAWN_MAX_X)
     local spawnY = 0
     
     -- Error handling: Clamp spawn X position to valid range [50, 670]
-    spawnX = math.max(50, math.min(670, spawnX))
+    spawnX = math.max(SPAWN_MIN_X, math.min(SPAWN_MAX_X, spawnX))
     
     -- Get walker from pool
     local walker = M.walkerPool:get()
@@ -327,10 +331,15 @@ function M.chooseEnemyEntry()
 end
 
 ---Spawn one group from the spawn table
----Group members spawn side by side around a random X position.
+---Group members spawn side by side around a random X position, chosen so the
+---whole group fits inside the spawn range (otherwise edge members would be
+---clamped onto each other).
 function M.spawnEnemyGroup()
     local entry = M.chooseEnemyEntry()
-    local centerX = math.random(50, 670)
+    local halfWidth = math.ceil((entry.groupSize - 1) / 2 * GROUP_SPACING)
+    local minCenter = SPAWN_MIN_X + halfWidth
+    local maxCenter = SPAWN_MAX_X - halfWidth
+    local centerX = math.random(minCenter, math.max(minCenter, maxCenter))
     for i = 1, entry.groupSize do
         local offset = (i - (entry.groupSize + 1) / 2) * GROUP_SPACING
         M.spawnWalker(entry.type, centerX + offset)

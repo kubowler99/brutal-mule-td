@@ -207,6 +207,32 @@ describe("Enemy types", function()
             assert.are.equal(30, spawned[2].x - spawned[1].x)
         end)
 
+        it("keeps a group's spacing when its center lands at either edge", function()
+            spawner_system.updateDifficulty(4)
+            local originalChoose = spawner_system.chooseEnemyEntry
+            spawner_system.chooseEnemyEntry = function() return TEST_TABLE[3] end
+
+            for _, pickLow in ipairs({ true, false }) do
+                spawner_system.activeWalkers = {}
+                -- Force the group center to the lowest or highest allowed value
+                math.random = function(low, high)
+                    if low == nil then return originalRandom() end
+                    return pickLow and low or high
+                end
+
+                spawner_system.spawnEnemyGroup()
+
+                local spawned = spawner_system.activeWalkers
+                assert.are.equal(4, #spawned)
+                for i = 2, 4 do
+                    assert.are.equal(30, spawned[i].x - spawned[i - 1].x)
+                end
+                assert.is_true(spawned[1].x >= 50 and spawned[4].x <= 670)
+            end
+
+            spawner_system.chooseEnemyEntry = originalChoose
+        end)
+
         it("activates spawned enemies with the given type", function()
             spawner_system.spawnWalker("runner", 200)
 
