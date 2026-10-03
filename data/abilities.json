@@ -181,7 +181,8 @@
       "pierceCount": 1,
       "projectileCount": 1,
       "slowFactor": 0.7,
-      "slowDuration": 1.5
+      "slowDuration": 1.5,
+      "freezeDuration": 0.8
     },
     "upgrades": {
       "damage_increase": {
@@ -208,6 +209,20 @@
         "iconType": "speed",
         "slowReduction": 0.1,
         "minSlowFactor": 0.3
+      },
+      "ricochet": {
+        "name": "Frost Shard Ricochet",
+        "description": "Shards bounce to one more enemy",
+        "iconType": "pierce",
+        "ricochetIncrease": 1,
+        "maxRicochets": 3
+      },
+      "freeze_chance": {
+        "name": "Frost Shard Freeze",
+        "description": "+15% chance to freeze on hit",
+        "iconType": "speed",
+        "chanceIncrease": 0.15,
+        "maxChance": 0.6
       }
     }
   }

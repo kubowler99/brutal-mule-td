@@ -227,8 +227,18 @@ function M.update(event)
         enemy:applySlow(projectile.slowFactor, projectile.slowDuration or 0)
       end
 
+      -- Chance to freeze (a full stop for a short time)
+      if projectile.freezeChance and enemy.isActive and enemy.applySlow
+         and math.random() < projectile.freezeChance then
+        enemy:applySlow(0, projectile.freezeDuration or 0)
+      end
+
       -- Handle projectile hit (pierce logic)
       projectile:onHit(enemy)
+      
+      if projectile.needsRicochet then
+        M.ricochet(projectile, activeWalkers)
+      end
     end
   end
   
@@ -340,6 +350,38 @@ function M.onEnemyDamaged(enemy, amount, killed)
   effects.damageNumber(enemy.x, enemy.y, amount, killed)
   effects.hitSpark(enemy.x, enemy.y)
   sound.play(killed and "enemy_death" or "hit")
+end
+
+-- Ricochets only jump to enemies this close to the hit
+local RICOCHET_RANGE = 300
+
+--- Send a spent projectile to the nearest enemy it has not hit yet
+-- Stops the projectile when no such enemy is in range.
+-- @param projectile table The projectile that just used up its pierce
+-- @param enemies table Active enemies
+function M.ricochet(projectile, enemies)
+  local hit = {}
+  for _, enemy in ipairs(projectile.hitEnemies or {}) do
+    hit[enemy] = true
+  end
+
+  local nearest, nearestDistSq = nil, RICOCHET_RANGE * RICOCHET_RANGE
+  for _, enemy in ipairs(enemies) do
+    if enemy.isActive and not hit[enemy] then
+      local dx = enemy.x - projectile.x
+      local dy = enemy.y - projectile.y
+      local distSq = dx * dx + dy * dy
+      if distSq <= nearestDistSq then
+        nearest, nearestDistSq = enemy, distSq
+      end
+    end
+  end
+
+  if nearest then
+    projectile:redirect(nearest.x, nearest.y)
+  else
+    projectile:deactivate()
+  end
 end
 
 -- Ranged attack visual

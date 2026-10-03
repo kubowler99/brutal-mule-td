@@ -55,9 +55,13 @@ function Projectile:activate(x, y, targetX, targetY, speed, damage, pierce)
   self.damage = damage
   self.pierceCount = pierce
   
-  -- On-hit slow (set by abilities such as Frost Shard after activation)
+  -- On-hit effects (set by abilities such as Frost Shard after activation)
   self.slowFactor = nil
   self.slowDuration = nil
+  self.freezeChance = nil
+  self.freezeDuration = nil
+  self.ricochetsLeft = 0
+  self.needsRicochet = false
   
   -- Reset hit tracking
   self.hitEnemies = {}
@@ -117,13 +121,35 @@ function Projectile:onHit(enemy)
   -- Decrement pierce count
   self.pierceCount = self.pierceCount - 1
   
-  -- Deactivate if no pierce remaining
+  -- Out of pierce: ricochet to a new target if any ricochets are left
+  -- (the game controller picks the target), otherwise stop
   if self.pierceCount < 0 then
-    self:deactivate()
+    if (self.ricochetsLeft or 0) > 0 then
+      self.ricochetsLeft = self.ricochetsLeft - 1
+      self.pierceCount = 0
+      self.needsRicochet = true
+    else
+      self:deactivate()
+    end
     return true
   end
   
   return true
+end
+
+--- Turn toward a new target at the same speed (used for ricochets)
+-- @param targetX number Target X
+-- @param targetY number Target Y
+function Projectile:redirect(targetX, targetY)
+  local speed = math.sqrt(self.vx * self.vx + self.vy * self.vy)
+  local dx = targetX - self.x
+  local dy = targetY - self.y
+  local distance = math.sqrt(dx * dx + dy * dy)
+  if distance > 0 then
+    self.vx = (dx / distance) * speed
+    self.vy = (dy / distance) * speed
+  end
+  self.needsRicochet = false
 end
 
 function Projectile:deactivate()

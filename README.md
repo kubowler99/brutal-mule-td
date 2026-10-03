@@ -9,7 +9,7 @@ See [docs/arcane-survivor/game-concept.md](docs/arcane-survivor/game-concept.md)
 - **Abilities** (up to 5, each upgradeable to tier 5)
   - **Arcane Bolt**: fires at the nearest enemy. Upgrades: damage, attack speed, projectile count, pierce.
   - **Frost Nova**: pulses along the wall, damaging and slowing every enemy within range. Upgrades: damage, range, cooldown, slow.
-  - **Frost Shard**: fires a piercing shard at the nearest enemy that slows what it hits. Upgrades: damage, shard count, pierce, slow.
+  - **Frost Shard**: fires a piercing shard at the nearest enemy that slows what it hits. Upgrades: damage, shard count, pierce, slow, ricochet (bounce to another enemy), freeze chance.
   - **Orbiting Blades**: blades circle the ability's spot on the wall and cut enemies they touch. Upgrades: blade count, speed, damage, size.
   - **Arcane Might** (passive): +10% damage for all abilities per tier.
   - **Quickening** (passive): 8% shorter cooldowns for all abilities per tier.
