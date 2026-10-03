@@ -63,6 +63,8 @@ function AbilityIndicator:setAbility(ability)
       self.icon:setFillColor(0.5, 0.3, 0.9) -- Purple for arcane
     elseif ability.id == "frost_nova" then
       self.icon:setFillColor(0.5, 0.8, 1.0) -- Light blue for frost
+    elseif ability.id == "orbiting_blades" then
+      self.icon:setFillColor(0.85, 0.9, 1.0) -- Silver for blades
     elseif ability.isPassive then
       self.icon:setFillColor(1.0, 0.85, 0.3) -- Gold for passives
     else

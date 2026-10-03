@@ -57,8 +57,33 @@ function M.update(dt, currentTime)
   -- Activate abilities based on cooldowns
   M.activateAbilities(currentTime)
   
+  -- Run per-frame abilities (e.g. orbiting blades)
+  M.updateAbilities(dt)
+  
   -- Update all active projectiles
   M.updateProjectiles(dt)
+end
+
+--- Run the per-frame update of abilities that have one
+-- Abilities that act continuously (orbitals, auras) define
+-- ability:update(dt, originX, originY, enemies, displayGroup, heroStats).
+--
+-- @param dt number Delta time in seconds
+function M.updateAbilities(dt)
+  if not hero or not hero.abilities then
+    return
+  end
+  
+  local heroStats = hero.getStats and hero:getStats() or nil
+  for i, ability in ipairs(hero.abilities) do
+    if ability and ability.update then
+      local originX, originY = M.getFireOrigin(i)
+      local success, err = pcall(ability.update, ability, dt, originX, originY, enemies, sceneGroup, heroStats)
+      if not success then
+        print("Warning: Ability update failed:", err)
+      end
+    end
+  end
 end
 
 --- Activate hero abilities based on cooldown timers

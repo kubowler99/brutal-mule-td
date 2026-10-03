@@ -117,5 +117,48 @@
         "iconType": "speed"
       }
     }
+  },
+  "orbiting_blades": {
+    "name": "Orbiting Blades",
+    "description": "Blades circle the ability's spot on the wall and cut enemies they touch",
+    "module": "src.entities.abilities.orbiting_blades",
+    "unlocked": true,
+    "maxTier": 5,
+    "icon": "assets/images/abilities/orbiting_blades.png",
+    "baseStats": {
+      "bladeCount": 2,
+      "damage": 6,
+      "orbitRadius": 80,
+      "rotationSpeed": 2.5,
+      "hitRadius": 18,
+      "hitCooldown": 0.5
+    },
+    "upgrades": {
+      "blade_count": {
+        "name": "Orbiting Blades Count",
+        "description": "+1 blade",
+        "iconType": "count",
+        "countIncrease": 1,
+        "maxBlades": 6
+      },
+      "rotation_speed": {
+        "name": "Orbiting Blades Speed",
+        "description": "+25% rotation speed",
+        "iconType": "speed",
+        "speedMultiplier": 1.25
+      },
+      "damage_increase": {
+        "name": "Orbiting Blades Damage",
+        "description": "+3 damage per hit",
+        "iconType": "damage",
+        "damageIncrease": 3
+      },
+      "blade_size": {
+        "name": "Orbiting Blades Size",
+        "description": "Blades grow larger",
+        "iconType": "radius",
+        "sizeIncrease": 6
+      }
+    }
   }
 }

@@ -9,9 +9,14 @@ See [docs/arcane-survivor/game-concept.md](docs/arcane-survivor/game-concept.md)
 - **Abilities** (up to 5, each upgradeable to tier 5)
   - **Arcane Bolt**: fires at the nearest enemy. Upgrades: damage, attack speed, projectile count, pierce.
   - **Frost Nova**: pulses along the wall, damaging and slowing every enemy within range. Upgrades: damage, range, cooldown, slow.
-- **Enemies**
+  - **Orbiting Blades**: blades circle the ability's spot on the wall and cut enemies they touch. Upgrades: blade count, speed, damage, size.
+  - **Arcane Might** (passive): +10% damage for all abilities per tier.
+  - **Quickening** (passive): 8% shorter cooldowns for all abilities per tier.
+- **Enemies** (the spawn mix is set by `spawner.enemyTable` in `game_config.json`)
   - **Walker**: the basic melee enemy.
-  - **Runner**: half the health and double the speed of a walker. Joins the spawn mix from hero level 3.
+  - **Runner** (level 3+): half the health and double the speed of a walker.
+  - **Swarmling** (level 4+): very weak, spawns in groups of 4.
+  - **Brute** (level 5+): slow and tanky, hits the wall hard.
 - **Stat upgrades**: wall repair, wall fortify, XP boost.
 - **Screens**: main menu with your best run, game with pause, game over with run stats and a "NEW BEST!" highlight.
 
@@ -38,7 +43,7 @@ src/
   controllers/        game_controller: game loop and system wiring
   systems/            spawner, combat, collision, experience, upgrade
   entities/           hero, wall, walker (all enemy types), projectile
-    abilities/        arcane_bolt, frost_nova
+    abilities/        arcane_bolt, frost_nova, orbiting_blades, passive
   models/             game state, save data, config and ability loaders
   ui/                 health bar, XP bar, ability indicators, upgrade cards
   utils/              object pool, helpers, placeholder graphics
@@ -51,7 +56,7 @@ docs/                 Game concept and architecture notes
 
 Most balance values live in `data/`, so you can change them without touching code:
 
-- `game_config.json`: spawn interval, spawn count, runner level and chance, wall health, XP curve.
+- `game_config.json`: spawn interval, spawn count, the enemy spawn table (type, weight, unlock level, group size), wall health, XP curve.
 - `enemies.json`: health, speed, damage, attack cooldown, and XP value per enemy type.
 - `abilities.json`: base stats and upgrade amounts per ability. Set `"unlocked": false` to stop an ability from being offered.
 
