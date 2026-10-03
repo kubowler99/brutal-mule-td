@@ -159,8 +159,9 @@ function M.checkWallCollisions(walkers, wallThreshold)
     
     -- Skip inactive walkers or invalid positions
     if walker and walker.isActive and type(walker.y) == "number" then
-      -- Check if walker has reached or passed the wall threshold
-      if walker.y >= wallThreshold then
+      -- Check if walker has reached its attack position (ranged enemies
+      -- attack from attackRange short of the wall)
+      if walker.y >= wallThreshold - (walker.attackRange or 0) then
         table.insert(collisions, walker)
       end
     end

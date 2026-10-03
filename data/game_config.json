@@ -11,7 +11,19 @@
       { "type": "walker", "weight": 7, "minLevel": 1, "groupSize": 1 },
       { "type": "runner", "weight": 3, "minLevel": 3, "groupSize": 1 },
       { "type": "swarmling", "weight": 2, "minLevel": 4, "groupSize": 4 },
-      { "type": "brute", "weight": 2, "minLevel": 5, "groupSize": 1 }
+      { "type": "brute", "weight": 2, "minLevel": 5, "groupSize": 1 },
+      { "type": "spitter", "weight": 2, "minLevel": 6, "groupSize": 1 }
+    ],
+    "elites": {
+      "minLevel": 8,
+      "chance": 0.08,
+      "healthMultiplier": 4,
+      "damageMultiplier": 2,
+      "xpMultiplier": 5
+    },
+    "bosses": [
+      { "level": 10, "type": "boss" },
+      { "level": 20, "type": "final_boss" }
     ]
   },
   "collision": {

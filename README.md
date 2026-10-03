@@ -1,6 +1,6 @@
 # Arcane Survivor
 
-A stationary-hero defense game built with [Solar2D](https://solar2d.com/). The hero holds a wall at the bottom of the screen while enemies advance from the top. Abilities fire automatically. Defeating enemies awards XP, and each level-up offers three random cards: a new ability or an upgrade to one you have. The run ends when the wall falls.
+A stationary-hero defense game built with [Solar2D](https://solar2d.com/). The hero holds a wall at the bottom of the screen while enemies advance from the top. Abilities fire automatically. Defeating enemies awards XP, and each level-up offers three random cards: a new ability or an upgrade to one you have. A boss arrives at level 10, and the final boss at level 20. Kill the final boss to win; the run ends in defeat if the wall falls.
 
 See [docs/arcane-survivor/game-concept.md](docs/arcane-survivor/game-concept.md) for the full game concept.
 
@@ -17,8 +17,11 @@ See [docs/arcane-survivor/game-concept.md](docs/arcane-survivor/game-concept.md)
   - **Runner** (level 3+): half the health and double the speed of a walker.
   - **Swarmling** (level 4+): very weak, spawns in groups of 4.
   - **Brute** (level 5+): slow and tanky, hits the wall hard.
+  - **Spitter** (level 6+): stops short of the wall and attacks from range.
+  - **Elites** (level 8+): any normal enemy can spawn as a gold elite with 4x health, 2x damage, and 5x XP.
+  - **Bosses**: a boss at level 10 and the final boss at level 20, announced with a banner and a boss health bar.
 - **Stat upgrades**: wall repair, wall fortify, XP boost.
-- **Screens**: main menu with your best run, game with pause, game over with run stats and a "NEW BEST!" highlight.
+- **Screens**: main menu with your best run, game with pause, and an end screen titled VICTORY! or GAME OVER with run stats and a "NEW BEST!" highlight.
 
 ## Running the game
 
@@ -56,8 +59,8 @@ docs/                 Game concept and architecture notes
 
 Most balance values live in `data/`, so you can change them without touching code:
 
-- `game_config.json`: spawn interval, spawn count, the enemy spawn table (type, weight, unlock level, group size), wall health, XP curve.
-- `enemies.json`: health, speed, damage, attack cooldown, and XP value per enemy type.
+- `game_config.json`: spawn interval, spawn count, the enemy spawn table (type, weight, unlock level, group size), elite settings, boss levels, wall health, XP curve.
+- `enemies.json`: health, speed, damage, attack cooldown, attack range, and XP value per enemy type; boss flags.
 - `abilities.json`: base stats and upgrade amounts per ability. Set `"unlocked": false` to stop an ability from being offered.
 
 ## Tests

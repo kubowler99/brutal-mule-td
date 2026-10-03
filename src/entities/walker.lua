@@ -38,6 +38,9 @@ local DEFAULT_STATS = {
   runner = { health = 10, speed = 160, damage = 3, attackCooldown = 0.8 },
   brute = { health = 80, speed = 40, damage = 12, attackCooldown = 1.5 },
   swarmling = { health = 4, speed = 110, damage = 1, attackCooldown = 0.6 },
+  spitter = { health = 15, speed = 70, damage = 4, attackCooldown = 2.0, attackRange = 260 },
+  boss = { health = 600, speed = 25, damage = 25, attackCooldown = 2.0, isBoss = true },
+  final_boss = { health = 2000, speed = 20, damage = 40, attackCooldown = 2.0, isBoss = true, isFinalBoss = true },
 }
 
 -- Scale applied to the 64x64 zombie sprite frames
@@ -49,7 +52,14 @@ local TYPE_STYLES = {
   runner = { tint = {1.0, 0.65, 0.3}, scale = 0.75 },
   brute = { tint = {0.75, 0.45, 1.0}, scale = 1.35 },
   swarmling = { tint = {0.55, 1.0, 0.45}, scale = 0.5 },
+  spitter = { tint = {0.85, 1.0, 0.3}, scale = 0.9 },
+  boss = { tint = {1.0, 0.4, 0.4}, scale = 2.2 },
+  final_boss = { tint = {0.6, 0.3, 0.3}, scale = 2.8 },
 }
+
+-- Elites are tougher, larger, gold-tinted versions of a normal enemy
+local ELITE_TINT = {1.0, 0.85, 0.3}
+local ELITE_SCALE = 1.3
 
 -- Sprite tint while slowed
 local SLOWED_TINT = {0.5, 0.8, 1.0}
@@ -90,6 +100,15 @@ local function _getEnemyStat(enemyType, key)
     end
   end
   return defaults[key]
+end
+
+local function _getEnemyFlag(enemyType, key)
+  local typeConfig = _loadEnemiesConfig()[enemyType]
+  if type(typeConfig) == "table" and type(typeConfig[key]) == "boolean" then
+    return typeConfig[key]
+  end
+  local defaults = DEFAULT_STATS[enemyType] or {}
+  return defaults[key] == true
 end
 
 function Walker:initialize(parentGroup, enemyType)
@@ -137,6 +156,28 @@ function Walker:setType(enemyType)
   self.speed = _getEnemyStat(enemyType, "speed")
   self.damage = _getEnemyStat(enemyType, "damage")
   self.attackCooldown = _getEnemyStat(enemyType, "attackCooldown")
+  -- Ranged enemies stop this far short of the wall and attack from there
+  self.attackRange = _getEnemyStat(enemyType, "attackRange") or 0
+  self.isBoss = _getEnemyFlag(enemyType, "isBoss")
+  self.isFinalBoss = _getEnemyFlag(enemyType, "isFinalBoss")
+  self.isElite = false
+  self.xpMultiplier = 1
+end
+
+--- Make this enemy an elite: tougher, larger, gold-tinted, worth more XP
+-- @param healthMultiplier number Health multiplier
+-- @param damageMultiplier number Damage multiplier
+-- @param xpMultiplier number XP multiplier
+function Walker:makeElite(healthMultiplier, damageMultiplier, xpMultiplier)
+  self.isElite = true
+  self.maxHealth = self.maxHealth * healthMultiplier
+  self.health = self.maxHealth
+  self.damage = self.damage * damageMultiplier
+  self.xpMultiplier = xpMultiplier
+  if self.healthBar then
+    self.healthBar:update(self.health, self.maxHealth)
+  end
+  self:refreshStyle()
 end
 
 --- Apply the body color and size for the current type and slow state
@@ -146,11 +187,13 @@ function Walker:refreshStyle()
   end
   
   local style = TYPE_STYLES[self.type] or TYPE_STYLES.walker
-  self.displayObject.xScale = SPRITE_SCALE * style.scale
-  self.displayObject.yScale = SPRITE_SCALE * style.scale
+  local scale = SPRITE_SCALE * style.scale * (self.isElite and ELITE_SCALE or 1)
+  self.displayObject.xScale = scale
+  self.displayObject.yScale = scale
   
   if self.displayObject.setFillColor then
-    local tint = self.slowRemaining > 0 and SLOWED_TINT or style.tint
+    local baseTint = self.isElite and ELITE_TINT or style.tint
+    local tint = self.slowRemaining > 0 and SLOWED_TINT or baseTint
     self.displayObject:setFillColor(tint[1], tint[2], tint[3])
   end
 end
@@ -186,9 +229,10 @@ function Walker:activate(x, y, lane, enemyType)
   self.y = y
   self.lane = lane
   
-  -- Pooled walkers can come back as a different type
-  if enemyType and enemyType ~= self.type then
-    self:setType(enemyType)
+  -- Pooled walkers can come back as a different type; an elite also
+  -- reloads its type stats so the elite bonus does not carry over
+  if (enemyType and enemyType ~= self.type) or self.isElite then
+    self:setType(enemyType or self.type)
   end
   
   -- Reset health
@@ -257,8 +301,11 @@ function Walker:update(dt, wallThreshold)
     end
   end
   
-  -- Check if walker has reached the wall threshold
-  if self.y >= wallThreshold then
+  -- Ranged enemies stop attackRange short of the wall
+  local stopY = wallThreshold - self.attackRange
+  
+  -- Check if walker has reached its attack position
+  if self.y >= stopY then
     -- Stop moving and set attacking state
     self.isAttackingWall = true
   else
@@ -266,8 +313,8 @@ function Walker:update(dt, wallThreshold)
     self.y = self.y + (speed * dt)
     
     -- Check again after movement to ensure we don't overshoot
-    if self.y >= wallThreshold then
-      self.y = wallThreshold
+    if self.y >= stopY then
+      self.y = stopY
       self.isAttackingWall = true
     end
   end

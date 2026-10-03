@@ -132,6 +132,17 @@ function scene:show(event)
     -- Receive statistics from event.params
     stats = event.params or {}
     
+    -- Title shows whether the run was won (final boss defeated) or lost
+    if titleText then
+      if stats.victoryCondition then
+        titleText.text = "VICTORY!"
+        titleText:setFillColor(0.4, 1, 0.5)
+      else
+        titleText.text = "GAME OVER"
+        titleText:setFillColor(1, 0.3, 0.3)
+      end
+    end
+    
     -- Update statistics display
     if survivalTimeText then
       local survivalTime = stats.survivalTime or stats.elapsedTime or 0
