@@ -129,7 +129,7 @@ describe("Menu Scene", function()
                 
                 -- Verify transition was triggered
                 assert.is_true(gotoSceneCalled)
-                assert.equals("src.scenes.game", targetScene)
+                assert.equals("src.scenes.hero_select", targetScene)
             else
                 -- If button structure is different, just verify scene was created
                 assert.is_not_nil(playButton)

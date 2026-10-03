@@ -36,6 +36,8 @@ local bossBanner = nil
 local isPausedByPlayer = false
 -- Set when the session ends (game over or quit) so scene:hide() cleans up entities
 local endSessionOnHide = false
+-- Hero for the current run; kept so Play Again reuses it
+local currentHeroId = nil
 
 local formatTime = stringUtils.formatTime
 
@@ -461,7 +463,11 @@ function scene:show(event)
     -- CRITICAL FIX: Initialize game controller every time scene appears
     -- This handles the "Play Again" scenario where scene:create() doesn't run
     -- because Composer caches scenes by default
-    game_controller.initialize(scene.gameLayer)
+    -- Hero select passes the hero; Play Again keeps the last one
+    if event.params and event.params.heroId then
+      currentHeroId = event.params.heroId
+    end
+    game_controller.initialize(scene.gameLayer, currentHeroId)
     
     -- A new session never starts paused
     isPausedByPlayer = false

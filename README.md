@@ -21,7 +21,12 @@ See [docs/arcane-survivor/game-concept.md](docs/arcane-survivor/game-concept.md)
   - **Elites** (level 8+): any normal enemy can spawn as a gold elite with 4x health, 2x damage, and 5x XP.
   - **Bosses**: a boss at level 10 and the final boss at level 20, announced with a banner and a boss health bar.
 - **Stat upgrades**: wall repair, wall fortify, XP boost.
-- **Screens**: main menu with your best run, game with pause, and an end screen titled VICTORY! or GAME OVER with run stats and a "NEW BEST!" highlight.
+- **Heroes** (chosen before each run)
+  - **Arcane Wanderer** (free): starts with Arcane Bolt, +10% XP.
+  - **Frost Witch** (300 gold): starts with Frost Nova, 10% shorter cooldowns.
+  - **Ember Knight** (500 gold): starts with Orbiting Blades, +15% damage.
+- **Meta progression**: each run earns gold (per kill, per level reached, and a bonus for winning). Spend it on heroes and on permanent upgrades: wall health, damage, cooldowns, XP gain.
+- **Screens**: main menu with your best run and gold, hero select, upgrades, game with pause, and an end screen titled VICTORY! or GAME OVER with run stats, gold earned, and a "NEW BEST!" highlight.
 
 ## Running the game
 
@@ -40,14 +45,15 @@ data/                 Game data (edit these to tune balance)
   abilities.json      Ability base stats and upgrade cards
   enemies.json        Enemy stats and XP values
   game_config.json    Wall, spawner, collision, and XP settings
+  meta.json           Gold rates, permanent upgrades, and heroes
 assets/images/        Sprites and sprite sheet data
 src/
-  scenes/             menu, game, gameover (Composer scenes)
+  scenes/             menu, hero_select, upgrades, game, gameover (Composer scenes)
   controllers/        game_controller: game loop and system wiring
   systems/            spawner, combat, collision, experience, upgrade
   entities/           hero, wall, walker (all enemy types), projectile
     abilities/        arcane_bolt, frost_nova, orbiting_blades, passive
-  models/             game state, save data, config and ability loaders
+  models/             game state, save data, meta progression, config and ability loaders
   ui/                 health bar, XP bar, ability indicators, upgrade cards
   utils/              object pool, helpers, placeholder graphics
 lib/                  middleclass (OOP) and stateful
@@ -62,6 +68,7 @@ Most balance values live in `data/`, so you can change them without touching cod
 - `game_config.json`: spawn interval, spawn count, the enemy spawn table (type, weight, unlock level, group size), elite settings, boss levels, wall health, XP curve.
 - `enemies.json`: health, speed, damage, attack cooldown, attack range, and XP value per enemy type; boss flags.
 - `abilities.json`: base stats and upgrade amounts per ability. Set `"unlocked": false` to stop an ability from being offered.
+- `meta.json`: gold per kill, per level, and for winning; permanent upgrade costs and amounts; hero prices, starting abilities, and bonuses.
 
 ## Tests
 

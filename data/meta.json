@@ -1,0 +1,71 @@
+{
+  "_comment": "Meta progression: gold earned per run, permanent upgrades, and heroes",
+  "gold": {
+    "perKill": 1,
+    "perLevel": 5,
+    "victoryBonus": 100
+  },
+  "upgrades": [
+    {
+      "id": "wall_health",
+      "name": "Thick Walls",
+      "description": "+20 wall health",
+      "stat": "wallHealth",
+      "perLevel": 20,
+      "costs": [50, 100, 200, 350, 500]
+    },
+    {
+      "id": "damage",
+      "name": "Sharpened Magic",
+      "description": "+5% damage",
+      "stat": "damageMultiplier",
+      "perLevel": 0.05,
+      "costs": [75, 150, 275, 450, 700]
+    },
+    {
+      "id": "cooldown",
+      "name": "Swift Casting",
+      "description": "-4% cooldowns",
+      "stat": "cooldownMultiplier",
+      "perLevel": -0.04,
+      "costs": [75, 150, 275, 450, 700]
+    },
+    {
+      "id": "xp_gain",
+      "name": "Scholar",
+      "description": "+10% XP",
+      "stat": "xpMultiplier",
+      "perLevel": 0.1,
+      "costs": [50, 100, 200, 350, 500]
+    }
+  ],
+  "heroes": [
+    {
+      "id": "arcane_wanderer",
+      "name": "Arcane Wanderer",
+      "description": "Balanced. Starts with Arcane Bolt. +10% XP.",
+      "startingAbility": "arcane_bolt",
+      "cost": 0,
+      "color": [0.2, 0.4, 0.9],
+      "bonuses": { "xpMultiplier": 0.1 }
+    },
+    {
+      "id": "frost_witch",
+      "name": "Frost Witch",
+      "description": "Control. Starts with Frost Nova. -10% cooldowns.",
+      "startingAbility": "frost_nova",
+      "cost": 300,
+      "color": [0.5, 0.85, 1.0],
+      "bonuses": { "cooldownMultiplier": -0.1 }
+    },
+    {
+      "id": "ember_knight",
+      "name": "Ember Knight",
+      "description": "Close range. Starts with Orbiting Blades. +15% damage.",
+      "startingAbility": "orbiting_blades",
+      "cost": 500,
+      "color": [1.0, 0.45, 0.2],
+      "bonuses": { "damageMultiplier": 0.15 }
+    }
+  ]
+}

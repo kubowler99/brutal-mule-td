@@ -201,6 +201,8 @@ describe("Run arc", function()
 
         it("awards elite XP with the elite multiplier", function()
             local hero = game_controller.getHero()
+            -- Remove the starting hero's XP bonus so only the elite multiplier applies
+            hero.xpMultiplier = 1
             local elite = Walker:new(nil)
             elite:activate(360, 500, 360, "walker")
             elite:makeElite(4, 2, 5)

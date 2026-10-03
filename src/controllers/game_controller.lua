@@ -18,6 +18,7 @@ local game_state = require("src.models.game_state")
 local ability_data_loader = require("src.models.ability_data_loader")
 local ability_registry = require("src.models.ability_registry")
 local config_loader = require("src.models.config_loader")
+local meta_progression = require("src.models.meta_progression")
 
 local M = {}
 
@@ -38,7 +39,8 @@ local MAX_FRAME_DT = 0.1
 --- Initialize the game controller and set up game session
 -- Creates hero, initializes object pools, and sets up all systems
 -- @param group table The scene group to add display objects to
-function M.initialize(group)
+-- @param heroId string|nil Hero for this run (default: the selected hero)
+function M.initialize(group, heroId)
   sceneGroup = group
   isPaused = false
   
@@ -50,9 +52,16 @@ function M.initialize(group)
   -- Initialize game state
   game_state.initialize()
   
+  -- Hero choice and permanent upgrades for this run
+  heroId = heroId or meta_progression.getSelectedHeroId()
+  local heroDefinition = heroId and meta_progression.getHero(heroId)
+  local bonuses = meta_progression.getRunBonuses(heroId)
+  
   -- Create wall at fixed position (360, 1200, display.contentWidth)
   -- Wall is positioned at Y=1200 with height 80
   wall = Wall:new(360, 1200, display.contentWidth)
+  wall.maxHealth = wall.maxHealth + bonuses.wallHealth
+  wall.health = wall.maxHealth
   
   -- Add wall display object to scene group FIRST (renders behind hero)
   if wall.displayObject and sceneGroup then
@@ -63,10 +72,18 @@ function M.initialize(group)
   -- Hero is positioned on the left side of the wall at wall's center Y
   -- Positioned at X=60 to maintain 5px gap from first ability indicator (left edge at X=95)
   hero = Hero:new(45, 1200)
+  hero.heroId = heroId
+  hero.baseStats.damageMultiplier = bonuses.damageMultiplier
+  hero.baseStats.cooldownMultiplier = bonuses.cooldownMultiplier
+  hero.xpMultiplier = bonuses.xpMultiplier
+  if heroDefinition and type(heroDefinition.color) == "table" then
+    hero:setColor(heroDefinition.color)
+  end
   
-  -- Add hero's starting ability (Arcane Bolt)
-  local arcaneBolt = ArcaneBolt:new()
-  hero:addAbility(arcaneBolt)
+  -- Add the hero's starting ability (Arcane Bolt if none is defined)
+  local startingAbility = heroDefinition and heroDefinition.startingAbility
+    and ability_registry.createInstance(heroDefinition.startingAbility)
+  hero:addAbility(startingAbility or ArcaneBolt:new())
   
   -- Add hero display object to scene group AFTER wall (renders in front)
   if hero.displayObject and sceneGroup then

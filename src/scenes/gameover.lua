@@ -6,6 +6,7 @@
 local composer = require("composer")
 local helpers = require("src.utils.helpers")
 local data = require("src.models.data")
+local meta_progression = require("src.models.meta_progression")
 local stringUtils = require("src.utils.string")
 
 local scene = composer.newScene()
@@ -17,6 +18,7 @@ local survivalTimeText
 local enemiesDefeatedText
 local finalLevelText
 local bestRunText
+local goldEarnedText
 local playAgainButton
 local mainMenuButton
 
@@ -98,6 +100,17 @@ function scene:create(event)
   })
   bestRunText:setFillColor(0.7, 0.7, 0.8)
   
+  -- Gold earned this run (filled in on show)
+  goldEarnedText = display.newText({
+    parent = sceneGroup,
+    text = "",
+    x = helpers.centerX,
+    y = statsY + statsSpacing * 4 + 20,
+    font = native.systemFontBold,
+    fontSize = 24
+  })
+  goldEarnedText:setFillColor(1, 0.85, 0.3)
+  
   -- Play Again button (handler will be added in show phase)
   playAgainButton = helpers.newButton({
     x = helpers.centerX,
@@ -157,6 +170,13 @@ function scene:show(event)
     if finalLevelText then
       local finalLevel = stats.finalLevel or stats.level or 1
       finalLevelText.text = "Final Level: " .. tostring(finalLevel)
+    end
+    
+    -- Award gold for this run (saved by addGold)
+    local goldEarned = meta_progression.goldForRun(stats)
+    meta_progression.addGold(goldEarned)
+    if goldEarnedText then
+      goldEarnedText.text = "+" .. tostring(goldEarned) .. " gold  (total " .. tostring(meta_progression.getGold()) .. ")"
     end
     
     -- Save statistics to persistent data
@@ -261,6 +281,7 @@ function scene:destroy(event)
   enemiesDefeatedText = nil
   finalLevelText = nil
   bestRunText = nil
+  goldEarnedText = nil
   playAgainButton = nil
   mainMenuButton = nil
   stats = nil

@@ -18,6 +18,9 @@ function Hero:initialize(x, y)
   -- Abilities array (max 5 slots)
   self.abilities = {}
   
+  -- Stats before passives (set from permanent upgrades and the hero choice)
+  self.baseStats = { damageMultiplier = 1, cooldownMultiplier = 1 }
+  
   -- Alive state
   self.isAlive = true
   
@@ -42,7 +45,10 @@ local MIN_COOLDOWN_MULTIPLIER = 0.4
 -- Abilities read these when they activate.
 -- @return table { damageMultiplier, cooldownMultiplier }
 function Hero:getStats()
-  local stats = { damageMultiplier = 1, cooldownMultiplier = 1 }
+  local stats = {
+    damageMultiplier = self.baseStats.damageMultiplier,
+    cooldownMultiplier = self.baseStats.cooldownMultiplier,
+  }
   for _, ability in ipairs(self.abilities) do
     if ability.applyStats then
       ability:applyStats(stats)
@@ -50,6 +56,15 @@ function Hero:getStats()
   end
   stats.cooldownMultiplier = math.max(stats.cooldownMultiplier, MIN_COOLDOWN_MULTIPLIER)
   return stats
+end
+
+--- Tint the hero's body
+-- @param color table { r, g, b }
+function Hero:setColor(color)
+  local body = self.displayObject and self.displayObject[1]
+  if body and body.setFillColor then
+    body:setFillColor(color[1], color[2], color[3])
+  end
 end
 
 function Hero:addXP(amount)
