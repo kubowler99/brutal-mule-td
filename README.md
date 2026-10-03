@@ -22,6 +22,7 @@ See [docs/arcane-survivor/game-concept.md](docs/arcane-survivor/game-concept.md)
   - **Elites** (level 8+): any normal enemy can spawn as a gold elite with 4x health, 2x damage, and 5x XP.
   - **Bosses**: a boss at level 10 and the final boss at level 20, announced with a banner and a boss health bar.
 - **Stat upgrades**: wall repair, wall fortify, XP boost.
+- **Synergies**: abilities have tags (projectile, frost, arcane, area, orbital). Each tag shared by two or more of your abilities adds +10% damage, and level-up cards that share a tag with your abilities are twice as likely to appear. Cards show their tags, in gold when they match.
 - **Heroes** (chosen before each run)
   - **Arcane Wanderer** (free): starts with Arcane Bolt, +10% XP.
   - **Frost Witch** (300 gold): starts with Frost Shard, 10% shorter cooldowns.
@@ -54,7 +55,7 @@ src/
   systems/            spawner, combat, collision, experience, upgrade
   entities/           hero, wall, walker (all enemy types), projectile
     abilities/        arcane_bolt, frost_shard, frost_nova, orbiting_blades, passive
-  models/             game state, save data, meta progression, config and ability loaders
+  models/             game state, save data, meta progression, synergy, config and ability loaders
   ui/                 health bar, XP bar, ability indicators, upgrade cards
   utils/              object pool, helpers, placeholder graphics
 lib/                  middleclass (OOP) and stateful
@@ -66,9 +67,9 @@ docs/                 Game concept and architecture notes
 
 Most balance values live in `data/`, so you can change them without touching code:
 
-- `game_config.json`: spawn interval, spawn count, the enemy spawn table (type, weight, unlock level, group size), elite settings, boss levels, wall health, XP curve.
+- `game_config.json`: spawn interval, spawn count, the enemy spawn table (type, weight, unlock level, group size), elite settings, boss levels, synergy bonus and draft weight, wall health, XP curve.
 - `enemies.json`: health, speed, damage, attack cooldown, attack range, and XP value per enemy type; boss flags.
-- `abilities.json`: base stats and upgrade amounts per ability. Set `"unlocked": false` to stop an ability from being offered.
+- `abilities.json`: base stats, synergy tags, and upgrade amounts per ability. Set `"unlocked": false` to stop an ability from being offered.
 - `meta.json`: gold per kill, per level, and for winning; permanent upgrade costs and amounts; hero prices, starting abilities, and bonuses.
 
 ## Tests

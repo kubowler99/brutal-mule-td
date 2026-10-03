@@ -26,6 +26,10 @@
       { "level": 20, "type": "final_boss" }
     ]
   },
+  "synergy": {
+    "damagePerSharedTag": 0.1,
+    "draftWeight": 2
+  },
   "collision": {
     "projectileEnemyThreshold": 20,
     "heroEnemyMeleeThreshold": 30

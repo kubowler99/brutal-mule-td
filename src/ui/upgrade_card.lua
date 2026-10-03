@@ -70,6 +70,24 @@ function UpgradeCard:initialize(x, y, upgradeData, group)
     align = "center"
   })
   self.descriptionText:setFillColor(0.8, 0.8, 0.8)
+  
+  -- Synergy tags, in gold when the card shares a tag with the hero's abilities
+  if type(upgradeData.tags) == "table" and #upgradeData.tags > 0 then
+    self.tagsText = display.newText({
+      parent = self.group,
+      text = table.concat(upgradeData.tags, ", "),
+      x = x,
+      y = y + 48,
+      width = 180,
+      fontSize = 11,
+      align = "center"
+    })
+    if upgradeData.sharesTag then
+      self.tagsText:setFillColor(1, 0.85, 0.3)
+    else
+      self.tagsText:setFillColor(0.6, 0.6, 0.7)
+    end
+  end
 end
 
 --- Set the tap callback for card selection

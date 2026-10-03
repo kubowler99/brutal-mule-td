@@ -9,6 +9,8 @@ if _adl_load_success then
   ability_data_loader = _adl_module
 end
 
+local synergy = require("src.models.synergy")
+
 local upgrade_system = {}
 
 -- State
@@ -57,6 +59,7 @@ local function _buildUpgradePoolFromData()
             id = capturedAbilityId .. "_" .. capturedUpgradeType,
             type = "tier_upgrade",
             abilityId = capturedAbilityId,
+            tags = synergy.getTags(capturedAbilityId),
             name = name,
             description = description,
             iconType = iconType,
@@ -225,6 +228,28 @@ function upgrade_system.initialize(hero, onUpgradeSelectedCallback)
   })
 end
 
+--- Pick an index from the cards, weighted by synergy draft weight
+-- @param cards table Array of upgrade cards
+-- @param abilities table The hero's abilities
+-- @return number Index into cards
+local function pickWeightedIndex(cards, abilities)
+  local totalWeight = 0
+  local weights = {}
+  for i, card in ipairs(cards) do
+    weights[i] = synergy.getDraftWeight(card, abilities)
+    totalWeight = totalWeight + weights[i]
+  end
+
+  local roll = math.random() * totalWeight
+  for i, weight in ipairs(weights) do
+    roll = roll - weight
+    if roll < 0 then
+      return i
+    end
+  end
+  return #cards
+end
+
 -- Generate random upgrade cards
 -- Returns an array of upgrade card objects
 function upgrade_system.generateCards(count)
@@ -261,10 +286,13 @@ function upgrade_system.generateCards(count)
       break
     end
     
-    -- Select random upgrade from available pool
-    local randomIndex = math.random(1, #availableUpgrades)
+    -- Select a random upgrade, favoring cards that share a tag with the
+    -- hero's abilities (synergy draft weighting)
+    local randomIndex = pickWeightedIndex(availableUpgrades, upgrade_system.hero.abilities)
     local upgrade = availableUpgrades[randomIndex]
     
+    -- Mark cards that would extend a synergy so the card can highlight it
+    upgrade.sharesTag = synergy.sharesTag(upgrade.abilityId, upgrade_system.hero.abilities)
     table.insert(cards, upgrade)
     
     -- Remove selected upgrade from available pool to avoid duplicates
@@ -381,8 +409,9 @@ function upgrade_system.getAvailableUpgrades()
             id = "new_ability_" .. abilityId,
             type = "new_ability",
             abilityId = abilityId,
+            tags = synergy.getTags(abilityId),
             name = abilityInstance.name or "Unknown Ability",
-            description = abilityInstance.description or "No description available",
+            description = abilityInstance.description or abilityDef.description or "No description available",
             iconType = abilityInstance.iconType or abilityId,
             apply = function(hero)
               -- Validate hero reference
