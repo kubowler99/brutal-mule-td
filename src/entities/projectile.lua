@@ -55,6 +55,10 @@ function Projectile:activate(x, y, targetX, targetY, speed, damage, pierce)
   self.damage = damage
   self.pierceCount = pierce
   
+  -- On-hit slow (set by abilities such as Frost Shard after activation)
+  self.slowFactor = nil
+  self.slowDuration = nil
+  
   -- Reset hit tracking
   self.hitEnemies = {}
   

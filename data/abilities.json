@@ -160,5 +160,49 @@
         "sizeIncrease": 6
       }
     }
+  },
+  "frost_shard": {
+    "name": "Frost Shard",
+    "description": "Fires a piercing shard at the nearest enemy that slows what it hits",
+    "module": "src.entities.abilities.frost_shard",
+    "unlocked": true,
+    "maxTier": 5,
+    "icon": "assets/images/abilities/frost_shard.png",
+    "baseStats": {
+      "cooldown": 1.2,
+      "damage": 7,
+      "projectileSpeed": 900,
+      "pierceCount": 1,
+      "projectileCount": 1,
+      "slowFactor": 0.7,
+      "slowDuration": 1.5
+    },
+    "upgrades": {
+      "damage_increase": {
+        "name": "Frost Shard Damage",
+        "description": "+4 damage per shard",
+        "iconType": "damage",
+        "damageIncrease": 4
+      },
+      "shard_count": {
+        "name": "Frost Shard Count",
+        "description": "+1 shard",
+        "iconType": "count",
+        "countIncrease": 1
+      },
+      "pierce": {
+        "name": "Frost Shard Pierce",
+        "description": "+1 pierce count",
+        "iconType": "pierce",
+        "pierceIncrease": 1
+      },
+      "slow_increase": {
+        "name": "Frost Shard Chill",
+        "description": "Slows enemies 10% more",
+        "iconType": "speed",
+        "slowReduction": 0.1,
+        "minSlowFactor": 0.3
+      }
+    }
   }
 }

@@ -9,6 +9,7 @@ See [docs/arcane-survivor/game-concept.md](docs/arcane-survivor/game-concept.md)
 - **Abilities** (up to 5, each upgradeable to tier 5)
   - **Arcane Bolt**: fires at the nearest enemy. Upgrades: damage, attack speed, projectile count, pierce.
   - **Frost Nova**: pulses along the wall, damaging and slowing every enemy within range. Upgrades: damage, range, cooldown, slow.
+  - **Frost Shard**: fires a piercing shard at the nearest enemy that slows what it hits. Upgrades: damage, shard count, pierce, slow.
   - **Orbiting Blades**: blades circle the ability's spot on the wall and cut enemies they touch. Upgrades: blade count, speed, damage, size.
   - **Arcane Might** (passive): +10% damage for all abilities per tier.
   - **Quickening** (passive): 8% shorter cooldowns for all abilities per tier.
@@ -23,7 +24,7 @@ See [docs/arcane-survivor/game-concept.md](docs/arcane-survivor/game-concept.md)
 - **Stat upgrades**: wall repair, wall fortify, XP boost.
 - **Heroes** (chosen before each run)
   - **Arcane Wanderer** (free): starts with Arcane Bolt, +10% XP.
-  - **Frost Witch** (300 gold): starts with Frost Nova, 10% shorter cooldowns.
+  - **Frost Witch** (300 gold): starts with Frost Shard, 10% shorter cooldowns.
   - **Ember Knight** (500 gold): starts with Orbiting Blades, +15% damage.
 - **Meta progression**: each run earns gold (per kill, per level reached, and a bonus for winning). Spend it on heroes and on permanent upgrades: wall health, damage, cooldowns, XP gain.
 - **Screens**: main menu with your best run and gold, hero select, upgrades, game with pause, and an end screen titled VICTORY! or GAME OVER with run stats, gold earned, and a "NEW BEST!" highlight.
@@ -52,7 +53,7 @@ src/
   controllers/        game_controller: game loop and system wiring
   systems/            spawner, combat, collision, experience, upgrade
   entities/           hero, wall, walker (all enemy types), projectile
-    abilities/        arcane_bolt, frost_nova, orbiting_blades, passive
+    abilities/        arcane_bolt, frost_shard, frost_nova, orbiting_blades, passive
   models/             game state, save data, meta progression, config and ability loaders
   ui/                 health bar, XP bar, ability indicators, upgrade cards
   utils/              object pool, helpers, placeholder graphics

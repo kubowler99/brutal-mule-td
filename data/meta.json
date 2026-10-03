@@ -52,8 +52,8 @@
     {
       "id": "frost_witch",
       "name": "Frost Witch",
-      "description": "Control. Starts with Frost Nova. -10% cooldowns.",
-      "startingAbility": "frost_nova",
+      "description": "Control. Starts with Frost Shard. -10% cooldowns.",
+      "startingAbility": "frost_shard",
       "cost": 300,
       "color": [0.5, 0.85, 1.0],
       "bonuses": { "cooldownMultiplier": -0.1 }

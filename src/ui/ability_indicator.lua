@@ -61,7 +61,7 @@ function AbilityIndicator:setAbility(ability)
     -- Set icon color based on ability (placeholder logic)
     if ability.id == "arcane_bolt" then
       self.icon:setFillColor(0.5, 0.3, 0.9) -- Purple for arcane
-    elseif ability.id == "frost_nova" then
+    elseif ability.id == "frost_nova" or ability.id == "frost_shard" then
       self.icon:setFillColor(0.5, 0.8, 1.0) -- Light blue for frost
     elseif ability.id == "orbiting_blades" then
       self.icon:setFillColor(0.85, 0.9, 1.0) -- Silver for blades

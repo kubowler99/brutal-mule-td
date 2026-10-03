@@ -207,6 +207,11 @@ function M.update(event)
       -- Apply damage to enemy (kills are rewarded through onEnemyKilled)
       combat_system.applyDamage(enemy, projectile.damage)
 
+      -- On-hit slow from frost projectiles (ignored if the hit killed the enemy)
+      if projectile.slowFactor and enemy.isActive and enemy.applySlow then
+        enemy:applySlow(projectile.slowFactor, projectile.slowDuration or 0)
+      end
+
       -- Handle projectile hit (pierce logic)
       projectile:onHit(enemy)
     end
