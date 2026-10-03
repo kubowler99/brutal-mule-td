@@ -1,82 +1,107 @@
-# Architecture Overview
+# Architecture
 
-This project follows a modular, layer-based architecture inspired by professional Solar2D game development patterns.
+The design decisions behind Arcane Survivor's code and the reasons for them. For where things live and how to make common changes, see [PROJECT-STRUCTURE.md](PROJECT-STRUCTURE.md).
 
-## 1. Modular Utilities (`src/utils/`)
+## 1. Layers and dependencies
 
-Instead of a monolithic helper file, the project uses specialized utility modules:
-
-- **screen.lua**: Standardized display metrics. Centralizes access to screen boundaries, safe areas, and center points.
-- **device.lua**: Platform and device detection flags (`isAndroid`, `isIos`, `isTall`, etc.).
-- **math.lua**: Extended mathematical functions tailored for game development (clamping, lerping, angle calculations).
-- **string.lua**: String manipulation helpers (splitting, trimming, capitalization).
-- **taskQueue.lua**: A frame-independent task scheduling system. Essential for games that implement time-scaling (slow-motion) or need to pause game logic independently of the engine.
-- **pool.lua**: A flexible object pooling utility to reduce memory churn and CPU spikes by reusing display objects and tables.
-- **helpers.lua**: UI-specific shortcuts and component factories (like `newButton`).
-
-## 2. Advanced Data Management (`src/models/data.lua`)
-
-The template features a robust data persistence layer supporting:
-- **Dot-Notation Access**: Retrieve and set nested data easily (e.g., `data.get("settings.sound.volume")`).
-- **Sandbox Mode**: A critical development feature that allows you to test game state changes in memory without overwriting the actual save file on disk.
-- **Session Tracking**: Built-in tracking for session counts and first-run timestamps.
-- **Safe I/O**: Automated JSON encoding/decoding with protected calls (`pcall`) to prevent crashes from corrupted files.
-
-## 3. Dependency Strategy (Penlight)
-
-While the project includes essential utilities in `src/utils/`, it is designed to be lean. For more advanced needs (complex data structures, filesystem abstraction, functional programming), the **Penlight** library is the recommended upgrade path.
-
-- **Status**: Optional (Recommended).
-- **Integration**: Penlight is included in the `.rockspec` as a recommended dependency.
-- **Usage**: Use Penlight when you need `pl.List`, `pl.Map`, or advanced table/string manipulations that go beyond the built-in `src/utils/` modules.
-
-## 4. Global Accessibility vs. Modularization
-
-While the project encourages `require()` for modules, some core utilities are often used frequently enough that they can be assigned to local variables in `main.lua` or referenced through a central "game" or "context" object if needed.
-
-## 5. Separation of Concerns
-
-- **Models (`src/models/`)**: Handle data and state. `data.lua` is the primary entry point for persistent storage.
-- **Scenes (`src/scenes/`)**: Pure display and lifecycle logic using the Composer library.
-- **Utils (`src/utils/`)**: Pure, side-effect-free logic (mostly).
-
-## 6. Design Patterns
-
-- **Facade**: `helpers.lua` acts as a facade for common display operations.
-- **Singleton**: The `data.lua` module acts as a state singleton.
-- **Object Pool**: Implemented in `pool.lua` to manage resource lifecycle.
-- **Command/Task Queue**: Implemented in `taskQueue.lua` for deferred execution.
-- **Class/Inheritance**: Provided by `middleclass.lua` for complex entities.
-- **State Machine**: Provided by `stateful.lua`, enabling complex behavior management for entities and game systems.
-
-## 7. Object-Oriented Programming (OOP)
-
-The template includes the `middleclass` library to support formal OOP. While Solar2D is naturally modular and functional, OOP is particularly beneficial for:
-- **Game Entities**: Managing complex state and behavior for players, enemies, and projectiles.
-- **UI Components**: Creating reusable custom UI elements with their own internal logic.
-- **Inheritance**: Sharing logic between similar objects (e.g., a base `Enemy` class extended by `FastEnemy`).
-- **States**: Managing entity behavior via `Stateful` (e.g., a player switching between `Idle`, `Running`, and `Jumping`).
-
-See `src/entities/walker.lua` and `src/entities/abilities/` for practical `middleclass` examples.
-
-## 8. Unit Testing (`tests/`)
-
-The project follows a BDD-style unit testing approach using **Busted**.
-
-- **Test Structure**: Tests are located in the `tests/` directory, mirroring the `src/` hierarchy.
-- **Mocking**: Since unit tests run in a standard Lua environment, `tests/spec_helper.lua` provides mocks for Solar2D-specific globals (like `display`, `system`, `Runtime`).
-- **Coverage**: Use **LuaCov** to track code coverage.
-- **What to Test**: Focus on "pure" logic in `src/utils/` and `src/models/`. Scenes and complex entities are better validated through integration testing or manual playtesting in the simulator.
-
-To run tests:
-```bash
-luarocks install busted
-busted
+```text
+scenes  ->  game_controller  ->  systems  ->  entities, models
+                     (callbacks flow back up)
 ```
 
-## 9. Inspired by "Pilot" Design
+- **Scenes** handle display and the Composer lifecycle. The game scene owns the HUD and overlays (level-up cards, pause, boss bar) and asks `game_controller` to run the game.
+- **`game_controller`** owns one run: it creates the hero, wall, and pools, wires the systems together, and runs the game loop.
+- **Systems** do one job each per frame (spawning, combat, collisions, XP, cards, effects, sound).
+- **Entities and models** hold state and data and know nothing about the game loop.
 
-The current architecture is an evolution of simpler templates, incorporating "industry-standard" practices:
-- Standardized screen/device abstraction.
-- Robust error handling.
-- Modularized utility functions for better testability and maintenance.
+Lower layers never `require` higher ones. When a system needs to tell the controller something, it calls a callback that the controller sets (for example `combat_system.onEnemyKilled`). The same goes for the controller and the scene (`onLevelUpCallback`, `onGameOverCallback`, `onBossSpawnedCallback`). This keeps the systems testable on their own and avoids circular requires.
+
+Two deliberate exceptions:
+- Abilities that deal damage directly (Frost Nova, Orbiting Blades) require `combat_system` so that their damage goes through `applyDamage` like everything else.
+- The wall repair and fortify cards in `upgrade_system` require `game_controller` inside their `apply` functions to reach the wall. The require is lazy, so there is no load-time cycle.
+
+## 2. Data-driven design
+
+Balance and content live in `data/*.json`, not in code:
+- `abilities.json`: abilities, their tags, and upgrade cards.
+- `enemies.json`: enemy types.
+- `game_config.json`: spawning, elites, bosses, synergy, collision, XP curve.
+- `meta.json`: gold, permanent upgrades, heroes.
+
+Loaders (`config_loader`, `ability_data_loader`, `ability_registry`, `meta_progression`) read these files once and validate values. Every reader also has hard-coded fallbacks, so a missing or broken value never crashes the game.
+
+A missing section turns a feature off rather than inventing values. Without a spawn table, only walkers spawn; without `spawner.elites` or `spawner.bosses`, there are no elites or bosses. This also keeps tests deterministic, since most specs run without the config loaded.
+
+Adding an enemy, passive, hero, or permanent upgrade is usually a data change only. New abilities and new kinds of behavior need code.
+
+## 3. The game loop and time
+
+There is one `enterFrame` listener, `game_controller.update`. It runs the systems in a fixed order each frame (see PROJECT-STRUCTURE.md).
+
+- **Movement and timers use `dt`**, the time since the last frame, capped at 0.1s. Solar2D stops sending frames while the app is suspended, so without the cap the first frame back would move enemies across the screen. The game also pauses on `applicationSuspend`.
+- **Ability and attack cooldowns use the frame's absolute time** (`event.time` in seconds). This time keeps running during a pause, so abilities are ready again right after resuming.
+- **Pausing** sets a flag that makes `update` skip frames, and `resume` resets the frame timer so the first frame back has a normal `dt`. The pause button, the level-up panel, and app suspend all use it.
+
+## 4. Hero stats
+
+Abilities don't store hero-wide bonuses. They ask the hero when they fire: `Hero:getStats()` builds `damageMultiplier` and `cooldownMultiplier` fresh each time from
+1. `hero.baseStats`: permanent upgrades and the hero's own bonus, set at run start;
+2. passive abilities, which add to the stats through `applyStats`;
+3. synergy: +10% damage per tag shared by two or more abilities;
+4. a floor on the cooldown multiplier (0.4).
+
+Combat passes the result to `canActivate` and `activate`. Because it is recomputed, picking a passive or a synergy card takes effect on the next shot with nothing to keep in sync. With at most five abilities, the cost is negligible.
+
+XP works the same way: `experience_system.awardXP` multiplies by the kill's multiplier (elites) and `hero.xpMultiplier` (hero, permanent upgrade, XP Boost card).
+
+## 5. Damage and kills
+
+All damage to enemies goes through `combat_system.applyDamage`. It reports a kill only when the hit moved an active enemy to inactive, then calls `onEnemyDamaged` (numbers, sparks, sound) and `onEnemyKilled` (XP, kill count, victory check).
+
+One path for every source (projectiles, Frost Nova, blades) means every source rewards kills the same way. It also prevents double rewards:
+- collision pairs whose enemy already died, or whose projectile was already spent, earlier in the same frame are skipped;
+- a dead enemy can't be "killed" again.
+
+## 6. Object pooling
+
+Enemies and projectiles are pooled (`src/utils/pool.lua`) to avoid allocating display objects during play. Two rules keep pooling correct:
+
+- **Reset on reuse.** `Walker:activate` reloads stats when the type changes or when the previous life was an elite, and clears slows. `Projectile:activate` clears the on-hit slow. Anything an ability adds to a pooled object must be reset there.
+- **Always release.** Every path that stops tracking a projectile (hit, off-screen, error, cleanup) returns it to the pool. At the end of a run, the controller destroys every pooled display object.
+
+## 7. Abilities
+
+An ability is a middleclass object. The combat system calls whichever of `canActivate`, `activate`, `update`, `upgrade`, `applyStats`, and `destroy` it defines (see PROJECT-STRUCTURE.md for signatures). There is no base class to inherit from; the interface is the method names.
+
+- **Created by id.** `ability_registry.createInstance(id)` requires the `module` named in `abilities.json` and calls `Class:new(id)`. Passing the id lets one class back several abilities: every passive is the same `Passive` class, configured by its data entry.
+- **Inheritance where it helps.** Frost Shard subclasses Arcane Bolt and adds the slow, reusing the targeting and firing.
+- **Slots.** Each ability fires or runs from its indicator's position on the wall (`combat_system.getFireOrigin`), so slot order matters for area and orbital abilities.
+
+## 8. Persistence
+
+`src/models/data.lua` stores save data as JSON in the documents directory (`gamedata.json`, not tracked in git). It offers dot-path access (`data.get("meta.gold")`) and a sandbox mode that tests use to change data in memory without writing it.
+
+- **Run statistics** are saved under `stats` by the game over scene.
+- **Meta progression** (gold, upgrade levels, unlocked heroes, selected hero) is saved under `meta` by `meta_progression`. Definitions stay in `data/meta.json`, so prices can change without migrating saves.
+
+## 9. Feedback and optional assets
+
+Effects and sound must never break play:
+- Effects draw with `pcall`, cap how many damage numbers can be on screen, and run screen shake from the game loop so it stops while paused.
+- Sounds load only if their file exists under `assets/audio/`, so the game runs silently until audio is added, and the `soundOn`/`musicOn` settings turn them off.
+- Placeholder graphics (`placeholder_graphics.lua`) stand in for art that doesn't exist yet.
+
+## 10. Testing
+
+Specs run outside Solar2D with busted on LuaJIT (Lua 5.1, matching Solar2D). `tests/spec_helper.lua` mocks the Solar2D APIs. Writable paths resolve to the OS temp directory so tests never touch the working tree.
+
+- **Isolation:** busted reloads modules for each spec file. Within a file, tests restore what they stub; `snapshotModule(mod)` restores a module's functions in `after_each` even when a test fails partway.
+- **Property tests:** lua-quickcheck properties run through `checkProperties()`, which fails the test when a property fails. Plain `lqc.check()` only records failures.
+- **Run order:** CI runs the suite in normal and shuffled order (`busted --shuffle`) to catch tests that depend on each other. The shuffled run has already caught one real bug: spawn groups at the screen edge.
+
+## 11. Libraries
+
+- **middleclass** (`Class`, global): classes and inheritance for entities, abilities, and UI components.
+- **stateful** (`Stateful`, global): state machines for middleclass objects. It is loaded in `main.lua` but no game code uses it yet.
+
+The `.rockspec` and `config.ld` files come from the original project template. They are kept for LuaRocks metadata and LDoc generation, but the build doesn't depend on them.
