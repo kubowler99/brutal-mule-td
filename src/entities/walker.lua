@@ -57,6 +57,17 @@ local TYPE_STYLES = {
   final_boss = { tint = {0.6, 0.3, 0.3}, scale = 2.8 },
 }
 
+-- Wind-up before a telegraphed attack (bosses, slam elites): red and larger
+local TELEGRAPH_TINT = {1.0, 0.15, 0.15}
+local TELEGRAPH_SCALE = 1.15
+
+-- Elite abilities
+local CHARGE_DISTANCE = 400     -- charge when this close to the stop point
+local CHARGE_DURATION = 1.0     -- seconds
+local CHARGE_SPEED_MULTIPLIER = 3
+local SUMMON_INTERVAL = 5       -- seconds between summons
+local SUMMON_COUNT = 2          -- minions per summon
+
 -- Elites are tougher, larger, gold-tinted versions of a normal enemy
 local ELITE_TINT = {1.0, 0.85, 0.3}
 local ELITE_SCALE = 1.3
@@ -172,14 +183,23 @@ function Walker:setType(enemyType)
   self.isFinalBoss = _getEnemyFlag(enemyType, "isFinalBoss")
   self.isElite = false
   self.xpMultiplier = 1
+  
+  -- Elite ability state
+  self.eliteAbility = nil
+  self.hasCharged = false
+  self.chargeRemaining = 0
+  self.summonTimer = 0
+  self.pendingSummons = 0
 end
 
 --- Make this enemy an elite: tougher, larger, gold-tinted, worth more XP
 -- @param healthMultiplier number Health multiplier
 -- @param damageMultiplier number Damage multiplier
 -- @param xpMultiplier number XP multiplier
-function Walker:makeElite(healthMultiplier, damageMultiplier, xpMultiplier)
+-- @param ability string|nil Elite ability: "slam", "charge", or "summon"
+function Walker:makeElite(healthMultiplier, damageMultiplier, xpMultiplier, ability)
   self.isElite = true
+  self.eliteAbility = ability
   self.maxHealth = self.maxHealth * healthMultiplier
   self.health = self.maxHealth
   self.damage = self.damage * damageMultiplier
@@ -198,13 +218,16 @@ function Walker:refreshStyle()
   
   local style = TYPE_STYLES[self.type] or TYPE_STYLES.walker
   local scale = SPRITE_SCALE * style.scale * (self.isElite and ELITE_SCALE or 1)
+    * (self.isTelegraphing and TELEGRAPH_SCALE or 1)
   self.displayObject.xScale = scale
   self.displayObject.yScale = scale
   
   if self.displayObject.setFillColor then
     local baseTint = self.isElite and ELITE_TINT or style.tint
     local tint = baseTint
-    if self.slowRemaining > 0 then
+    if self.isTelegraphing then
+      tint = TELEGRAPH_TINT
+    elseif self.slowRemaining > 0 then
       tint = SLOWED_TINT
     elseif self.burnRemaining > 0 then
       tint = BURNING_TINT
@@ -227,6 +250,15 @@ function Walker:applySlow(factor, duration)
   end
   self.slowRemaining = math.max(self.slowRemaining, duration)
   self:refreshStyle()
+end
+
+--- Show or hide the attack wind-up
+-- @param telegraphing boolean True while winding up
+function Walker:setTelegraph(telegraphing)
+  if self.isTelegraphing ~= telegraphing then
+    self.isTelegraphing = telegraphing
+    self:refreshStyle()
+  end
 end
 
 --- Remove any burn
@@ -261,10 +293,35 @@ end
 --- Current movement speed after slow effects
 -- @return number Pixels per second
 function Walker:getCurrentSpeed()
-  if self.slowRemaining > 0 then
-    return self.speed * self.slowFactor
+  local speed = self.speed
+  if self.chargeRemaining > 0 then
+    speed = speed * CHARGE_SPEED_MULTIPLIER
   end
-  return self.speed
+  if self.slowRemaining > 0 then
+    speed = speed * self.slowFactor
+  end
+  return speed
+end
+
+--- Run charge and summon elite abilities for one frame
+-- @param dt number Delta time in seconds
+-- @param stopY number Y where this enemy stops to attack
+function Walker:updateEliteAbility(dt, stopY)
+  if self.eliteAbility == "charge" then
+    if self.chargeRemaining > 0 then
+      self.chargeRemaining = math.max(0, self.chargeRemaining - dt)
+    elseif not self.hasCharged and stopY - self.y <= CHARGE_DISTANCE then
+      self.hasCharged = true
+      self.chargeRemaining = CHARGE_DURATION
+    end
+  elseif self.eliteAbility == "summon" then
+    self.summonTimer = self.summonTimer + dt
+    while self.summonTimer >= SUMMON_INTERVAL do
+      self.summonTimer = self.summonTimer - SUMMON_INTERVAL
+      -- The spawner creates the minions on its next update
+      self.pendingSummons = self.pendingSummons + SUMMON_COUNT
+    end
+  end
 end
 
 function Walker:activate(x, y, lane, enemyType)
@@ -282,10 +339,11 @@ function Walker:activate(x, y, lane, enemyType)
   -- Reset health
   self.health = self.maxHealth
   
-  -- Clear any slow or burn left over from the previous life
+  -- Clear any slow, burn, or wind-up left over from the previous life
   self.slowFactor = 1.0
   self.slowRemaining = 0
   self:clearBurn()
+  self.isTelegraphing = false
   
   -- Reset attack timer
   self.lastAttackTime = 0
@@ -364,6 +422,10 @@ function Walker:update(dt, wallThreshold)
   
   -- Ranged enemies stop attackRange short of the wall
   local stopY = wallThreshold - self.attackRange
+  
+  -- Elite charge and summon (speed for this frame was read above, so a
+  -- charge starts moving fast on the next frame)
+  self:updateEliteAbility(dt, stopY)
   
   -- Check if walker has reached its attack position
   if self.y >= stopY then

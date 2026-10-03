@@ -44,6 +44,12 @@ local HEAVY_HIT_SHAKE = 4
 local BOSS_HIT_SHAKE = 8
 local BOSS_SPAWN_SHAKE = 6
 
+-- Bosses (and slam elites) wind up for this long before each attack
+local TELEGRAPH_TIME = 0.6
+
+-- Slam elites hit the wall this many times harder
+local SLAM_DAMAGE_MULTIPLIER = 2
+
 --- Initialize the game controller and set up game session
 -- Creates hero, initializes object pools, and sets up all systems
 -- @param group table The scene group to add display objects to
@@ -257,20 +263,35 @@ function M.update(event)
   local wallCollisions = collision_system.checkWallCollisions(activeWalkers, 1140)
   for _, enemy in ipairs(wallCollisions) do
     -- Set walker wall target and attack state
+    local arriving = enemy.wallTarget == nil
     enemy.wallTarget = wall
     enemy.isAttackingWall = true
     
+    -- Enemies that telegraph wind up before every attack, including the first
+    local telegraphs = M.isTelegraphing(enemy)
+    if arriving and telegraphs then
+      enemy.lastAttackTime = currentTime - enemy.attackCooldown + TELEGRAPH_TIME
+    end
+    
+    local untilAttack = enemy.attackCooldown - (currentTime - enemy.lastAttackTime)
+    if telegraphs and enemy.setTelegraph then
+      -- Small tolerance: the arrival setup lands exactly on the window edge
+      enemy:setTelegraph(untilAttack > 0 and untilAttack <= TELEGRAPH_TIME + 1e-6)
+    end
+    
     -- Check if enemy can attack (cooldown)
-    if currentTime - enemy.lastAttackTime >= enemy.attackCooldown then
-      combat_system.applyDamage(wall, enemy.damage)
+    if untilAttack <= 0 then
+      local isSlam = enemy.eliteAbility == "slam"
+      local damage = isSlam and enemy.damage * SLAM_DAMAGE_MULTIPLIER or enemy.damage
+      combat_system.applyDamage(wall, damage)
       wall:flashDamage()
       enemy.lastAttackTime = currentTime
       sound.play("wall_hit")
       
       -- Heavy hits shake the screen
-      if enemy.isBoss then
+      if enemy.isBoss or isSlam then
         effects.screenShake(BOSS_HIT_SHAKE, 0.3)
-      elseif enemy.damage >= HEAVY_HIT_DAMAGE then
+      elseif damage >= HEAVY_HIT_DAMAGE then
         effects.screenShake(HEAVY_HIT_SHAKE, 0.15)
       end
       
@@ -349,6 +370,13 @@ function M.onUpgradeSelected(upgrade)
   end
   
   M.resume()
+end
+
+--- Whether an enemy winds up (telegraphs) before its wall attacks
+-- @param enemy table The enemy
+-- @return boolean True for bosses and slam elites
+function M.isTelegraphing(enemy)
+  return enemy.isBoss == true or enemy.eliteAbility == "slam"
 end
 
 --- Hit feedback for any damage source: number, spark, and sound

@@ -62,7 +62,7 @@ The game scene builds its UI once in `create` and starts a new run in `show` ("w
 1. `spawner_system` spawns enemies and bosses;
 2. difficulty follows the hero level;
 3. enemies move (and slow effects tick);
-4. collisions: projectile hits deal damage, enemies at the wall attack it;
+4. collisions: projectile hits deal damage (with slow, freeze, and ricochet), enemies at the wall attack it (bosses and slam elites wind up first);
 5. `combat_system` fires abilities whose cooldown is ready, runs per-frame abilities, and moves projectiles;
 6. `effects` advances screen shake.
 
@@ -74,7 +74,7 @@ The game scene builds its UI once in `create` and starts a new run in `show` ("w
 
 | Module | Responsibility |
 |---|---|
-| `spawner_system` | Spawns from the weighted spawn table, rolls elites, spawns bosses at their levels, scales spawn rate with hero level |
+| `spawner_system` | Spawns from the weighted spawn table, rolls elites and their abilities, spawns bosses at their levels and summoners' minions, scales spawn rate with hero level |
 | `combat_system` | Fires abilities at their wall slot, runs per-frame abilities, tracks and recycles projectiles, applies damage |
 | `collision_system` | Distance checks: projectile vs enemy, enemy reaching its attack position at the wall |
 | `experience_system` | Awards XP (with elite and hero multipliers), levels the hero up, XP feedback |
@@ -97,7 +97,7 @@ Systems talk to the controller through callbacks rather than requiring it:
 
 - **`hero.lua`**: stationary at the wall's left edge. Holds up to 5 abilities. `Hero:getStats()` combines base stats (permanent upgrades and hero bonus), passive abilities, and synergy bonuses into a `damageMultiplier` and `cooldownMultiplier`.
 - **`wall.lua`**: the thing to protect. The run ends when its health reaches 0.
-- **`walker.lua`**: every enemy type. `activate(x, y, lane, enemyType)` loads that type's stats from `enemies.json`. It also handles elites (`makeElite`), slows (`applySlow`), burns (`applyBurn`; the controller applies the collected burn damage each frame), ranged stopping (`attackRange`), the sprite animation, and per-type tint and size.
+- **`walker.lua`**: every enemy type. `activate(x, y, lane, enemyType)` loads that type's stats from `enemies.json`. It also handles elites (`makeElite`, with the charge and summon abilities), attack wind-ups (`setTelegraph`), slows (`applySlow`), burns (`applyBurn`; the controller applies the collected burn damage each frame), ranged stopping (`attackRange`), the sprite animation, and per-type tint and size.
 - **`projectile.lua`**: a pooled projectile with damage, pierce, and an optional on-hit slow.
 
 ### Abilities (`src/entities/abilities/`)

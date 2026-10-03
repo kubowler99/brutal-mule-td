@@ -30,14 +30,26 @@ local BOSS_SPAWN_X = 360
 local function loadEliteSettings()
     local configured = config_loader.get("spawner.elites")
     if type(configured) ~= "table" then
-        return { minLevel = math.huge, chance = 0, healthMultiplier = 1, damageMultiplier = 1, xpMultiplier = 1 }
+        return { minLevel = math.huge, chance = 0, healthMultiplier = 1, damageMultiplier = 1, xpMultiplier = 1, abilities = {} }
     end
+    
+    -- Elite abilities: each elite gets one at random from this list
+    local abilities = {}
+    if type(configured.abilities) == "table" then
+        for _, ability in ipairs(configured.abilities) do
+            if type(ability) == "string" then
+                table.insert(abilities, ability)
+            end
+        end
+    end
+    
     return {
         minLevel = config_loader.positiveNumber(configured.minLevel, 1),
         chance = math.min(1, config_loader.positiveNumber(configured.chance, 0)),
         healthMultiplier = config_loader.positiveNumber(configured.healthMultiplier, 1),
         damageMultiplier = config_loader.positiveNumber(configured.damageMultiplier, 1),
         xpMultiplier = config_loader.positiveNumber(configured.xpMultiplier, 1),
+        abilities = abilities,
     }
 end
 
@@ -179,6 +191,9 @@ function M.update(dt, currentTime)
     -- Spawn any boss whose level the hero has reached
     M.checkBossSpawns()
     
+    -- Spawn minions requested by summoner elites
+    M.spawnSummons()
+    
     -- Handle initial spawn burst (3 walkers within 2 seconds)
     if not M.hasSpawnedInitial then
         if M.gameStartTime == nil then
@@ -229,8 +244,10 @@ end
 ---@param enemyType string|nil Enemy type (default "walker")
 ---@param spawnX number|nil Spawn X position (default random)
 ---@param ignoreLimit boolean|nil Spawn even at the concurrent limit (bosses)
+---@param options table|nil { y = spawn Y (default top edge), noElite = true to skip the elite roll }
 ---@return table|nil The spawned enemy
-function M.spawnWalker(enemyType, spawnX, ignoreLimit)
+function M.spawnWalker(enemyType, spawnX, ignoreLimit, options)
+    options = options or {}
     -- Error handling: Check maximum concurrent limit (enforce 50 limit)
     if #M.activeWalkers >= M.maxConcurrent and not ignoreLimit then
         return
@@ -244,7 +261,7 @@ function M.spawnWalker(enemyType, spawnX, ignoreLimit)
     
     -- Spawn along the top edge (random X unless given), avoiding screen edges
     spawnX = spawnX or math.random(SPAWN_MIN_X, SPAWN_MAX_X)
-    local spawnY = 0
+    local spawnY = options.y or 0
     
     -- Error handling: Clamp spawn X position to valid range [50, 670]
     spawnX = math.max(SPAWN_MIN_X, math.min(SPAWN_MAX_X, spawnX))
@@ -279,13 +296,44 @@ function M.spawnWalker(enemyType, spawnX, ignoreLimit)
     
     -- Some normal enemies spawn as elites once the hero is strong enough
     local elites = M.elites
-    if elites and not walker.isBoss and M.heroLevel >= elites.minLevel and math.random() < elites.chance then
-        walker:makeElite(elites.healthMultiplier, elites.damageMultiplier, elites.xpMultiplier)
+    if elites and not walker.isBoss and not options.noElite
+       and M.heroLevel >= elites.minLevel and math.random() < elites.chance then
+        local ability = nil
+        if #elites.abilities > 0 then
+            ability = elites.abilities[math.random(1, #elites.abilities)]
+        end
+        walker:makeElite(elites.healthMultiplier, elites.damageMultiplier, elites.xpMultiplier, ability)
     end
     
     -- Add to active walkers
     table.insert(M.activeWalkers, walker)
     return walker
+end
+
+-- Summoned minions: type, and horizontal offset from the summoner
+local SUMMON_TYPE = "swarmling"
+local SUMMON_OFFSET = 30
+
+---Spawn the minions that summoner elites have asked for
+---Minions appear beside the summoner, never as elites, and respect the
+---concurrent limit.
+function M.spawnSummons()
+    -- Copy first: spawning adds to activeWalkers while we iterate
+    local summoners = {}
+    for _, walker in ipairs(M.activeWalkers) do
+        if walker.isActive and (walker.pendingSummons or 0) > 0 then
+            table.insert(summoners, walker)
+        end
+    end
+    
+    for _, summoner in ipairs(summoners) do
+        for i = 1, summoner.pendingSummons do
+            local side = (i % 2 == 1) and -1 or 1
+            M.spawnWalker(SUMMON_TYPE, summoner.x + side * SUMMON_OFFSET, false,
+                { y = summoner.y, noElite = true })
+        end
+        summoner.pendingSummons = 0
+    end
 end
 
 ---Spawn each scheduled boss once, when the hero reaches its level

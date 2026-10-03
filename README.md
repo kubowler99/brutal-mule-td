@@ -20,8 +20,11 @@ See [docs/arcane-survivor/game-concept.md](docs/arcane-survivor/game-concept.md)
   - **Swarmling** (level 4+): very weak, spawns in groups of 4.
   - **Brute** (level 5+): slow and tanky, hits the wall hard.
   - **Spitter** (level 6+): stops short of the wall and attacks from range.
-  - **Elites** (level 8+): any normal enemy can spawn as a gold elite with 4x health, 2x damage, and 5x XP.
-  - **Bosses**: a boss at level 10 and the final boss at level 20, announced with a banner and a boss health bar.
+  - **Elites** (level 8+): any normal enemy can spawn as a gold elite with 4x health, 2x damage, and 5x XP, plus one ability:
+    - **Slam**: winds up (flashes red) and hits the wall twice as hard.
+    - **Charge**: dashes at triple speed once it gets close to the wall.
+    - **Summon**: calls two swarmlings every 5 seconds.
+  - **Bosses**: a boss at level 10 and the final boss at level 20, announced with a banner and a boss health bar. Bosses flash red and grow just before each attack.
 - **Stat upgrades**: wall repair, wall fortify, XP boost.
 - **Synergies**: abilities have tags (projectile, frost, fire, arcane, area, orbital). Each tag shared by two or more of your abilities adds +10% damage, and level-up cards that share a tag with your abilities are twice as likely to appear. Cards show their tags, in gold when they match.
 - **Heroes** (chosen before each run)
@@ -69,7 +72,7 @@ docs/                 Game concept and architecture notes
 
 Most balance values live in `data/`, so you can change them without touching code:
 
-- `game_config.json`: spawn interval, spawn count, the enemy spawn table (type, weight, unlock level, group size), elite settings, boss levels, synergy bonus and draft weight, wall health, XP curve.
+- `game_config.json`: spawn interval, spawn count, the enemy spawn table (type, weight, unlock level, group size), elite settings and abilities, boss levels, synergy bonus and draft weight, wall health, XP curve.
 - `enemies.json`: health, speed, damage, attack cooldown, attack range, and XP value per enemy type; boss flags.
 - `abilities.json`: base stats, synergy tags, and upgrade amounts per ability. Set `"unlocked": false` to stop an ability from being offered.
 - `meta.json`: gold per kill, per level, and for winning; permanent upgrade costs and amounts; hero prices, starting abilities, and bonuses.
