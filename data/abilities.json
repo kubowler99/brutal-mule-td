@@ -2,6 +2,7 @@
   "arcane_bolt": {
     "name": "Arcane Bolt",
     "description": "Fires magical projectiles at enemies",
+    "tags": ["projectile", "arcane"],
     "module": "src.entities.abilities.arcane_bolt",
     "unlocked": true,
     "maxTier": 5,
@@ -44,6 +45,7 @@
   "frost_nova": {
     "name": "Frost Nova",
     "description": "Pulses frost along the wall, damaging and slowing nearby enemies",
+    "tags": ["area", "frost"],
     "module": "src.entities.abilities.frost_nova",
     "unlocked": true,
     "maxTier": 5,
@@ -87,6 +89,7 @@
   "arcane_might": {
     "name": "Arcane Might",
     "description": "Passive: all abilities deal 10% more damage per tier",
+    "tags": ["arcane"],
     "module": "src.entities.abilities.passive",
     "unlocked": true,
     "maxTier": 5,
@@ -104,6 +107,7 @@
   "quickening": {
     "name": "Quickening",
     "description": "Passive: all ability cooldowns are 8% shorter per tier",
+    "tags": ["arcane"],
     "module": "src.entities.abilities.passive",
     "unlocked": true,
     "maxTier": 5,
@@ -121,6 +125,7 @@
   "orbiting_blades": {
     "name": "Orbiting Blades",
     "description": "Blades circle the ability's spot on the wall and cut enemies they touch",
+    "tags": ["orbital", "arcane"],
     "module": "src.entities.abilities.orbiting_blades",
     "unlocked": true,
     "maxTier": 5,
@@ -158,6 +163,51 @@
         "description": "Blades grow larger",
         "iconType": "radius",
         "sizeIncrease": 6
+      }
+    }
+  },
+  "frost_shard": {
+    "name": "Frost Shard",
+    "description": "Fires a piercing shard at the nearest enemy that slows what it hits",
+    "tags": ["projectile", "frost"],
+    "module": "src.entities.abilities.frost_shard",
+    "unlocked": true,
+    "maxTier": 5,
+    "icon": "assets/images/abilities/frost_shard.png",
+    "baseStats": {
+      "cooldown": 1.2,
+      "damage": 7,
+      "projectileSpeed": 900,
+      "pierceCount": 1,
+      "projectileCount": 1,
+      "slowFactor": 0.7,
+      "slowDuration": 1.5
+    },
+    "upgrades": {
+      "damage_increase": {
+        "name": "Frost Shard Damage",
+        "description": "+4 damage per shard",
+        "iconType": "damage",
+        "damageIncrease": 4
+      },
+      "shard_count": {
+        "name": "Frost Shard Count",
+        "description": "+1 shard",
+        "iconType": "count",
+        "countIncrease": 1
+      },
+      "pierce": {
+        "name": "Frost Shard Pierce",
+        "description": "+1 pierce count",
+        "iconType": "pierce",
+        "pierceIncrease": 1
+      },
+      "slow_increase": {
+        "name": "Frost Shard Chill",
+        "description": "Slows enemies 10% more",
+        "iconType": "speed",
+        "slowReduction": 0.1,
+        "minSlowFactor": 0.3
       }
     }
   }

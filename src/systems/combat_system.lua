@@ -17,6 +17,9 @@ local indicatorPositions = {}
 -- Called with the enemy whenever applyDamage() kills an active enemy
 M.onEnemyKilled = nil
 
+-- Called with (enemy, amount, killed) for every hit on an active enemy
+M.onEnemyDamaged = nil
+
 --- Deactivate a projectile and return it to the projectile pool
 -- @param projectile table The projectile entity to release
 local function releaseProjectile(projectile)
@@ -265,6 +268,9 @@ function M.applyDamage(entity, amount)
   end
   
   local killed = wasActive and not entity.isActive
+  if wasActive and validAmount > 0 and M.onEnemyDamaged then
+    M.onEnemyDamaged(entity, validAmount, killed)
+  end
   if killed and M.onEnemyKilled then
     M.onEnemyKilled(entity)
   end
@@ -324,6 +330,7 @@ function M.cleanup()
   enemies = {}
   sceneGroup = nil
   M.onEnemyKilled = nil
+  M.onEnemyDamaged = nil
   indicatorPositions = {}
 end
 

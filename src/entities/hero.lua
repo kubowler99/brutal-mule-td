@@ -2,6 +2,7 @@
 -- The stationary player character positioned at the defensive wall
 
 local placeholder_graphics = require("src.utils.placeholder_graphics")
+local synergy = require("src.models.synergy")
 
 local Hero = Class("Hero")
 
@@ -41,7 +42,7 @@ end
 -- Lowest cooldown multiplier passives can reach
 local MIN_COOLDOWN_MULTIPLIER = 0.4
 
---- Combined stats from passive abilities
+--- Combined stats from base stats, passive abilities, and synergies
 -- Abilities read these when they activate.
 -- @return table { damageMultiplier, cooldownMultiplier }
 function Hero:getStats()
@@ -54,6 +55,8 @@ function Hero:getStats()
       ability:applyStats(stats)
     end
   end
+  -- Each tag shared by two or more abilities adds a damage bonus
+  stats.damageMultiplier = stats.damageMultiplier + synergy.getDamageBonus(self.abilities)
   stats.cooldownMultiplier = math.max(stats.cooldownMultiplier, MIN_COOLDOWN_MULTIPLIER)
   return stats
 end

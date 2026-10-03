@@ -133,7 +133,7 @@ describe("Meta progression", function()
             game_controller.initialize(mockGroup, "frost_witch")
             local hero = game_controller.getHero()
 
-            assert.are.equal("frost_nova", hero.abilities[1].id)
+            assert.are.equal("frost_shard", hero.abilities[1].id)
             assert.is_true(math.abs(hero:getStats().cooldownMultiplier - 0.9) < 1e-9)
             assert.are.equal(120, game_controller.getWall().maxHealth)
             assert.are.equal(120, game_controller.getWall().health)

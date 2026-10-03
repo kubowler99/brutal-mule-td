@@ -329,7 +329,7 @@ _G.timer = {
 _G.audio = {
     -- Return a handle so code that preloads sounds behaves as on device
     loadSound = function(filename) return { _mockSound = filename } end,
-    loadStream = function() end,
+    loadStream = function(filename) return { _mockStream = filename } end,
     play = function() end,
     stop = function() end,
     dispose = function() end,
