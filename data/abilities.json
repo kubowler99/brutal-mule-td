@@ -83,5 +83,39 @@
         "minSlowFactor": 0.2
       }
     }
+  },
+  "arcane_might": {
+    "name": "Arcane Might",
+    "description": "Passive: all abilities deal 10% more damage per tier",
+    "module": "src.entities.abilities.passive",
+    "unlocked": true,
+    "maxTier": 5,
+    "icon": "assets/images/abilities/arcane_might.png",
+    "baseStats": {},
+    "passive": { "stat": "damageMultiplier", "perTier": 0.1 },
+    "upgrades": {
+      "tier_up": {
+        "name": "Arcane Might",
+        "description": "+10% damage for all abilities",
+        "iconType": "damage"
+      }
+    }
+  },
+  "quickening": {
+    "name": "Quickening",
+    "description": "Passive: all ability cooldowns are 8% shorter per tier",
+    "module": "src.entities.abilities.passive",
+    "unlocked": true,
+    "maxTier": 5,
+    "icon": "assets/images/abilities/quickening.png",
+    "baseStats": {},
+    "passive": { "stat": "cooldownMultiplier", "perTier": -0.08 },
+    "upgrades": {
+      "tier_up": {
+        "name": "Quickening",
+        "description": "-8% cooldown for all abilities",
+        "iconType": "speed"
+      }
+    }
   }
 }

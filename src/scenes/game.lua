@@ -69,17 +69,20 @@ local function updateUI()
   
   -- Update ability indicators
   local currentTime = system.getTimer() / 1000
+  local cooldownMultiplier = hero.getStats and hero:getStats().cooldownMultiplier or 1
   for i, indicator in ipairs(abilityIndicators) do
     local ability = hero.abilities[i]
     -- Abilities picked from level-up cards appear here after the scene shows
     if indicator.ability ~= ability then
       indicator:setAbility(ability)
     end
-    if ability then
+    -- Passive abilities have no cooldown to show
+    if ability and ability.cooldown then
       -- Calculate remaining cooldown
+      local cooldown = ability.cooldown * cooldownMultiplier
       local timeSinceActivation = currentTime - (ability.lastActivation or 0)
-      local remaining = math.max(0, ability.cooldown - timeSinceActivation)
-      indicator:updateCooldown(remaining, ability.cooldown)
+      local remaining = math.max(0, cooldown - timeSinceActivation)
+      indicator:updateCooldown(remaining, cooldown)
     end
   end
 end

@@ -89,9 +89,12 @@ function M.activateAbilities(currentTime)
     return
   end
   
+  -- Passive abilities change these stats; active abilities read them
+  local heroStats = hero.getStats and hero:getStats() or nil
+  
   -- Iterate through hero abilities with pcall wrapper for critical operations
   for i, ability in ipairs(hero.abilities) do
-    if ability and ability.canActivate and ability:canActivate(currentTime) then
+    if ability and ability.canActivate and ability:canActivate(currentTime, heroStats) then
       -- Create a tracking wrapper around the pool to capture created projectiles
       local trackingPool = {
         get = function(self, ...)
@@ -112,7 +115,7 @@ function M.activateAbilities(currentTime)
       
       -- Wrap ability activation in pcall for error handling
       local success, result = pcall(function()
-        return ability:activate(originX, originY, enemies, trackingPool, sceneGroup)
+        return ability:activate(originX, originY, enemies, trackingPool, sceneGroup, heroStats)
       end)
       
       if success then

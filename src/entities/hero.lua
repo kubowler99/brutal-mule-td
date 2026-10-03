@@ -35,12 +35,36 @@ function Hero:addAbility(ability)
   return true
 end
 
+-- Lowest cooldown multiplier passives can reach
+local MIN_COOLDOWN_MULTIPLIER = 0.4
+
+--- Combined stats from passive abilities
+-- Abilities read these when they activate.
+-- @return table { damageMultiplier, cooldownMultiplier }
+function Hero:getStats()
+  local stats = { damageMultiplier = 1, cooldownMultiplier = 1 }
+  for _, ability in ipairs(self.abilities) do
+    if ability.applyStats then
+      ability:applyStats(stats)
+    end
+  end
+  stats.cooldownMultiplier = math.max(stats.cooldownMultiplier, MIN_COOLDOWN_MULTIPLIER)
+  return stats
+end
+
 function Hero:addXP(amount)
   self.xp = self.xp + amount
   -- Note: Level-up logic is handled externally by experience_system
 end
 
 function Hero:destroy()
+  -- Abilities may own display objects (e.g. orbiting blades)
+  for _, ability in ipairs(self.abilities) do
+    if ability.destroy then
+      ability:destroy()
+    end
+  end
+  
   if self.displayObject then
     self.displayObject:removeSelf()
     self.displayObject = nil

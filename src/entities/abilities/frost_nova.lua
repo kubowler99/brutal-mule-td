@@ -45,10 +45,14 @@ function FrostNova:initialize()
   self.tier = 1
 end
 
-function FrostNova:canActivate(currentTime)
+--- Check whether the cooldown has elapsed
+-- @param currentTime number Game time in seconds
+-- @param heroStats table|nil Hero stats; cooldownMultiplier scales the cooldown
+function FrostNova:canActivate(currentTime, heroStats)
   -- Store currentTime so activate() can use the same time source
   self._lastCurrentTime = currentTime
-  return (currentTime - self.lastActivation) >= self.cooldown
+  local cooldown = self.cooldown * ((heroStats and heroStats.cooldownMultiplier) or 1)
+  return (currentTime - self.lastActivation) >= cooldown
 end
 
 --- Find active enemies within range of the wall line
@@ -102,8 +106,9 @@ end
 -- @param enemies table Array of enemies
 -- @param projectilePool table Unused (Frost Nova fires no projectiles)
 -- @param displayGroup table Optional group for the pulse visual
+-- @param heroStats table|nil Hero stats; damageMultiplier scales damage
 -- @return boolean True if the nova fired
-function FrostNova:activate(heroX, heroY, enemies, projectilePool, displayGroup)
+function FrostNova:activate(heroX, heroY, enemies, projectilePool, displayGroup, heroStats)
   local targets = self:findTargets(heroY, enemies)
   if #targets == 0 then
     return false
@@ -116,7 +121,7 @@ function FrostNova:activate(heroX, heroY, enemies, projectilePool, displayGroup)
     if enemy.applySlow then
       enemy:applySlow(self.slowFactor, self.slowDuration)
     end
-    combat_system.applyDamage(enemy, self.damage)
+    combat_system.applyDamage(enemy, self.damage * ((heroStats and heroStats.damageMultiplier) or 1))
   end
 
   self:showPulse(heroY, displayGroup)
