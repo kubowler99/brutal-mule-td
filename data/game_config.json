@@ -7,8 +7,12 @@
     "spawnInterval": 3.0,
     "spawnCount": 2,
     "maxConcurrent": 50,
-    "runnerMinLevel": 3,
-    "runnerChance": 0.3
+    "enemyTable": [
+      { "type": "walker", "weight": 7, "minLevel": 1, "groupSize": 1 },
+      { "type": "runner", "weight": 3, "minLevel": 3, "groupSize": 1 },
+      { "type": "swarmling", "weight": 2, "minLevel": 4, "groupSize": 4 },
+      { "type": "brute", "weight": 2, "minLevel": 5, "groupSize": 1 }
+    ]
   },
   "collision": {
     "projectileEnemyThreshold": 20,

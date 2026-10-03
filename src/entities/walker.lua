@@ -36,6 +36,8 @@ local Walker = Class("Walker")
 local DEFAULT_STATS = {
   walker = { health = 20, speed = 80, damage = 5, attackCooldown = 1.0 },
   runner = { health = 10, speed = 160, damage = 3, attackCooldown = 0.8 },
+  brute = { health = 80, speed = 40, damage = 12, attackCooldown = 1.5 },
+  swarmling = { health = 4, speed = 110, damage = 1, attackCooldown = 0.6 },
 }
 
 -- Scale applied to the 64x64 zombie sprite frames
@@ -45,6 +47,8 @@ local SPRITE_SCALE = 96 / 64
 local TYPE_STYLES = {
   walker = { tint = {1.0, 1.0, 1.0}, scale = 1.0 },
   runner = { tint = {1.0, 0.65, 0.3}, scale = 0.75 },
+  brute = { tint = {0.75, 0.45, 1.0}, scale = 1.35 },
+  swarmling = { tint = {0.55, 1.0, 0.45}, scale = 0.5 },
 }
 
 -- Sprite tint while slowed

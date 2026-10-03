@@ -22,5 +22,19 @@
     "damage": 3,
     "attackCooldown": 0.8,
     "xpValue": 8
+  },
+  "brute": {
+    "health": 80,
+    "speed": 40,
+    "damage": 12,
+    "attackCooldown": 1.5,
+    "xpValue": 30
+  },
+  "swarmling": {
+    "health": 4,
+    "speed": 110,
+    "damage": 1,
+    "attackCooldown": 0.6,
+    "xpValue": 3
   }
 }
