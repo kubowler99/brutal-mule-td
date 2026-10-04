@@ -213,4 +213,46 @@ describe("UpgradeCard", function()
       assert.is_nil(card.callback)
     end)
   end)
+
+  describe("ability icon image", function()
+    local ability_data_loader = require("src.models.ability_data_loader")
+    local savedData
+
+    before_each(function()
+      savedData = ability_data_loader._data
+      ability_data_loader._data = {
+        frost_nova = { icon = "assets/images/abilities/frost_nova.png" }
+      }
+    end)
+
+    after_each(function()
+      ability_data_loader._data = savedData
+    end)
+
+    it("should show the ability's icon image on a new-ability card", function()
+      local newCard = UpgradeCard:new(200, 300, {
+        id = "new_ability_frost_nova",
+        type = "new_ability",
+        abilityId = "frost_nova",
+        name = "Frost Nova",
+        iconType = "frost_nova"
+      })
+      assert.are.equal("image", newCard.icon._type)
+      assert.are.equal("assets/images/abilities/frost_nova.png", newCard.icon.filename)
+      assert.are.equal(270, newCard.icon.y)
+      newCard:destroy()
+    end)
+
+    it("should keep the stat icon on a tier-upgrade card", function()
+      local tierCard = UpgradeCard:new(200, 300, {
+        id = "frost_nova_damage_increase",
+        type = "tier_upgrade",
+        abilityId = "frost_nova",
+        name = "Frost Nova Damage",
+        iconType = "damage"
+      })
+      assert.are_not.equal("image", tierCard.icon._type)
+      tierCard:destroy()
+    end)
+  end)
 end)

@@ -2,7 +2,11 @@
 -- Displays an ability icon and cooldown overlay for a single ability slot
 -- @class AbilityIndicator
 
+local ability_data_loader = require("src.models.ability_data_loader")
+
 local AbilityIndicator = Class("AbilityIndicator")
+
+local ICON_SIZE = 40
 
 --- Initialize the ability indicator
 -- @param x X position of the indicator
@@ -27,8 +31,12 @@ function AbilityIndicator:initialize(x, y, slotIndex, group)
   self.background.strokeWidth = 2
   self.background:setStrokeColor(0.6, 0.6, 0.6)
   
-  -- Ability icon (placeholder circle, will be replaced with actual icon)
-  self.icon = display.newCircle(self.group, x, y, 20)
+  -- Icon layer keeps the icon below the cooldown overlay when the icon is swapped
+  self.iconLayer = display.newGroup()
+  self.group:insert(self.iconLayer)
+
+  -- Ability icon (empty slot placeholder until an ability is set)
+  self.icon = display.newCircle(self.iconLayer, x, y, 20)
   self.icon:setFillColor(0.5, 0.5, 0.5)
   self.icon.isVisible = false
   
@@ -56,26 +64,47 @@ function AbilityIndicator:setAbility(ability)
   self.ability = ability
   
   if ability then
-    -- Show icon
+    self:_replaceIcon(ability)
     self.icon.isVisible = true
-    -- Set icon color based on ability (placeholder logic)
-    if ability.id == "arcane_bolt" then
-      self.icon:setFillColor(0.5, 0.3, 0.9) -- Purple for arcane
-    elseif ability.id == "frost_nova" or ability.id == "frost_shard" then
-      self.icon:setFillColor(0.5, 0.8, 1.0) -- Light blue for frost
-    elseif ability.id == "flame_slash" then
-      self.icon:setFillColor(1.0, 0.45, 0.2) -- Orange-red for fire
-    elseif ability.id == "patrol_blades" then
-      self.icon:setFillColor(0.85, 0.9, 1.0) -- Silver for blades
-    elseif ability.isPassive then
-      self.icon:setFillColor(1.0, 0.85, 0.3) -- Gold for passives
-    else
-      self.icon:setFillColor(0.9, 0.5, 0.2) -- Orange for other abilities
-    end
   else
     -- Hide icon if no ability
     self.icon.isVisible = false
     self.cooldownOverlay.isVisible = false
+  end
+end
+
+--- Swap the icon for the ability's image, or a colored circle if it has no image
+-- @param ability The ability object to display
+function AbilityIndicator:_replaceIcon(ability)
+  if self.icon then
+    self.icon:removeSelf()
+    self.icon = nil
+  end
+
+  local iconPath = ability_data_loader.getIconPath(ability.id)
+  if iconPath then
+    self.icon = display.newImageRect(self.iconLayer, iconPath, ICON_SIZE, ICON_SIZE)
+  end
+  if self.icon then
+    self.icon.x = self.x
+    self.icon.y = self.y
+    return
+  end
+
+  -- Fallback when the ability has no icon or the image failed to load
+  self.icon = display.newCircle(self.iconLayer, self.x, self.y, 20)
+  if ability.id == "arcane_bolt" then
+    self.icon:setFillColor(0.5, 0.3, 0.9) -- Purple for arcane
+  elseif ability.id == "frost_nova" or ability.id == "frost_shard" then
+    self.icon:setFillColor(0.5, 0.8, 1.0) -- Light blue for frost
+  elseif ability.id == "flame_slash" then
+    self.icon:setFillColor(1.0, 0.45, 0.2) -- Orange-red for fire
+  elseif ability.id == "patrol_blades" then
+    self.icon:setFillColor(0.85, 0.9, 1.0) -- Silver for blades
+  elseif ability.isPassive then
+    self.icon:setFillColor(1.0, 0.85, 0.3) -- Gold for passives
+  else
+    self.icon:setFillColor(0.9, 0.5, 0.2) -- Orange for other abilities
   end
 end
 
@@ -112,6 +141,7 @@ function AbilityIndicator:destroy()
   end
   self.background = nil
   self.icon = nil
+  self.iconLayer = nil
   self.cooldownOverlay = nil
   self.slotText = nil
   self.ability = nil

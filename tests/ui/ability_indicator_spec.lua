@@ -289,4 +289,44 @@ describe("AbilityIndicator - Property-Based Tests", function()
       checkProperties()
     end)
   end)
+
+  describe("icon image", function()
+    local ability_data_loader = require("src.models.ability_data_loader")
+    local savedData
+    local indicator
+
+    before_each(function()
+      indicator = AbilityIndicator:new(100, 50, 1)
+      savedData = ability_data_loader._data
+      ability_data_loader._data = {
+        arcane_bolt = { icon = "assets/images/abilities/arcane_bolt.png" }
+      }
+    end)
+
+    after_each(function()
+      indicator:destroy()
+      ability_data_loader._data = savedData
+    end)
+
+    it("should show the ability's icon image when it has one", function()
+      indicator:setAbility({ id = "arcane_bolt" })
+      assert.are.equal("image", indicator.icon._type)
+      assert.are.equal("assets/images/abilities/arcane_bolt.png", indicator.icon.filename)
+      assert.are.equal(100, indicator.icon.x)
+      assert.are.equal(50, indicator.icon.y)
+      assert.is_true(indicator.icon.isVisible)
+    end)
+
+    it("should fall back to a circle when the ability has no icon", function()
+      indicator:setAbility({ id = "fireball" })
+      assert.are.equal("circle", indicator.icon._type)
+      assert.is_true(indicator.icon.isVisible)
+    end)
+
+    it("should hide the icon image when the ability is cleared", function()
+      indicator:setAbility({ id = "arcane_bolt" })
+      indicator:setAbility(nil)
+      assert.is_false(indicator.icon.isVisible)
+    end)
+  end)
 end)

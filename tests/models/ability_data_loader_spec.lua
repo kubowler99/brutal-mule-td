@@ -380,4 +380,28 @@ describe("Ability Data Loader", function()
     end)
   end)
 
+  describe("getIconPath", function()
+    it("should return nil when data is not loaded", function()
+      ability_data_loader._data = nil
+      assert.is_nil(ability_data_loader.getIconPath("arcane_bolt"))
+    end)
+
+    it("should return the icon path for a known ability", function()
+      ability_data_loader._data = {
+        arcane_bolt = { icon = "assets/images/abilities/arcane_bolt.png" }
+      }
+      assert.are.equal("assets/images/abilities/arcane_bolt.png", ability_data_loader.getIconPath("arcane_bolt"))
+    end)
+
+    it("should return nil for an unknown ability or a missing icon", function()
+      ability_data_loader._data = {
+        arcane_bolt = { name = "Arcane Bolt" },
+        frost_nova = { icon = "" }
+      }
+      assert.is_nil(ability_data_loader.getIconPath("fireball"))
+      assert.is_nil(ability_data_loader.getIconPath("arcane_bolt"))
+      assert.is_nil(ability_data_loader.getIconPath("frost_nova"))
+      assert.is_nil(ability_data_loader.getIconPath(nil))
+    end)
+  end)
 end)

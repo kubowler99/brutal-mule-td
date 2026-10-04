@@ -4,6 +4,7 @@
 -- @class UpgradeCard
 
 local placeholder_graphics = require("src.utils.placeholder_graphics")
+local ability_data_loader = require("src.models.ability_data_loader")
 
 local UpgradeCard = Class("UpgradeCard")
 
@@ -31,8 +32,22 @@ function UpgradeCard:initialize(x, y, upgradeData, group)
   self.background.strokeWidth = 3
   self.background:setStrokeColor(0.5, 0.5, 0.6)
   
-  -- Icon using placeholder_graphics
-  if upgradeData.iconType then
+  -- New-ability cards show the ability's own icon image
+  if upgradeData.type == "new_ability" then
+    local iconPath = ability_data_loader.getIconPath(upgradeData.abilityId)
+    if iconPath then
+      self.icon = display.newImageRect(self.group, iconPath, 50, 50)
+      if self.icon then
+        self.icon.x = x
+        self.icon.y = y - 30
+      end
+    end
+  end
+
+  -- Otherwise use placeholder_graphics
+  if self.icon then
+    -- Ability icon image already created
+  elseif upgradeData.iconType then
     self.icon = placeholder_graphics.createUpgradeIcon(upgradeData.iconType)
     self.icon.x = x
     self.icon.y = y - 30

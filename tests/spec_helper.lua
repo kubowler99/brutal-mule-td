@@ -151,17 +151,23 @@ _G.display = {
         return circle
     end,
     newImageRect = function(parent, filename, w, h)
-        return {
+        local image = {
             x = 0,
             y = 0,
             width = w or 0,
             height = h or 0,
+            filename = filename,
             isVisible = true,
+            _type = "image",
             setFillColor = function() end,
             removeSelf = function() end,
             toFront = function() end,
             toBack = function() end
         }
+        if parent and parent.insert then
+            parent:insert(image)
+        end
+        return image
     end,
     newLine = function(parent, ...)
         -- Handle both forms: newLine(x1, y1, x2, y2, ...) and newLine(parent, x1, y1, x2, y2, ...)
