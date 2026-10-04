@@ -27,6 +27,9 @@
       { "level": 20, "type": "final_boss" }
     ]
   },
+  "projectiles": {
+    "extraProjectilePenalty": 0.2
+  },
   "synergy": {
     "damagePerSharedTag": 0.1,
     "draftWeight": 2

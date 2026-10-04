@@ -3,6 +3,7 @@
 -- Fires toward the nearest enemy with configurable damage, cooldown, and upgrades
 
 local ability_data_loader = require("src.models.ability_data_loader")
+local config_loader = require("src.models.config_loader")
 
 local ArcaneBolt = Class("ArcaneBolt")
 
@@ -12,6 +13,10 @@ local DEFAULT_DAMAGE = 10
 local DEFAULT_PROJECTILE_SPEED = 400
 local DEFAULT_PIERCE_COUNT = 0
 local DEFAULT_PROJECTILE_COUNT = 1
+
+-- Each projectile past the first cuts per-projectile damage by this fraction
+-- (multiplicative: 2 projectiles deal 80% each, 3 deal 64% each)
+local DEFAULT_EXTRA_PROJECTILE_PENALTY = 0.2
 
 -- Upgrade fallback defaults
 local DEFAULT_DAMAGE_INCREASE = 5
@@ -77,14 +82,88 @@ function ArcaneBolt:findNearestEnemy(heroX, heroY, enemies)
   return nearestEnemy
 end
 
---- Fire at the nearest enemy
+--- Where to aim at an enemy so a projectile from (fromX, fromY) meets it
+-- Enemies move straight down; lead the shot by the enemy's current speed
+-- (slowed, frozen, or charging enemies move at a different speed).
+-- @param fromX number Firing position X
+-- @param fromY number Firing position Y
+-- @param enemy table Target enemy
+-- @return number, number Aim point
+function ArcaneBolt:predictAim(fromX, fromY, enemy)
+  local speed = enemy.getCurrentSpeed and enemy:getCurrentSpeed() or enemy.speed or 0
+  if speed <= 0 then
+    return enemy.x, enemy.y
+  end
+
+  local dx = enemy.x - fromX
+  local dy = enemy.y - fromY
+  local timeToHit = math.sqrt(dx * dx + dy * dy) / self.projectileSpeed
+  return enemy.x, enemy.y + speed * timeToHit
+end
+
+--- Active enemies sorted nearest first, up to a limit
+-- @param heroX number Firing position X
+-- @param heroY number Firing position Y
+-- @param enemies table Array of enemies
+-- @param limit number Maximum number to return
+-- @return table Array of enemies
+function ArcaneBolt:findNearestEnemies(heroX, heroY, enemies, limit)
+  local candidates = {}
+  for _, enemy in ipairs(enemies or {}) do
+    if enemy.isActive then
+      local dx = enemy.x - heroX
+      local dy = enemy.y - heroY
+      table.insert(candidates, { enemy = enemy, distSq = dx * dx + dy * dy })
+    end
+  end
+  table.sort(candidates, function(a, b) return a.distSq < b.distSq end)
+
+  local nearest = {}
+  for i = 1, math.min(limit, #candidates) do
+    nearest[i] = candidates[i].enemy
+  end
+  return nearest
+end
+
+--- Aim points for one volley, one per projectile
+-- Arcane Bolt sends each projectile at a different enemy, nearest first.
+-- With fewer enemies than projectiles, the extras go around the list again.
+-- @return table Array of { x, y } (empty when there is no target)
+function ArcaneBolt:getAimPoints(heroX, heroY, enemies)
+  local targets = self:findNearestEnemies(heroX, heroY, enemies, self.projectileCount)
+  local aims = {}
+  if #targets == 0 then
+    return aims
+  end
+  for i = 1, self.projectileCount do
+    local target = targets[((i - 1) % #targets) + 1]
+    local x, y = self:predictAim(heroX, heroY, target)
+    aims[i] = { x = x, y = y }
+  end
+  return aims
+end
+
+--- Damage of each projectile in a volley
+-- More projectiles per volley means less damage each, so count upgrades add
+-- coverage with diminishing total damage (see projectiles.extraProjectilePenalty).
+-- @param heroStats table|nil Hero stats; damageMultiplier scales damage
+-- @return number Damage per projectile
+function ArcaneBolt:getProjectileDamage(heroStats)
+  local penalty = config_loader.get("projectiles.extraProjectilePenalty", DEFAULT_EXTRA_PROJECTILE_PENALTY)
+  if type(penalty) ~= "number" or penalty < 0 or penalty >= 1 then
+    penalty = DEFAULT_EXTRA_PROJECTILE_PENALTY
+  end
+  local countFactor = (1 - penalty) ^ math.max(0, self.projectileCount - 1)
+  return self.damage * ((heroStats and heroStats.damageMultiplier) or 1) * countFactor
+end
+
+--- Fire one volley
 -- @param heroStats table|nil Hero stats; damageMultiplier scales projectile damage
 function ArcaneBolt:activate(heroX, heroY, enemies, projectilePool, displayGroup, heroStats)
-  -- Find the nearest enemy
-  local target = self:findNearestEnemy(heroX, heroY, enemies)
+  local aims = self:getAimPoints(heroX, heroY, enemies)
 
   -- If no target, don't activate
-  if not target then
+  if #aims == 0 then
     return false
   end
 
@@ -92,42 +171,11 @@ function ArcaneBolt:activate(heroX, heroY, enemies, projectilePool, displayGroup
   -- (currentTime from game loop is passed via the combat system)
   self.lastActivation = self._lastCurrentTime or os.clock()
 
-  -- Predictive targeting: aim where the enemy will be, not where it is now
-  local targetX = target.x
-  local targetY = target.y
-
-  -- Walkers move straight down at target.speed pixels/sec (vx=0, vy=speed)
-  local enemyVX = 0
-  local enemyVY = target.speed or 0
-
-  -- Only predict if the enemy is actually moving
-  if enemyVY > 0 then
-    -- Estimate time for projectile to reach the target's current position
-    local dx = targetX - heroX
-    local dy = targetY - heroY
-    local dist = math.sqrt(dx * dx + dy * dy)
-    local timeToHit = dist / self.projectileSpeed
-
-    -- Lead the shot: aim at predicted future position
-    targetX = targetX + enemyVX * timeToHit
-    targetY = targetY + enemyVY * timeToHit
-  end
-
-  -- Create projectiles based on projectileCount
-  for _ = 1, self.projectileCount do
+  local damage = self:getProjectileDamage(heroStats)
+  for _, aim in ipairs(aims) do
     local projectile = projectilePool:get()
-
     if projectile then
-      -- Activate the projectile toward the predicted position
-      projectile:activate(
-        heroX,
-        heroY,
-        targetX,
-        targetY,
-        self.projectileSpeed,
-        self.damage * ((heroStats and heroStats.damageMultiplier) or 1),
-        self.pierceCount
-      )
+      projectile:activate(heroX, heroY, aim.x, aim.y, self.projectileSpeed, damage, self.pierceCount)
     end
   end
 

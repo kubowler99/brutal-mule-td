@@ -108,6 +108,57 @@ describe("Frost Shard", function()
         end)
     end)
 
+    describe("fan", function()
+        local function angleTo(aim)
+            return math.atan2(aim.y - 1200, aim.x - 360)
+        end
+
+        it("fires a single shard straight at the target", function()
+            local aims = shard:getAimPoints(360, 1200, { { x = 360, y = 500, isActive = true } })
+            assert.are.equal(1, #aims)
+            assert.is_true(math.abs(aims[1].x - 360) < 1e-9)
+            assert.is_true(math.abs(aims[1].y - 500) < 1e-9)
+        end)
+
+        it("spreads extra shards 12 degrees apart, centered on the target", function()
+            shard.projectileCount = 3
+            local aims = shard:getAimPoints(360, 1200, { { x = 360, y = 500, isActive = true } })
+
+            assert.are.equal(3, #aims)
+            local straightUp = math.atan2(-700, 0)
+            assert.is_true(math.abs(angleTo(aims[2]) - straightUp) < 1e-9)
+            assert.is_true(math.abs(angleTo(aims[1]) - (straightUp - math.rad(12))) < 1e-9)
+            assert.is_true(math.abs(angleTo(aims[3]) - (straightUp + math.rad(12))) < 1e-9)
+        end)
+
+        it("centers an even count between the two middle shards", function()
+            shard.projectileCount = 2
+            local aims = shard:getAimPoints(360, 1200, { { x = 360, y = 500, isActive = true } })
+            local straightUp = math.atan2(-700, 0)
+            assert.is_true(math.abs(angleTo(aims[1]) - (straightUp - math.rad(6))) < 1e-9)
+            assert.is_true(math.abs(angleTo(aims[2]) - (straightUp + math.rad(6))) < 1e-9)
+        end)
+
+        it("lowers each shard's damage 20% per extra shard", function()
+            shard.projectileCount = 2
+            local pool = capturePool()
+            shard:canActivate(10)
+            shard:activate(360, 1200, { { x = 360, y = 500, isActive = true } }, pool)
+            for _, projectile in ipairs(pool.fired) do
+                assert.is_true(math.abs(projectile.damage - 7 * 0.8) < 1e-9)
+            end
+        end)
+
+        it("fires a fan even with a single enemy", function()
+            shard.projectileCount = 3
+            local pool = capturePool()
+            shard:canActivate(10)
+            shard:activate(360, 1200, { { x = 360, y = 500, isActive = true } }, pool)
+            assert.are.equal(3, #pool.fired)
+            assert.is_true(pool.fired[1].vx < 0 and pool.fired[3].vx > 0)
+        end)
+    end)
+
     describe("ricochet", function()
         it("turns a spent projectile into a ricochet instead of stopping it", function()
             local projectile = Projectile:new(nil)
