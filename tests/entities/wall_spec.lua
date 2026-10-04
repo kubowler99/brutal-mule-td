@@ -170,4 +170,31 @@ describe("Wall Entity", function()
             assert.is_nil(wall.displayObject)
         end)
     end)
+
+    describe("texture", function()
+        it("should tile the wall texture across the full width", function()
+            local group = wall.displayObject
+            assert.is_nil(wall.isPlaceholder)
+            assert.is_true(group.numChildren >= 1)
+            local tileWidth = group[1].width
+            assert.is_true(group.numChildren * tileWidth >= 720)
+            for i = 1, group.numChildren do
+                assert.are.equal("assets/images/wall/wall.png", group[i].filename)
+                assert.are.equal(80, group[i].height)
+            end
+        end)
+
+        it("should mirror every other tile so the edges line up", function()
+            local group = wall.displayObject
+            assert.is_nil(group[1].xScale)
+            if group.numChildren >= 2 then
+                assert.are.equal(-1, group[2].xScale)
+            end
+        end)
+
+        it("should center the tiles on the wall position", function()
+            assert.are.equal(360, wall.displayObject.x)
+            assert.are.equal(1180, wall.displayObject.y)
+        end)
+    end)
 end)

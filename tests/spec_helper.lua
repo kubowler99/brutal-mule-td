@@ -151,6 +151,13 @@ _G.display = {
         return circle
     end,
     newImageRect = function(parent, filename, w, h)
+        -- Handle both forms: newImageRect(filename, w, h) and newImageRect(parent, filename, w, h)
+        if type(parent) == "string" then
+            h = w
+            w = filename
+            filename = parent
+            parent = nil
+        end
         local image = {
             x = 0,
             y = 0,

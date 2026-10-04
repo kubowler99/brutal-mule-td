@@ -33,27 +33,17 @@ describe("Hero Position Preservation Properties", function()
       assert.are.equal(1200, hero.y, "Hero Y position must remain at 1200")
     end)
     
-    it("should preserve hero visual appearance (blue circle, radius 30)", function()
-      -- **Validates: Requirements 3.1**
-      -- Observe: hero radius is 30, displayed as blue circle on unfixed code
-      -- This must remain unchanged after the fix
-      
+    it("should show the selected hero's 64px sprite at the hero position", function()
       game_controller.initialize(sceneGroup)
       local hero = game_controller.getHero()
       
       assert.is_not_nil(hero)
       assert.is_not_nil(hero.displayObject)
-      
-      -- The hero sprite is a group of circles (body, border, glow).
-      -- Its outermost circle (the glow) has radius 30.
-      local maxRadius = 0
-      for i = 1, hero.displayObject.numChildren do
-        local child = hero.displayObject[i]
-        if child.radius and child.radius > maxRadius then
-          maxRadius = child.radius
-        end
-      end
-      assert.are.equal(30, maxRadius, "Hero outer radius must remain 30 pixels")
+      assert.are.equal("assets/images/heroes/arcane_wanderer.png", hero.displayObject.filename)
+      assert.are.equal(64, hero.displayObject.width)
+      assert.are.equal(64, hero.displayObject.height)
+      assert.are.equal(hero.x, hero.displayObject.x)
+      assert.are.equal(hero.y, hero.displayObject.y)
       
       -- Verify display object is visible
       assert.is_true(hero.displayObject.isVisible, "Hero display object must be visible")

@@ -100,6 +100,9 @@ function FrostShard:activate(heroX, heroY, enemies, projectilePool, displayGroup
   local activated = ArcaneBolt.activate(self, heroX, heroY, enemies, capturingPool, displayGroup, heroStats)
 
   for _, projectile in ipairs(fired) do
+    if projectile.setVisual then
+      projectile:setVisual("frost_shard")
+    end
     projectile.slowFactor = self.slowFactor
     projectile.slowDuration = self.slowDuration
     projectile.ricochetsLeft = self.ricochets
