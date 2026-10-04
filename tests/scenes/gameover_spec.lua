@@ -256,7 +256,7 @@ describe("Game Over Scene", function()
     end)
   end)
 
-  describe("victory background", function()
+  describe("backgrounds", function()
     local function findVictoryBackground(view)
       for i = 1, view.numChildren do
         if view[i].filename == "assets/images/backgrounds/victory.png" then
@@ -285,6 +285,26 @@ describe("Game Over Scene", function()
       gameover:dispatchEvent({ name = "show", phase = "will", params = { victoryCondition = true } })
       gameover:dispatchEvent({ name = "show", phase = "will", params = { victoryCondition = false } })
       assert.is_false(findVictoryBackground(gameover.view).isVisible)
+    end)
+
+    it("draws over the defeat background", function()
+      local defeatIndex, victoryIndex
+      for i = 1, gameover.view.numChildren do
+        local filename = gameover.view[i].filename
+        if filename == "assets/images/backgrounds/defeat.png" then defeatIndex = i end
+        if filename == "assets/images/backgrounds/victory.png" then victoryIndex = i end
+      end
+      assert.is_not_nil(defeatIndex)
+      assert.is_true(defeatIndex < victoryIndex)
+    end)
+
+    it("leaves the defeat background showing after a defeat", function()
+      gameover:dispatchEvent({ name = "show", phase = "will", params = { victoryCondition = false } })
+      for i = 1, gameover.view.numChildren do
+        if gameover.view[i].filename == "assets/images/backgrounds/defeat.png" then
+          assert.is_true(gameover.view[i].isVisible)
+        end
+      end
     end)
 
     it("sits behind the title", function()

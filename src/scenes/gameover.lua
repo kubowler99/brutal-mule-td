@@ -32,17 +32,10 @@ local formatTime = stringUtils.formatTime
 function scene:create(event)
   local sceneGroup = self.view
   
-  -- Background
-  background = display.newRect(
-    sceneGroup,
-    helpers.centerX,
-    helpers.centerY,
-    helpers.width,
-    helpers.height
-  )
-  background:setFillColor(0.1, 0.1, 0.15)
+  -- Defeat background image (the fallen castle), shown after a loss
+  background = helpers.newBackground(sceneGroup, "defeat")
   
-  -- Victory background image, shown in place of the plain one after a win
+  -- Victory background image, drawn over the defeat one after a win
   victoryBackground = helpers.newBackground(sceneGroup, "victory")
   victoryBackground.isVisible = false
   
