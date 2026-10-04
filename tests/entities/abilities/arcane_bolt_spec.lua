@@ -334,6 +334,67 @@ describe("ArcaneBolt Ability", function()
 
     -- **Validates: Requirements 2.7**
     -- Test upgrade applies tier bonuses correctly
+    describe("damage per projectile", function()
+        local config_loader = require("src.models.config_loader")
+        local savedConfig
+
+        before_each(function()
+            savedConfig = config_loader._data
+            config_loader._data = { projectiles = { extraProjectilePenalty = 0.2 } }
+        end)
+
+        after_each(function()
+            config_loader._data = savedConfig
+        end)
+
+        it("drops 20% per extra projectile, multiplicatively", function()
+            local expected = { 10, 8, 6.4, 5.12, 4.096 }
+            for count = 1, 5 do
+                ability.projectileCount = count
+                assert.is_true(math.abs(ability:getProjectileDamage() - expected[count]) < 1e-9,
+                    "count " .. count)
+            end
+        end)
+
+        it("combines with the hero damage multiplier", function()
+            ability.projectileCount = 2
+            assert.is_true(math.abs(ability:getProjectileDamage({ damageMultiplier = 1.5 }) - 12) < 1e-9)
+        end)
+
+        it("reads the penalty from game_config.json", function()
+            config_loader._data = { projectiles = { extraProjectilePenalty = 0.5 } }
+            ability.projectileCount = 3
+            assert.is_true(math.abs(ability:getProjectileDamage() - 2.5) < 1e-9)
+        end)
+
+        it("falls back to 20% for a missing or invalid penalty", function()
+            ability.projectileCount = 2
+            for _, value in ipairs({ "nope", -1, 1.5 }) do
+                config_loader._data = { projectiles = { extraProjectilePenalty = value } }
+                assert.is_true(math.abs(ability:getProjectileDamage() - 8) < 1e-9)
+            end
+            config_loader._data = nil
+            assert.is_true(math.abs(ability:getProjectileDamage() - 8) < 1e-9)
+        end)
+
+        it("fires every projectile in a volley with the reduced damage", function()
+            ability.projectileCount = 3
+            local damages = {}
+            local pool = { get = function()
+                return { activate = function(self, x, y, tx, ty, speed, damage)
+                    table.insert(damages, damage)
+                end }
+            end }
+            ability:canActivate(10)
+            ability:activate(360, 1200, { { x = 360, y = 500, isActive = true } }, pool)
+
+            assert.are.equal(3, #damages)
+            for _, damage in ipairs(damages) do
+                assert.is_true(math.abs(damage - 6.4) < 1e-9)
+            end
+        end)
+    end)
+
     describe("upgrade", function()
         it("should increase damage by 5 for damage_increase upgrade", function()
             local initialDamage = ability.damage

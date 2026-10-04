@@ -139,6 +139,16 @@ describe("Frost Shard", function()
             assert.is_true(math.abs(angleTo(aims[2]) - (straightUp + math.rad(6))) < 1e-9)
         end)
 
+        it("lowers each shard's damage 20% per extra shard", function()
+            shard.projectileCount = 2
+            local pool = capturePool()
+            shard:canActivate(10)
+            shard:activate(360, 1200, { { x = 360, y = 500, isActive = true } }, pool)
+            for _, projectile in ipairs(pool.fired) do
+                assert.is_true(math.abs(projectile.damage - 7 * 0.8) < 1e-9)
+            end
+        end)
+
         it("fires a fan even with a single enemy", function()
             shard.projectileCount = 3
             local pool = capturePool()

@@ -30,7 +30,7 @@
       },
       "projectile_count": {
         "name": "Arcane Bolt Projectile Count",
-        "description": "+1 bolt, aimed at another enemy",
+        "description": "+1 bolt at another enemy; all bolts -20% damage",
         "iconType": "count",
         "countIncrease": 1
       },
@@ -193,7 +193,7 @@
       },
       "shard_count": {
         "name": "Frost Shard Count",
-        "description": "+1 shard in the fan",
+        "description": "+1 shard in the fan; all shards -20% damage",
         "iconType": "count",
         "countIncrease": 1
       },

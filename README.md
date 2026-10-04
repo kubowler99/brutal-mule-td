@@ -8,6 +8,7 @@ See [docs/arcane-survivor/game-concept.md](docs/arcane-survivor/game-concept.md)
 
 - **Abilities** (up to 5, each upgradeable to tier 5)
   - **Arcane Bolt**: fires at the nearest enemy. Upgrades: damage, attack speed, projectile count (each extra bolt targets the next-nearest enemy), pierce.
+  - Extra bolts and shards share the damage: each projectile past the first lowers every projectile's damage by 20% (2 deal 80% each, 3 deal 64% each).
   - **Frost Nova**: pulses along the wall, damaging and slowing every enemy within range. Upgrades: damage, range, cooldown, slow.
   - **Frost Shard**: fires a piercing shard at the nearest enemy that slows what it hits. Upgrades: damage, shard count (extra shards fan out 12° apart), pierce, slow, ricochet (bounce to another enemy), freeze chance.
   - **Flame Slash**: sweeps fire across every enemy within 220px of its spot on the wall. Upgrades: damage, reach, cooldown, burn (damage over time).
@@ -72,7 +73,7 @@ docs/                 Game concept and architecture notes
 
 Most balance values live in `data/`, so you can change them without touching code:
 
-- `game_config.json`: spawn interval, spawn count, the enemy spawn table (type, weight, unlock level, group size), elite settings and abilities, boss levels, synergy bonus and draft weight, wall health, XP curve.
+- `game_config.json`: spawn interval, spawn count, the enemy spawn table (type, weight, unlock level, group size), elite settings and abilities, boss levels, extra-projectile damage penalty, synergy bonus and draft weight, wall health, XP curve.
 - `enemies.json`: health, speed, damage, attack cooldown, attack range, and XP value per enemy type; boss flags.
 - `abilities.json`: base stats, synergy tags, and upgrade amounts per ability. Set `"unlocked": false` to stop an ability from being offered.
 - `meta.json`: gold per kill, per level, and for winning; permanent upgrade costs and amounts; hero prices, starting abilities, and bonuses.

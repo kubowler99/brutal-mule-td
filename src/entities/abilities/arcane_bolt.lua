@@ -3,6 +3,7 @@
 -- Fires toward the nearest enemy with configurable damage, cooldown, and upgrades
 
 local ability_data_loader = require("src.models.ability_data_loader")
+local config_loader = require("src.models.config_loader")
 
 local ArcaneBolt = Class("ArcaneBolt")
 
@@ -12,6 +13,10 @@ local DEFAULT_DAMAGE = 10
 local DEFAULT_PROJECTILE_SPEED = 400
 local DEFAULT_PIERCE_COUNT = 0
 local DEFAULT_PROJECTILE_COUNT = 1
+
+-- Each projectile past the first cuts per-projectile damage by this fraction
+-- (multiplicative: 2 projectiles deal 80% each, 3 deal 64% each)
+local DEFAULT_EXTRA_PROJECTILE_PENALTY = 0.2
 
 -- Upgrade fallback defaults
 local DEFAULT_DAMAGE_INCREASE = 5
@@ -138,6 +143,20 @@ function ArcaneBolt:getAimPoints(heroX, heroY, enemies)
   return aims
 end
 
+--- Damage of each projectile in a volley
+-- More projectiles per volley means less damage each, so count upgrades add
+-- coverage with diminishing total damage (see projectiles.extraProjectilePenalty).
+-- @param heroStats table|nil Hero stats; damageMultiplier scales damage
+-- @return number Damage per projectile
+function ArcaneBolt:getProjectileDamage(heroStats)
+  local penalty = config_loader.get("projectiles.extraProjectilePenalty", DEFAULT_EXTRA_PROJECTILE_PENALTY)
+  if type(penalty) ~= "number" or penalty < 0 or penalty >= 1 then
+    penalty = DEFAULT_EXTRA_PROJECTILE_PENALTY
+  end
+  local countFactor = (1 - penalty) ^ math.max(0, self.projectileCount - 1)
+  return self.damage * ((heroStats and heroStats.damageMultiplier) or 1) * countFactor
+end
+
 --- Fire one volley
 -- @param heroStats table|nil Hero stats; damageMultiplier scales projectile damage
 function ArcaneBolt:activate(heroX, heroY, enemies, projectilePool, displayGroup, heroStats)
@@ -152,7 +171,7 @@ function ArcaneBolt:activate(heroX, heroY, enemies, projectilePool, displayGroup
   -- (currentTime from game loop is passed via the combat system)
   self.lastActivation = self._lastCurrentTime or os.clock()
 
-  local damage = self.damage * ((heroStats and heroStats.damageMultiplier) or 1)
+  local damage = self:getProjectileDamage(heroStats)
   for _, aim in ipairs(aims) do
     local projectile = projectilePool:get()
     if projectile then
