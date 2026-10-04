@@ -108,7 +108,7 @@ An ability is a middleclass object with an `id` and a `tier` (1 to 5). The comba
 |---|---|
 | `canActivate(currentTime, heroStats)` | Whether the cooldown has elapsed (cooldown scaled by `heroStats.cooldownMultiplier`) |
 | `activate(x, y, enemies, projectilePool, displayGroup, heroStats)` | Fire once; `x, y` is the ability's slot on the wall |
-| `update(dt, x, y, enemies, displayGroup, heroStats)` | Per-frame abilities such as Orbiting Blades |
+| `update(dt, x, y, enemies, displayGroup, heroStats)` | Per-frame abilities such as Patrol Blades |
 | `upgrade(upgradeType)` | Apply one level-up card |
 | `applyStats(stats)` | Passives: change the hero stats table |
 | `destroy()` | Remove display objects the ability owns |
@@ -119,7 +119,7 @@ An ability is a middleclass object with an `id` and a `tier` (1 to 5). The comba
 | `frost_shard.lua` | Arcane Bolt subclass; piercing shards that slow on hit |
 | `frost_nova.lua` | Pulse along the wall that damages and slows |
 | `flame_slash.lua` | Short-range sweep from its slot; burn upgrade |
-| `orbiting_blades.lua` | Blades circling the ability's slot (uses `update`) |
+| `patrol_blades.lua` | Blades sweeping along the whole wall (uses `update`) |
 | `passive.lua` | One class for every passive; `abilities.json` sets the stat and amount per tier |
 
 ## Models (`src/models/`)

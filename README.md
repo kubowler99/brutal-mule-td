@@ -12,7 +12,7 @@ See [docs/arcane-survivor/game-concept.md](docs/arcane-survivor/game-concept.md)
   - **Frost Nova**: pulses along the wall, damaging and slowing every enemy within range. Upgrades: damage, range, cooldown, slow.
   - **Frost Shard**: fires a piercing shard at the nearest enemy that slows what it hits. Upgrades: damage, shard count (extra shards fan out 12° apart), pierce, slow, ricochet (bounce to another enemy), freeze chance.
   - **Flame Slash**: sweeps fire across every enemy within 220px of its spot on the wall. Upgrades: damage, reach, cooldown, burn (damage over time).
-  - **Orbiting Blades**: blades circle the ability's spot on the wall and cut enemies they touch. Upgrades: blade count, speed, damage, size.
+  - **Patrol Blades**: blades sweep back and forth along the whole wall, just in front of it, and cut enemies they touch. Upgrades: blade count, patrol speed, damage, size.
   - **Arcane Might** (passive): +10% damage for all abilities per tier.
   - **Quickening** (passive): 8% shorter cooldowns for all abilities per tier.
 - **Enemies** (the spawn mix is set by `spawner.enemyTable` in `game_config.json`)
@@ -27,7 +27,7 @@ See [docs/arcane-survivor/game-concept.md](docs/arcane-survivor/game-concept.md)
     - **Summon**: calls two swarmlings every 5 seconds.
   - **Bosses**: a boss at level 10 and the final boss at level 20, announced with a banner and a boss health bar. Bosses flash red and grow just before each attack.
 - **Stat upgrades**: wall repair, wall fortify, XP boost.
-- **Synergies**: abilities have tags (projectile, frost, fire, arcane, area, orbital). Each tag shared by two or more of your abilities adds +10% damage, and level-up cards that share a tag with your abilities are twice as likely to appear. Cards show their tags, in gold when they match.
+- **Synergies**: abilities have tags (projectile, frost, fire, arcane, area, blade). Each tag shared by two or more of your abilities adds +10% damage, and level-up cards that share a tag with your abilities are twice as likely to appear. Cards show their tags, in gold when they match.
 - **Heroes** (chosen before each run)
   - **Arcane Wanderer** (free): starts with Arcane Bolt, +10% XP.
   - **Frost Witch** (300 gold): starts with Frost Shard, 10% shorter cooldowns.
@@ -60,7 +60,7 @@ src/
   controllers/        game_controller: game loop and system wiring
   systems/            spawner, combat, collision, experience, upgrade
   entities/           hero, wall, walker (all enemy types), projectile
-    abilities/        arcane_bolt, frost_shard, frost_nova, flame_slash, orbiting_blades, passive
+    abilities/        arcane_bolt, frost_shard, frost_nova, flame_slash, patrol_blades, passive
   models/             game state, save data, meta progression, synergy, config and ability loaders
   ui/                 health bar, XP bar, ability indicators, upgrade cards
   utils/              object pool, helpers, placeholder graphics

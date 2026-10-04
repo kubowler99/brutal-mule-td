@@ -122,44 +122,45 @@
       }
     }
   },
-  "orbiting_blades": {
-    "name": "Orbiting Blades",
-    "description": "Blades circle the ability's spot on the wall and cut enemies they touch",
-    "tags": ["orbital", "arcane"],
-    "module": "src.entities.abilities.orbiting_blades",
+  "patrol_blades": {
+    "name": "Patrol Blades",
+    "description": "Blades sweep back and forth along the whole wall and cut enemies they touch",
+    "tags": ["blade", "arcane"],
+    "module": "src.entities.abilities.patrol_blades",
     "unlocked": true,
     "maxTier": 5,
-    "icon": "assets/images/abilities/orbiting_blades.png",
+    "icon": "assets/images/abilities/patrol_blades.png",
     "baseStats": {
       "bladeCount": 2,
       "damage": 6,
-      "orbitRadius": 80,
-      "rotationSpeed": 2.5,
-      "hitRadius": 18,
+      "patrolSpeed": 260,
+      "patrolOffset": 60,
+      "patrolMargin": 40,
+      "hitRadius": 24,
       "hitCooldown": 0.5
     },
     "upgrades": {
       "blade_count": {
-        "name": "Orbiting Blades Count",
+        "name": "Patrol Blades Count",
         "description": "+1 blade",
         "iconType": "count",
         "countIncrease": 1,
         "maxBlades": 6
       },
-      "rotation_speed": {
-        "name": "Orbiting Blades Speed",
-        "description": "+25% rotation speed",
+      "patrol_speed": {
+        "name": "Patrol Blades Speed",
+        "description": "+25% patrol speed",
         "iconType": "speed",
         "speedMultiplier": 1.25
       },
       "damage_increase": {
-        "name": "Orbiting Blades Damage",
+        "name": "Patrol Blades Damage",
         "description": "+3 damage per hit",
         "iconType": "damage",
         "damageIncrease": 3
       },
       "blade_size": {
-        "name": "Orbiting Blades Size",
+        "name": "Patrol Blades Size",
         "description": "Blades grow larger",
         "iconType": "radius",
         "sizeIncrease": 6
