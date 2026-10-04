@@ -87,7 +87,7 @@ function Hero:addXP(amount)
 end
 
 function Hero:destroy()
-  -- Abilities may own display objects (e.g. orbiting blades)
+  -- Abilities may own display objects (e.g. patrol blades)
   for _, ability in ipairs(self.abilities) do
     if ability.destroy then
       ability:destroy()

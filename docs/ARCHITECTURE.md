@@ -17,7 +17,7 @@ scenes  ->  game_controller  ->  systems  ->  entities, models
 Lower layers never `require` higher ones. When a system needs to tell the controller something, it calls a callback that the controller sets (for example `combat_system.onEnemyKilled`). The same goes for the controller and the scene (`onLevelUpCallback`, `onGameOverCallback`, `onBossSpawnedCallback`). This keeps the systems testable on their own and avoids circular requires.
 
 Two deliberate exceptions:
-- Abilities that deal damage directly (Frost Nova, Orbiting Blades) require `combat_system` so that their damage goes through `applyDamage` like everything else.
+- Abilities that deal damage directly (Frost Nova, Flame Slash, Patrol Blades) require `combat_system` so that their damage goes through `applyDamage` like everything else.
 - The wall repair and fortify cards in `upgrade_system` require `game_controller` inside their `apply` functions to reach the wall. The require is lazy, so there is no load-time cycle.
 
 ## 2. Data-driven design
@@ -75,7 +75,7 @@ An ability is a middleclass object. The combat system calls whichever of `canAct
 
 - **Created by id.** `ability_registry.createInstance(id)` requires the `module` named in `abilities.json` and calls `Class:new(id)`. Passing the id lets one class back several abilities: every passive is the same `Passive` class, configured by its data entry.
 - **Inheritance where it helps.** Frost Shard subclasses Arcane Bolt and adds the slow, reusing the targeting and firing.
-- **Slots.** Each ability fires or runs from its indicator's position on the wall (`combat_system.getFireOrigin`), so slot order matters for area and orbital abilities.
+- **Slots.** Each ability fires or runs from its indicator's position on the wall (`combat_system.getFireOrigin`), so slot order matters for abilities that act from their slot, such as Flame Slash.
 
 ## 8. Persistence
 

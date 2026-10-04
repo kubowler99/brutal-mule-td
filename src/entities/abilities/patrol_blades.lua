@@ -1,19 +1,21 @@
--- Orbiting Blades Ability
--- Blades circle the ability's slot on the wall and cut enemies they touch.
--- Always active: it runs every frame through update() instead of a cooldown.
+-- Patrol Blades Ability
+-- Blades sweep back and forth along the whole wall, just in front of it, and
+-- cut enemies they touch. Always active: it runs every frame through update()
+-- instead of a cooldown.
 
 local ability_data_loader = require("src.models.ability_data_loader")
 local combat_system = require("src.systems.combat_system")
 
-local OrbitingBlades = Class("OrbitingBlades")
+local PatrolBlades = Class("PatrolBlades")
 
 -- Hard-coded fallback defaults (used when ability_data_loader has no data)
 local DEFAULT_BLADE_COUNT = 2
 local DEFAULT_DAMAGE = 6
-local DEFAULT_ORBIT_RADIUS = 80
-local DEFAULT_ROTATION_SPEED = 2.5  -- radians per second
-local DEFAULT_HIT_RADIUS = 18
-local DEFAULT_HIT_COOLDOWN = 0.5    -- seconds before the same enemy can be hit again
+local DEFAULT_PATROL_SPEED = 260   -- pixels per second along the wall
+local DEFAULT_PATROL_OFFSET = 60   -- distance in front of the wall line
+local DEFAULT_PATROL_MARGIN = 40   -- distance from the screen edges
+local DEFAULT_HIT_RADIUS = 24
+local DEFAULT_HIT_COOLDOWN = 0.5   -- seconds before the same enemy can be hit again
 
 -- Upgrade fallback defaults
 local DEFAULT_COUNT_INCREASE = 1
@@ -26,22 +28,24 @@ local DEFAULT_SIZE_INCREASE = 6
 local BLADE_COLOR = {0.85, 0.9, 1.0}
 local BLADE_VISUAL_SCALE = 0.5  -- drawn radius relative to hit radius
 
-function OrbitingBlades:initialize()
-  self.id = "orbiting_blades"
-  self.name = "Orbiting Blades"
+function PatrolBlades:initialize()
+  self.id = "patrol_blades"
+  self.name = "Patrol Blades"
 
-  local baseStats = ability_data_loader.getBaseStats("orbiting_blades")
+  local baseStats = ability_data_loader.getBaseStats("patrol_blades")
 
   self.bladeCount = (baseStats and baseStats.bladeCount) or DEFAULT_BLADE_COUNT
   self.damage = (baseStats and baseStats.damage) or DEFAULT_DAMAGE
-  self.orbitRadius = (baseStats and baseStats.orbitRadius) or DEFAULT_ORBIT_RADIUS
-  self.rotationSpeed = (baseStats and baseStats.rotationSpeed) or DEFAULT_ROTATION_SPEED
+  self.patrolSpeed = (baseStats and baseStats.patrolSpeed) or DEFAULT_PATROL_SPEED
+  self.patrolOffset = (baseStats and baseStats.patrolOffset) or DEFAULT_PATROL_OFFSET
+  self.patrolMargin = (baseStats and baseStats.patrolMargin) or DEFAULT_PATROL_MARGIN
   self.hitRadius = (baseStats and baseStats.hitRadius) or DEFAULT_HIT_RADIUS
   self.hitCooldown = (baseStats and baseStats.hitCooldown) or DEFAULT_HIT_COOLDOWN
   self.baseHitRadius = self.hitRadius  -- blades are drawn scaled to hitRadius / baseHitRadius
 
   self.tier = 1
-  self.angle = 0
+  -- Distance travelled along the patrol's round trip
+  self.travelled = 0
   self.elapsed = 0
 
   -- Time each enemy was last hit; weak keys so pooled enemies are not kept alive
@@ -52,22 +56,34 @@ function OrbitingBlades:initialize()
 end
 
 --- Blades never fire on a cooldown; they act in update()
-function OrbitingBlades:canActivate()
+function PatrolBlades:canActivate()
   return false
 end
 
---- Current position of each blade around the origin
--- @param originX number Orbit center X
--- @param originY number Orbit center Y
+--- Left and right ends of the patrol
+-- @return number, number minX, maxX
+function PatrolBlades:getPatrolRange()
+  local width = display.contentWidth or 720
+  return self.patrolMargin, width - self.patrolMargin
+end
+
+--- Current position of each blade
+-- Blades are spaced evenly around the round trip, so with two blades one
+-- heads right while the other heads left.
+-- @param wallY number Y of the wall line (the ability's slot)
 -- @return table Array of { x, y }
-function OrbitingBlades:getBladePositions(originX, originY)
+function PatrolBlades:getBladePositions(wallY)
+  local minX, maxX = self:getPatrolRange()
+  local length = maxX - minX
+  local roundTrip = 2 * length
+  local y = wallY - self.patrolOffset
+
   local positions = {}
   for i = 1, self.bladeCount do
-    local bladeAngle = self.angle + (i - 1) * (2 * math.pi / self.bladeCount)
-    positions[i] = {
-      x = originX + math.cos(bladeAngle) * self.orbitRadius,
-      y = originY + math.sin(bladeAngle) * self.orbitRadius,
-    }
+    local along = (self.travelled + (i - 1) * roundTrip / self.bladeCount) % roundTrip
+    -- First half of the round trip goes right, second half comes back
+    local x = along <= length and (minX + along) or (maxX - (along - length))
+    positions[i] = { x = x, y = y }
   end
   return positions
 end
@@ -95,18 +111,18 @@ local function syncBladeObjects(self, positions, displayGroup)
   end
 end
 
---- Rotate the blades and damage enemies they touch
+--- Move the blades along the wall and damage enemies they touch
 -- @param dt number Delta time in seconds
--- @param originX number Orbit center X (the ability's slot on the wall)
--- @param originY number Orbit center Y
+-- @param originX number Slot X (unused; the patrol spans the wall)
+-- @param originY number Slot Y (the wall line)
 -- @param enemies table Array of enemies
 -- @param displayGroup table|nil Group to draw blades into
 -- @param heroStats table|nil Hero stats; damageMultiplier scales damage
-function OrbitingBlades:update(dt, originX, originY, enemies, displayGroup, heroStats)
+function PatrolBlades:update(dt, originX, originY, enemies, displayGroup, heroStats)
   self.elapsed = self.elapsed + dt
-  self.angle = (self.angle + self.rotationSpeed * dt) % (2 * math.pi)
+  self.travelled = self.travelled + self.patrolSpeed * dt
 
-  local positions = self:getBladePositions(originX, originY)
+  local positions = self:getBladePositions(originY)
   syncBladeObjects(self, positions, displayGroup)
 
   if not enemies then
@@ -134,8 +150,8 @@ function OrbitingBlades:update(dt, originX, originY, enemies, displayGroup, hero
   end
 end
 
-function OrbitingBlades:upgrade(upgradeType)
-  local params = ability_data_loader.getUpgradeParams("orbiting_blades", upgradeType)
+function PatrolBlades:upgrade(upgradeType)
+  local params = ability_data_loader.getUpgradeParams("patrol_blades", upgradeType)
 
   if upgradeType == "blade_count" then
     local increase = (params and params.countIncrease) or DEFAULT_COUNT_INCREASE
@@ -143,9 +159,9 @@ function OrbitingBlades:upgrade(upgradeType)
     self.bladeCount = math.min(self.bladeCount + increase, maxBlades)
     self.tier = math.min(self.tier + 1, 5)
 
-  elseif upgradeType == "rotation_speed" then
+  elseif upgradeType == "patrol_speed" then
     local multiplier = (params and params.speedMultiplier) or DEFAULT_SPEED_MULTIPLIER
-    self.rotationSpeed = self.rotationSpeed * multiplier
+    self.patrolSpeed = self.patrolSpeed * multiplier
     self.tier = math.min(self.tier + 1, 5)
 
   elseif upgradeType == "damage_increase" then
@@ -161,7 +177,7 @@ function OrbitingBlades:upgrade(upgradeType)
 end
 
 --- Remove blade display objects
-function OrbitingBlades:destroy()
+function PatrolBlades:destroy()
   for _, blade in ipairs(self.bladeObjects) do
     if blade.removeSelf then
       blade:removeSelf()
@@ -170,4 +186,4 @@ function OrbitingBlades:destroy()
   self.bladeObjects = {}
 end
 
-return OrbitingBlades
+return PatrolBlades

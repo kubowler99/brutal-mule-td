@@ -60,7 +60,7 @@ function M.update(dt, currentTime)
   -- Activate abilities based on cooldowns
   M.activateAbilities(currentTime)
   
-  -- Run per-frame abilities (e.g. orbiting blades)
+  -- Run per-frame abilities (e.g. patrol blades)
   M.updateAbilities(dt)
   
   -- Update all active projectiles
@@ -68,7 +68,7 @@ function M.update(dt, currentTime)
 end
 
 --- Run the per-frame update of abilities that have one
--- Abilities that act continuously (orbitals, auras) define
+-- Abilities that act continuously (patrolling blades, auras) define
 -- ability:update(dt, originX, originY, enemies, displayGroup, heroStats).
 --
 -- @param dt number Delta time in seconds
