@@ -190,6 +190,22 @@ function M.getBaseStats(abilityId)
   return _validateBaseStats(abilityId, abilityData.baseStats)
 end
 
+--- Get the icon image path for an ability
+-- @param abilityId string e.g. "arcane_bolt"
+-- @return string Icon path relative to the resource directory, or nil
+function M.getIconPath(abilityId)
+  if not M._data or not abilityId then
+    return nil
+  end
+
+  local abilityData = M._data[abilityId]
+  if type(abilityData) ~= "table" or type(abilityData.icon) ~= "string" or abilityData.icon == "" then
+    return nil
+  end
+
+  return abilityData.icon
+end
+
 --- Get upgrade parameters for an ability and upgrade type
 -- @param abilityId string
 -- @param upgradeType string e.g. "damage_increase"
