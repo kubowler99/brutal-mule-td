@@ -605,19 +605,36 @@ describe("ArcaneBolt Ability", function()
             end
         end)
 
-        it("should consistently target nearest enemy across multiple projectiles", function()
-            -- Test that when projectileCount > 1, all projectiles target the same nearest enemy
+        it("should lead the shot by the enemy's current speed, not its base speed", function()
+            local Walker = require("src.entities.walker")
+            local walker = Walker:new(nil)
+            walker:activate(360, 200, 360)
+            local baseX, baseY = ability:predictAim(360, 1200, walker)
+
+            walker:applySlow(0.5, 5)
+            local slowedX, slowedY = ability:predictAim(360, 1200, walker)
+
+            walker:applySlow(0, 5)
+            local frozenX, frozenY = ability:predictAim(360, 1200, walker)
+
+            -- Lead is speed * time to hit; half speed means half the lead
+            assert.is_true(math.abs((slowedY - 200) - (baseY - 200) / 2) < 1e-9)
+            assert.are.equal(200, frozenY)
+            assert.are.equal(360, baseX)
+        end)
+
+        it("should send each projectile at a different enemy, nearest first", function()
+            -- When projectileCount > 1, projectile i targets the i-th nearest
+            -- enemy; with fewer enemies than projectiles, extras wrap around
             for _ = 1, 50 do
-                -- Set up ability with multiple projectiles
                 ability.projectileCount = math.random(2, 5)
 
-                -- Generate random hero position
                 local heroX = math.random(100, 620)
                 local heroY = math.random(200, 1180)
 
-                -- Create multiple enemies
+                -- Stationary enemies (no speed), so aim points are their positions
                 local enemies = {}
-                for i = 1, math.random(3, 8) do
+                for i = 1, math.random(1, 8) do
                     table.insert(enemies, {
                         x = math.random(50, 670),
                         y = math.random(50, 1000),
@@ -625,23 +642,17 @@ describe("ArcaneBolt Ability", function()
                     })
                 end
 
-                -- Calculate nearest enemy
-                local nearestEnemy = nil
-                local minDistance = math.huge
-                for _, enemy in ipairs(enemies) do
-                    local dx = enemy.x - heroX
-                    local dy = enemy.y - heroY
-                    local distance = math.sqrt(dx * dx + dy * dy)
-                    if distance < minDistance then
-                        minDistance = distance
-                        nearestEnemy = enemy
-                    end
+                -- Expected order: nearest first
+                local sorted = {}
+                for _, enemy in ipairs(enemies) do table.insert(sorted, enemy) end
+                local function distSq(enemy)
+                    local dx, dy = enemy.x - heroX, enemy.y - heroY
+                    return dx * dx + dy * dy
                 end
+                table.sort(sorted, function(a, b) return distSq(a) < distSq(b) end)
+                local targetCount = math.min(ability.projectileCount, #sorted)
 
-                -- Track all projectile targets
                 local projectileTargets = {}
-
-                -- Create mock projectile pool
                 local mockProjectile = {
                     activate = function(self, pHeroX, pHeroY, targetX, targetY)
                         table.insert(projectileTargets, { x = targetX, y = targetY })
@@ -651,21 +662,19 @@ describe("ArcaneBolt Ability", function()
                     get = function() return mockProjectile end
                 }
 
-                -- Activate the ability
                 ability:activate(heroX, heroY, enemies, mockProjectilePool)
 
-                -- Verify all projectiles targeted the same nearest enemy
                 assert.are.equal(ability.projectileCount, #projectileTargets,
                     "Should create correct number of projectiles")
 
                 for i, target in ipairs(projectileTargets) do
-                    assert.are.equal(nearestEnemy.x, target.x,
-                        "Projectile " .. i .. " should target nearest enemy X")
-                    assert.are.equal(nearestEnemy.y, target.y,
-                        "Projectile " .. i .. " should target nearest enemy Y")
+                    local expected = sorted[((i - 1) % targetCount) + 1]
+                    assert.are.equal(expected.x, target.x,
+                        "Projectile " .. i .. " should target the expected enemy X")
+                    assert.are.equal(expected.y, target.y,
+                        "Projectile " .. i .. " should target the expected enemy Y")
                 end
 
-                -- Reset projectileCount for next iteration
                 ability.projectileCount = 1
             end
         end)

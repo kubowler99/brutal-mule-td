@@ -50,6 +50,36 @@ function FrostShard:initialize()
   self.tier = 1
 end
 
+-- Angle between neighboring shards in a fan (radians, about 12 degrees)
+local FAN_ANGLE = math.rad(12)
+
+--- Aim points for one volley: a fan centered on the nearest enemy
+-- One shard flies straight at the target; extra shards spread evenly to
+-- either side, so a volley sweeps several lanes.
+-- @return table Array of { x, y } (empty when there is no target)
+function FrostShard:getAimPoints(heroX, heroY, enemies)
+  local target = self:findNearestEnemies(heroX, heroY, enemies, 1)[1]
+  if not target then
+    return {}
+  end
+
+  local centerX, centerY = self:predictAim(heroX, heroY, target)
+  local dx = centerX - heroX
+  local dy = centerY - heroY
+  local distance = math.sqrt(dx * dx + dy * dy)
+  local baseAngle = math.atan2(dy, dx)
+
+  local aims = {}
+  for i = 1, self.projectileCount do
+    local angle = baseAngle + (i - (self.projectileCount + 1) / 2) * FAN_ANGLE
+    aims[i] = {
+      x = heroX + math.cos(angle) * distance,
+      y = heroY + math.sin(angle) * distance,
+    }
+  end
+  return aims
+end
+
 --- Fire like Arcane Bolt, then give each shard the on-hit slow, ricochets,
 --- and freeze chance
 function FrostShard:activate(heroX, heroY, enemies, projectilePool, displayGroup, heroStats)
