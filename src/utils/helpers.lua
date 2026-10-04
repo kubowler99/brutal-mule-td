@@ -74,6 +74,39 @@ function M.newButton(options)
     return btn
 end
 
+-- Full-screen background images and their pixel sizes
+M.BACKGROUNDS = {
+    game = { path = "assets/images/backgrounds/game.png", width = 288, height = 512 },
+    menu = { path = "assets/images/backgrounds/menu.png", width = 286, height = 509 },
+    settings = { path = "assets/images/backgrounds/settings.png", width = 288, height = 512 },
+}
+
+-- Fill color used when a background image fails to load
+local BACKGROUND_FALLBACK_COLOR = {0.1, 0.1, 0.2}
+
+-- Create a full-screen background from M.BACKGROUNDS. The image is scaled
+-- to cover the whole screen, keeping its aspect ratio, so any extra width
+-- or height is cut off evenly at the edges.
+-- @param parent table Display group to insert into
+-- @param name string Key in M.BACKGROUNDS
+-- @return table The background display object
+function M.newBackground(parent, name)
+    local background = M.BACKGROUNDS[name]
+    if background then
+        local scale = math.max(M.width / background.width, M.height / background.height)
+        local image = display.newImageRect(parent, background.path, background.width * scale, background.height * scale)
+        if image then
+            image.x = M.centerX
+            image.y = M.centerY
+            return image
+        end
+    end
+
+    local rect = display.newRect(parent, M.centerX, M.centerY, M.width, M.height)
+    rect:setFillColor(unpack(BACKGROUND_FALLBACK_COLOR))
+    return rect
+end
+
 -- Clean up display group
 function M.cleanGroup(group)
     if group then

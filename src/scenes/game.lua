@@ -4,7 +4,6 @@
 
 local composer = require("composer")
 local helpers = require("src.utils.helpers")
-local placeholder_graphics = require("src.utils.placeholder_graphics")
 local game_controller = require("src.controllers.game_controller")
 local game_state = require("src.models.game_state")
 local HealthBar = require("src.ui.health_bar")
@@ -260,9 +259,8 @@ end
 function scene:create(event)
   local sceneGroup = self.view
   
-  -- Create background using placeholder graphics
-  local background = placeholder_graphics.createBackground(helpers.width, helpers.height)
-  sceneGroup:insert(background)
+  -- Battlefield background image
+  helpers.newBackground(sceneGroup, "game")
   
   -- Create a game layer for entities (walkers, projectiles, hero, wall)
   -- This layer is inserted BEFORE the UI overlay layer so entities always render behind UI
