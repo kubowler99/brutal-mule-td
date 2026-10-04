@@ -255,4 +255,46 @@ describe("Game Over Scene", function()
       end)
     end)
   end)
+
+  describe("victory background", function()
+    local function findVictoryBackground(view)
+      for i = 1, view.numChildren do
+        if view[i].filename == "assets/images/backgrounds/victory.png" then
+          return view[i]
+        end
+      end
+      return nil
+    end
+
+    before_each(function()
+      gameover:dispatchEvent({ name = "create", phase = "will" })
+    end)
+
+    it("is hidden until a run is won", function()
+      local background = findVictoryBackground(gameover.view)
+      assert.is_not_nil(background)
+      assert.is_false(background.isVisible)
+    end)
+
+    it("shows after a victory", function()
+      gameover:dispatchEvent({ name = "show", phase = "will", params = { victoryCondition = true } })
+      assert.is_true(findVictoryBackground(gameover.view).isVisible)
+    end)
+
+    it("hides again after a defeat", function()
+      gameover:dispatchEvent({ name = "show", phase = "will", params = { victoryCondition = true } })
+      gameover:dispatchEvent({ name = "show", phase = "will", params = { victoryCondition = false } })
+      assert.is_false(findVictoryBackground(gameover.view).isVisible)
+    end)
+
+    it("sits behind the title", function()
+      local backgroundIndex, titleIndex
+      for i = 1, gameover.view.numChildren do
+        local child = gameover.view[i]
+        if child.filename == "assets/images/backgrounds/victory.png" then backgroundIndex = i end
+        if child.text == "GAME OVER" then titleIndex = i end
+      end
+      assert.is_true(backgroundIndex < titleIndex)
+    end)
+  end)
 end)
