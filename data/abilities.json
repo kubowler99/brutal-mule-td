@@ -181,7 +181,8 @@
       "pierceCount": 1,
       "projectileCount": 1,
       "slowFactor": 0.7,
-      "slowDuration": 1.5
+      "slowDuration": 1.5,
+      "freezeDuration": 0.8
     },
     "upgrades": {
       "damage_increase": {
@@ -208,6 +209,62 @@
         "iconType": "speed",
         "slowReduction": 0.1,
         "minSlowFactor": 0.3
+      },
+      "ricochet": {
+        "name": "Frost Shard Ricochet",
+        "description": "Shards bounce to one more enemy",
+        "iconType": "pierce",
+        "ricochetIncrease": 1,
+        "maxRicochets": 3
+      },
+      "freeze_chance": {
+        "name": "Frost Shard Freeze",
+        "description": "+15% chance to freeze on hit",
+        "iconType": "speed",
+        "chanceIncrease": 0.15,
+        "maxChance": 0.6
+      }
+    }
+  },
+  "flame_slash": {
+    "name": "Flame Slash",
+    "description": "Sweeps fire across enemies close to the wall",
+    "tags": ["area", "fire"],
+    "module": "src.entities.abilities.flame_slash",
+    "unlocked": true,
+    "maxTier": 5,
+    "icon": "assets/images/abilities/flame_slash.png",
+    "baseStats": {
+      "cooldown": 1.5,
+      "damage": 14,
+      "range": 220,
+      "burnDuration": 3
+    },
+    "upgrades": {
+      "damage_increase": {
+        "name": "Flame Slash Damage",
+        "description": "+6 damage per slash",
+        "iconType": "damage",
+        "damageIncrease": 6
+      },
+      "range_increase": {
+        "name": "Flame Slash Reach",
+        "description": "+40 range",
+        "iconType": "radius",
+        "rangeIncrease": 40
+      },
+      "attack_speed": {
+        "name": "Flame Slash Speed",
+        "description": "-0.2s cooldown",
+        "iconType": "speed",
+        "cooldownReduction": 0.2,
+        "minCooldown": 0.6
+      },
+      "burn": {
+        "name": "Flame Slash Burn",
+        "description": "Slashed enemies burn for +4 damage per second",
+        "iconType": "damage",
+        "burnIncrease": 4
       }
     }
   }

@@ -107,4 +107,114 @@ describe("Frost Shard", function()
             assert.are.equal(0.3, shard.slowFactor)
         end)
     end)
+
+    describe("ricochet", function()
+        it("turns a spent projectile into a ricochet instead of stopping it", function()
+            local projectile = Projectile:new(nil)
+            projectile:activate(0, 0, 0, -100, 900, 7, 0)
+            projectile.ricochetsLeft = 1
+
+            projectile:onHit({ x = 0, y = -50 })
+
+            assert.is_true(projectile.isActive)
+            assert.is_true(projectile.needsRicochet)
+            assert.are.equal(0, projectile.ricochetsLeft)
+        end)
+
+        it("redirects toward the nearest enemy it has not hit, at the same speed", function()
+            local first = { x = 360, y = 500, isActive = true }
+            local near = { x = 420, y = 500, isActive = true }
+            local far = { x = 360, y = 100, isActive = true }
+            local projectile = Projectile:new(nil)
+            projectile:activate(360, 600, 360, 500, 900, 7, 0)
+            projectile.x, projectile.y = 360, 500
+            projectile.ricochetsLeft = 1
+            projectile:onHit(first)
+
+            game_controller.ricochet(projectile, { first, near, far })
+
+            assert.is_true(projectile.isActive)
+            assert.is_false(projectile.needsRicochet)
+            assert.is_true(math.abs(projectile.vx - 900) < 1e-6)
+            assert.is_true(math.abs(projectile.vy) < 1e-6)
+        end)
+
+        it("stops when no unhit enemy is in range", function()
+            local first = { x = 360, y = 500, isActive = true }
+            local tooFar = { x = 360, y = 0, isActive = true }
+            local projectile = Projectile:new(nil)
+            projectile:activate(360, 600, 360, 500, 900, 7, 0)
+            projectile.x, projectile.y = 360, 500
+            projectile.ricochetsLeft = 1
+            projectile:onHit(first)
+
+            game_controller.ricochet(projectile, { first, tooFar })
+
+            assert.is_false(projectile.isActive)
+        end)
+
+        it("gives fired shards the ricochet count and freeze chance from upgrades", function()
+            shard:upgrade("ricochet")
+            shard:upgrade("freeze_chance")
+            local pool = capturePool()
+            shard:canActivate(10)
+            shard:activate(45, 1200, { { x = 360, y = 500, isActive = true } }, pool)
+
+            local projectile = pool.fired[1]
+            assert.are.equal(1, projectile.ricochetsLeft)
+            assert.is_true(math.abs(projectile.freezeChance - 0.15) < 1e-9)
+            assert.are.equal(0.8, projectile.freezeDuration)
+        end)
+
+        it("caps ricochets at 3 and freeze chance at 60%", function()
+            for _ = 1, 5 do
+                shard:upgrade("ricochet")
+                shard:upgrade("freeze_chance")
+            end
+            assert.are.equal(3, shard.ricochets)
+            assert.are.equal(0.6, shard.freezeChance)
+        end)
+
+        it("clears ricochets and freeze when a pooled projectile is reused", function()
+            local projectile = Projectile:new(nil)
+            projectile:activate(0, 0, 10, 10, 100, 5, 0)
+            projectile.ricochetsLeft = 2
+            projectile.freezeChance = 0.5
+            projectile:activate(0, 0, 10, 10, 100, 5, 0)
+            assert.are.equal(0, projectile.ricochetsLeft)
+            assert.is_nil(projectile.freezeChance)
+        end)
+    end)
+
+    describe("freeze", function()
+        it("stops an enemy hit by a freezing shard", function()
+            local restore = snapshotModule(collision_system)
+            local originalRandom = math.random
+            game_controller.initialize({ insert = function() end, numChildren = 0 })
+            game_controller.start()
+
+            local walker = Walker:new(nil)
+            walker:activate(360, 300, 360)
+            walker.health = 100
+            local projectile = Projectile:new(nil)
+            projectile:activate(360, 1200, 360, 300, 900, 7, 1)
+            projectile.freezeChance = 0.5
+            projectile.freezeDuration = 0.8
+            collision_system.checkProjectileCollisions = function()
+                return { { projectile = projectile, enemy = walker } }
+            end
+            math.random = function(...)
+                if select("#", ...) == 0 then return 0.1 end
+                return originalRandom(...)
+            end
+
+            game_controller.update({ time = 16 })
+
+            math.random = originalRandom
+            restore()
+            game_controller.cleanup()
+            assert.are.equal(0, walker:getCurrentSpeed())
+            assert.are.equal(0.8, walker.slowRemaining)
+        end)
+    end)
 end)

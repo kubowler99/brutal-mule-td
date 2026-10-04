@@ -19,8 +19,12 @@ function Hero:initialize(x, y)
   -- Abilities array (max 5 slots)
   self.abilities = {}
   
-  -- Stats before passives (set from permanent upgrades and the hero choice)
-  self.baseStats = { damageMultiplier = 1, cooldownMultiplier = 1 }
+  -- Stats before passives (set from permanent upgrades and the hero choice).
+  -- lowWallDamageBonus is extra damage while the wall is below half health.
+  self.baseStats = { damageMultiplier = 1, cooldownMultiplier = 1, lowWallDamageBonus = 0 }
+  
+  -- Wall health / max health, kept current by the game controller
+  self.wallHealthRatio = 1
   
   -- Alive state
   self.isAlive = true
@@ -42,6 +46,9 @@ end
 -- Lowest cooldown multiplier passives can reach
 local MIN_COOLDOWN_MULTIPLIER = 0.4
 
+-- Below this wall health ratio, lowWallDamageBonus applies
+local LOW_WALL_RATIO = 0.5
+
 --- Combined stats from base stats, passive abilities, and synergies
 -- Abilities read these when they activate.
 -- @return table { damageMultiplier, cooldownMultiplier }
@@ -57,6 +64,10 @@ function Hero:getStats()
   end
   -- Each tag shared by two or more abilities adds a damage bonus
   stats.damageMultiplier = stats.damageMultiplier + synergy.getDamageBonus(self.abilities)
+  -- Some heroes hit harder while the wall is below half health
+  if self.wallHealthRatio < LOW_WALL_RATIO then
+    stats.damageMultiplier = stats.damageMultiplier + (self.baseStats.lowWallDamageBonus or 0)
+  end
   stats.cooldownMultiplier = math.max(stats.cooldownMultiplier, MIN_COOLDOWN_MULTIPLIER)
   return stats
 end

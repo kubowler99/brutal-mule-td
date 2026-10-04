@@ -19,7 +19,8 @@
       "chance": 0.08,
       "healthMultiplier": 4,
       "damageMultiplier": 2,
-      "xpMultiplier": 5
+      "xpMultiplier": 5,
+      "abilities": ["slam", "charge", "summon"]
     },
     "bosses": [
       { "level": 10, "type": "boss" },

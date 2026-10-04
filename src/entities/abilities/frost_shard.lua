@@ -15,6 +15,7 @@ local DEFAULT_PIERCE_COUNT = 1
 local DEFAULT_PROJECTILE_COUNT = 1
 local DEFAULT_SLOW_FACTOR = 0.7
 local DEFAULT_SLOW_DURATION = 1.5
+local DEFAULT_FREEZE_DURATION = 0.8
 
 -- Upgrade fallback defaults
 local DEFAULT_DAMAGE_INCREASE = 4
@@ -22,6 +23,10 @@ local DEFAULT_COUNT_INCREASE = 1
 local DEFAULT_PIERCE_INCREASE = 1
 local DEFAULT_SLOW_REDUCTION = 0.1
 local DEFAULT_MIN_SLOW_FACTOR = 0.3
+local DEFAULT_RICOCHET_INCREASE = 1
+local DEFAULT_MAX_RICOCHETS = 3
+local DEFAULT_FREEZE_CHANCE_INCREASE = 0.15
+local DEFAULT_MAX_FREEZE_CHANCE = 0.6
 
 function FrostShard:initialize()
   self.id = "frost_shard"
@@ -37,11 +42,16 @@ function FrostShard:initialize()
   self.projectileCount = (baseStats and baseStats.projectileCount) or DEFAULT_PROJECTILE_COUNT
   self.slowFactor = (baseStats and baseStats.slowFactor) or DEFAULT_SLOW_FACTOR
   self.slowDuration = (baseStats and baseStats.slowDuration) or DEFAULT_SLOW_DURATION
+  -- Ricochet and freeze start at zero and come from upgrades
+  self.ricochets = 0
+  self.freezeChance = 0
+  self.freezeDuration = (baseStats and baseStats.freezeDuration) or DEFAULT_FREEZE_DURATION
 
   self.tier = 1
 end
 
---- Fire like Arcane Bolt, then give each shard the on-hit slow
+--- Fire like Arcane Bolt, then give each shard the on-hit slow, ricochets,
+--- and freeze chance
 function FrostShard:activate(heroX, heroY, enemies, projectilePool, displayGroup, heroStats)
   local fired = {}
   local capturingPool = {
@@ -62,6 +72,11 @@ function FrostShard:activate(heroX, heroY, enemies, projectilePool, displayGroup
   for _, projectile in ipairs(fired) do
     projectile.slowFactor = self.slowFactor
     projectile.slowDuration = self.slowDuration
+    projectile.ricochetsLeft = self.ricochets
+    if self.freezeChance > 0 then
+      projectile.freezeChance = self.freezeChance
+      projectile.freezeDuration = self.freezeDuration
+    end
   end
 
   return activated
@@ -86,6 +101,18 @@ function FrostShard:upgrade(upgradeType)
     local reduction = (params and params.slowReduction) or DEFAULT_SLOW_REDUCTION
     local minFactor = (params and params.minSlowFactor) or DEFAULT_MIN_SLOW_FACTOR
     self.slowFactor = math.max(self.slowFactor - reduction, minFactor)
+    self.tier = math.min(self.tier + 1, 5)
+
+  elseif upgradeType == "ricochet" then
+    local increase = (params and params.ricochetIncrease) or DEFAULT_RICOCHET_INCREASE
+    local maxRicochets = (params and params.maxRicochets) or DEFAULT_MAX_RICOCHETS
+    self.ricochets = math.min(self.ricochets + increase, maxRicochets)
+    self.tier = math.min(self.tier + 1, 5)
+
+  elseif upgradeType == "freeze_chance" then
+    local increase = (params and params.chanceIncrease) or DEFAULT_FREEZE_CHANCE_INCREASE
+    local maxChance = (params and params.maxChance) or DEFAULT_MAX_FREEZE_CHANCE
+    self.freezeChance = math.min(self.freezeChance + increase, maxChance)
     self.tier = math.min(self.tier + 1, 5)
   end
 end

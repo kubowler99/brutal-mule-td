@@ -61,11 +61,11 @@
     {
       "id": "ember_knight",
       "name": "Ember Knight",
-      "description": "Close range. Starts with Orbiting Blades. +15% damage.",
-      "startingAbility": "orbiting_blades",
+      "description": "Close range. Starts with Flame Slash. +20% damage while the wall is below half health.",
+      "startingAbility": "flame_slash",
       "cost": 500,
       "color": [1.0, 0.45, 0.2],
-      "bonuses": { "damageMultiplier": 0.15 }
+      "bonuses": { "lowWallDamageMultiplier": 0.2 }
     }
   ]
 }
