@@ -13,6 +13,7 @@ local scene = composer.newScene()
 
 -- Scene variables
 local background
+local victoryBackground
 local titleText
 local survivalTimeText
 local enemiesDefeatedText
@@ -40,6 +41,10 @@ function scene:create(event)
     helpers.height
   )
   background:setFillColor(0.1, 0.1, 0.15)
+  
+  -- Victory background image, shown in place of the plain one after a win
+  victoryBackground = helpers.newBackground(sceneGroup, "victory")
+  victoryBackground.isVisible = false
   
   -- Title
   titleText = display.newText({
@@ -147,6 +152,9 @@ function scene:show(event)
     
     -- Title shows whether the run was won (final boss defeated) or lost
     if titleText then
+      if victoryBackground then
+        victoryBackground.isVisible = stats.victoryCondition == true
+      end
       if stats.victoryCondition then
         titleText.text = "VICTORY!"
         titleText:setFillColor(0.4, 1, 0.5)
@@ -276,6 +284,7 @@ function scene:destroy(event)
   -- Display objects are automatically cleaned up by Composer when in sceneGroup
   -- Nil out references
   background = nil
+  victoryBackground = nil
   titleText = nil
   survivalTimeText = nil
   enemiesDefeatedText = nil
