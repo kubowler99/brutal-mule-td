@@ -8,6 +8,10 @@ local abilityRegistry = require("src.models.ability_registry")
 -- Hide status bar
 display.setStatusBar(display.HiddenStatusBar)
 
+-- Scale textures with nearest-neighbor filtering so pixel art stays sharp
+display.setDefault("magTextureFilter", "nearest")
+display.setDefault("minTextureFilter", "nearest")
+
 -- Seed random
 math.randomseed(os.time())
 

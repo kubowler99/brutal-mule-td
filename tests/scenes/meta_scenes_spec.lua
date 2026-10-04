@@ -143,6 +143,84 @@ describe("Meta progression scenes", function()
             for _, call in ipairs(gotoCalls) do tapped[call.name] = true end
             assert.is_true(tapped["src.scenes.hero_select"])
             assert.is_true(tapped["src.scenes.upgrades"])
+            assert.is_true(tapped["src.scenes.settings"])
+        end)
+
+        it("uses the menu background image", function()
+            local menu = loadScene("src.scenes.menu")
+            menu:dispatchEvent({ name = "create", phase = "will" })
+            assert.are.equal("assets/images/backgrounds/menu.png", menu.view[1].filename)
+        end)
+    end)
+
+    describe("settings", function()
+        local scene
+
+        local function findButton(view, labelText)
+            for i = 1, view.numChildren do
+                local child = view[i]
+                if child.label and child.label.text == labelText then
+                    return child
+                end
+            end
+            return nil
+        end
+
+        before_each(function()
+            scene = loadScene("src.scenes.settings")
+            scene:create({ name = "create" })
+            scene:show({ name = "show", phase = "will" })
+        end)
+
+        after_each(function()
+            scene:destroy({ name = "destroy" })
+        end)
+
+        it("uses the settings background image", function()
+            assert.are.equal("assets/images/backgrounds/settings.png", scene.view[1].filename)
+        end)
+
+        it("shows a toggle for sound effects and music", function()
+            assert.is_not_nil(findText(scene.view, "^Sound Effects$"))
+            assert.is_not_nil(findText(scene.view, "^Music$"))
+            assert.is_not_nil(findText(scene.view, "^ON$"))
+        end)
+
+        it("treats settings as on until they are turned off", function()
+            data.set("settings", {})
+            assert.is_true(scene.isOn("soundOn"))
+            assert.is_true(scene.isOn("musicOn"))
+        end)
+
+        it("turns a setting off and back on, saving each change", function()
+            data.set("settings.soundOn", true)
+
+            assert.is_false(scene.toggle("soundOn"))
+            assert.is_false(data.get("settings.soundOn"))
+            assert.is_true(scene.toggle("soundOn"))
+            assert.is_true(data.get("settings.soundOn"))
+        end)
+
+        it("updates the button label when toggled", function()
+            data.set("settings.musicOn", true)
+            data.set("settings.soundOn", true)
+            scene.refresh()
+
+            scene.toggle("musicOn")
+
+            local onCount, offCount = 0, 0
+            for i = 1, scene.view.numChildren do
+                local text = scene.view[i].text
+                if text == "ON" then onCount = onCount + 1 end
+                if text == "OFF" then offCount = offCount + 1 end
+            end
+            assert.are.equal(1, onCount)
+            assert.are.equal(1, offCount)
+        end)
+
+        it("has a BACK button", function()
+            local back = findButton(scene.view, "BACK")
+            assert.is_not_nil(back)
         end)
     end)
 

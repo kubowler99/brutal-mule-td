@@ -13,6 +13,7 @@ local bestRunText
 local goldText
 local playButton
 local upgradesButton
+local settingsButton
 
 -- Scene lifecycle functions
 
@@ -20,14 +21,7 @@ function scene:create(event)
     local sceneGroup = self.view
     
     -- Background
-    background = display.newRect(
-        sceneGroup,
-        helpers.centerX,
-        helpers.centerY,
-        helpers.width,
-        helpers.height
-    )
-    background:setFillColor(0.1, 0.1, 0.2)
+    background = helpers.newBackground(sceneGroup, "menu")
     
     -- Title
     titleText = display.newText({
@@ -85,6 +79,19 @@ function scene:create(event)
     })
     sceneGroup:insert(upgradesButton)
     sceneGroup:insert(upgradesButton.label)
+    
+    -- Settings button: sound and music toggles
+    settingsButton = helpers.newButton({
+        x = helpers.centerX,
+        y = helpers.centerY + 160,
+        width = 200,
+        height = 60,
+        label = "SETTINGS",
+        fontSize = 24,
+        fillColor = {0.4, 0.4, 0.5}
+    })
+    sceneGroup:insert(settingsButton)
+    sceneGroup:insert(settingsButton.label)
 end
 
 function scene:show(event)
@@ -126,11 +133,21 @@ function scene:show(event)
             return true
         end
         
+        local function onSettingsTap(event)
+            composer.gotoScene("src.scenes.settings", {
+                effect = "fade",
+                time = 300
+            })
+            return true
+        end
+        
         -- Store listener references for cleanup
         playButton._tapListener = onPlayTap
         playButton:addEventListener("tap", onPlayTap)
         upgradesButton._tapListener = onUpgradesTap
         upgradesButton:addEventListener("tap", onUpgradesTap)
+        settingsButton._tapListener = onSettingsTap
+        settingsButton:addEventListener("tap", onSettingsTap)
     end
 end
 
@@ -139,7 +156,7 @@ function scene:hide(event)
     
     if phase == "will" then
         -- Remove button listeners before scene transitions
-        for _, button in ipairs({ playButton, upgradesButton }) do
+        for _, button in ipairs({ playButton, upgradesButton, settingsButton }) do
             if button and button._tapListener then
                 button:removeEventListener("tap", button._tapListener)
                 button._tapListener = nil
@@ -160,6 +177,7 @@ function scene:destroy(event)
     goldText = nil
     playButton = nil
     upgradesButton = nil
+    settingsButton = nil
 end
 
 -- Scene event listeners
