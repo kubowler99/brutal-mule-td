@@ -91,9 +91,7 @@ function M.initialize(group, heroId)
   hero.baseStats.cooldownMultiplier = bonuses.cooldownMultiplier
   hero.baseStats.lowWallDamageBonus = bonuses.lowWallDamageMultiplier
   hero.xpMultiplier = bonuses.xpMultiplier
-  if heroDefinition and type(heroDefinition.color) == "table" then
-    hero:setColor(heroDefinition.color)
-  end
+  hero:setAppearance(heroDefinition)
   
   -- Add the hero's starting ability (Arcane Bolt if none is defined)
   local startingAbility = heroDefinition and heroDefinition.startingAbility

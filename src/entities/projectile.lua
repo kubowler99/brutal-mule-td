@@ -5,6 +5,35 @@ local placeholder_graphics = require("src.utils.placeholder_graphics")
 
 local Projectile = Class("Projectile")
 
+-- Sprite image per projectile visual, all pointing up (rotation 0 = moving up)
+local SPRITES = {
+  arcane_bolt = { path = "assets/images/projectiles/arcane_bolt.png", size = 28 },
+  frost_shard = { path = "assets/images/projectiles/frost_shard.png", size = 32 },
+}
+local DEFAULT_VISUAL = "arcane_bolt"
+
+--- Build the projectile display group: one image per visual, or the
+--- placeholder circle if no image loads
+-- @return table Display group, table images keyed by visual name
+local function createDisplayObject(x, y)
+  local group = display.newGroup()
+  local images = {}
+  for name, sprite in pairs(SPRITES) do
+    local image = display.newImageRect(group, sprite.path, sprite.size, sprite.size)
+    if image then
+      image.isVisible = false
+      images[name] = image
+    end
+  end
+  if next(images) == nil then
+    group:removeSelf()
+    return placeholder_graphics.createProjectileSprite(x, y), images
+  end
+  group.x = x
+  group.y = y
+  return group, images
+end
+
 function Projectile:initialize(parentGroup)
   -- Parent display group for display objects
   self.parentGroup = parentGroup
@@ -71,7 +100,7 @@ function Projectile:activate(x, y, targetX, targetY, speed, damage, pierce)
   
   -- Create or update display object
   if not self.displayObject then
-    self.displayObject = placeholder_graphics.createProjectileSprite(self.x, self.y)
+    self.displayObject, self.images = createDisplayObject(self.x, self.y)
     if self.parentGroup and self.displayObject then
       self.parentGroup:insert(self.displayObject)
     end
@@ -79,6 +108,20 @@ function Projectile:activate(x, y, targetX, targetY, speed, damage, pierce)
     self.displayObject.x = self.x
     self.displayObject.y = self.y
     self.displayObject.isVisible = true
+  end
+  self.displayObject.rotation = math.deg(math.atan2(self.vy, self.vx)) + 90
+  self:setVisual(DEFAULT_VISUAL)
+end
+
+--- Show the sprite for one projectile visual and hide the others
+-- @param name string Visual name, e.g. "arcane_bolt" or "frost_shard"
+function Projectile:setVisual(name)
+  if not self.images or not self.images[name] then
+    return
+  end
+  self.visual = name
+  for imageName, image in pairs(self.images) do
+    image.isVisible = (imageName == name)
   end
 end
 
@@ -149,6 +192,9 @@ function Projectile:redirect(targetX, targetY)
     self.vx = (dx / distance) * speed
     self.vy = (dy / distance) * speed
   end
+  if self.displayObject then
+    self.displayObject.rotation = math.deg(math.atan2(self.vy, self.vx)) + 90
+  end
   self.needsRicochet = false
 end
 
@@ -181,6 +227,7 @@ function Projectile:destroy()
     self.displayObject:removeSelf()
     self.displayObject = nil
   end
+  self.images = nil
 end
 
 return Projectile

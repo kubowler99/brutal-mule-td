@@ -47,6 +47,7 @@
       "startingAbility": "arcane_bolt",
       "cost": 0,
       "color": [0.2, 0.4, 0.9],
+      "sprite": "assets/images/heroes/arcane_wanderer.png",
       "bonuses": { "xpMultiplier": 0.1 }
     },
     {
@@ -56,6 +57,7 @@
       "startingAbility": "frost_shard",
       "cost": 300,
       "color": [0.5, 0.85, 1.0],
+      "sprite": "assets/images/heroes/frost_witch.png",
       "bonuses": { "cooldownMultiplier": -0.1 }
     },
     {
@@ -65,6 +67,7 @@
       "startingAbility": "flame_slash",
       "cost": 500,
       "color": [1.0, 0.45, 0.2],
+      "sprite": "assets/images/heroes/ember_knight.png",
       "bonuses": { "lowWallDamageMultiplier": 0.2 }
     }
   ]

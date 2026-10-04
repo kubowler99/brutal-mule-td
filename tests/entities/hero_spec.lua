@@ -224,4 +224,26 @@ describe("Hero Entity", function()
             testHero:destroy()
         end)
     end)
+
+    describe("setAppearance", function()
+        it("should replace the placeholder with the hero's sprite image", function()
+            hero:setAppearance({ sprite = "assets/images/heroes/frost_witch.png", color = { 0.5, 0.85, 1.0 } })
+            assert.are.equal("image", hero.displayObject._type)
+            assert.are.equal("assets/images/heroes/frost_witch.png", hero.displayObject.filename)
+            assert.are.equal(hero.x, hero.displayObject.x)
+            assert.are.equal(hero.y, hero.displayObject.y)
+        end)
+
+        it("should keep the tinted placeholder when the hero has no sprite", function()
+            local placeholder = hero.displayObject
+            hero:setAppearance({ color = { 1.0, 0.45, 0.2 } })
+            assert.are.equal(placeholder, hero.displayObject)
+        end)
+
+        it("should ignore a missing definition", function()
+            local placeholder = hero.displayObject
+            hero:setAppearance(nil)
+            assert.are.equal(placeholder, hero.displayObject)
+        end)
+    end)
 end)

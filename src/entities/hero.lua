@@ -72,6 +72,35 @@ function Hero:getStats()
   return stats
 end
 
+-- Size of the hero sprite image
+local SPRITE_SIZE = 64
+
+--- Show the hero's sprite image, or tint the placeholder if it has none
+-- Call before the display object is inserted into the scene group.
+-- @param definition table Hero definition from meta.json { sprite, color }
+function Hero:setAppearance(definition)
+  if type(definition) ~= "table" then
+    return
+  end
+
+  if type(definition.sprite) == "string" and definition.sprite ~= "" then
+    local image = display.newImageRect(definition.sprite, SPRITE_SIZE, SPRITE_SIZE)
+    if image then
+      image.x = self.x
+      image.y = self.y
+      if self.displayObject then
+        self.displayObject:removeSelf()
+      end
+      self.displayObject = image
+      return
+    end
+  end
+
+  if type(definition.color) == "table" then
+    self:setColor(definition.color)
+  end
+end
+
 --- Tint the hero's body
 -- @param color table { r, g, b }
 function Hero:setColor(color)

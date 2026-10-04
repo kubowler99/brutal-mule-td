@@ -41,6 +41,25 @@ describe("Hero Render Front of Wall - Bug Condition Exploration", function()
       local originalNewRect = display.newRect
       local originalNewCircle = display.newCircle
       local originalNewGroup = display.newGroup
+      local originalNewImageRect = display.newImageRect
+
+      -- Hero and wall sprites are images, so give images the same toFront
+      display.newImageRect = function(...)
+        local image = originalNewImageRect(...)
+        image.toFront = function(self)
+          for i, obj in ipairs(displayObjects) do
+            if obj == self then
+              table.remove(displayObjects, i)
+              table.insert(displayObjects, self)
+              for j, o in ipairs(displayObjects) do
+                o._sceneIndex = j
+              end
+              break
+            end
+          end
+        end
+        return image
+      end
       
       display.newRect = function(...)
         local rect = originalNewRect(...)
@@ -134,6 +153,7 @@ describe("Hero Render Front of Wall - Bug Condition Exploration", function()
       display.newRect = originalNewRect
       display.newCircle = originalNewCircle
       display.newGroup = originalNewGroup
+      display.newImageRect = originalNewImageRect
     end)
     
     it("should ensure hero display object index is maximum among all game entities (EXPECTED TO FAIL ON UNFIXED CODE)", function()
@@ -157,6 +177,25 @@ describe("Hero Render Front of Wall - Bug Condition Exploration", function()
       local originalNewRect = display.newRect
       local originalNewCircle = display.newCircle
       local originalNewGroup = display.newGroup
+      local originalNewImageRect = display.newImageRect
+
+      -- Hero and wall sprites are images, so give images the same toFront
+      display.newImageRect = function(...)
+        local image = originalNewImageRect(...)
+        image.toFront = function(self)
+          for i, obj in ipairs(displayObjects) do
+            if obj == self then
+              table.remove(displayObjects, i)
+              table.insert(displayObjects, self)
+              for j, o in ipairs(displayObjects) do
+                o._sceneIndex = j
+              end
+              break
+            end
+          end
+        end
+        return image
+      end
       
       display.newRect = function(...)
         local rect = originalNewRect(...)
@@ -238,6 +277,7 @@ describe("Hero Render Front of Wall - Bug Condition Exploration", function()
       display.newRect = originalNewRect
       display.newCircle = originalNewCircle
       display.newGroup = originalNewGroup
+      display.newImageRect = originalNewImageRect
     end)
   end)
 end)

@@ -53,6 +53,7 @@ describe("Frost Shard", function()
         assert.are.equal(1, projectile.pierceCount)
         assert.are.equal(0.7, projectile.slowFactor)
         assert.are.equal(1.5, projectile.slowDuration)
+        assert.are.equal("frost_shard", projectile.visual)
     end)
 
     it("clears the slow when a pooled projectile is reused by another ability", function()
