@@ -63,6 +63,17 @@ function M.addGold(amount)
   data.set("meta.gold", math.max(0, M.getGold() + amount), true)
 end
 
+--- Spend gold if there is enough, and save
+-- @param amount number Gold to spend (non-negative)
+-- @return boolean True if the gold was spent
+function M.spendGold(amount)
+  if type(amount) ~= "number" or amount < 0 or M.getGold() < amount then
+    return false
+  end
+  M.addGold(-amount)
+  return true
+end
+
 --- Gold earned by a finished run
 -- @param stats table Run statistics (enemiesDefeated, finalLevel, victoryCondition)
 -- @return number Gold earned
@@ -117,12 +128,11 @@ function M.purchaseUpgrade(id)
   if not cost then
     return false, "maxed"
   end
-  if M.getGold() < cost then
+  if not M.spendGold(cost) then
     return false, "gold"
   end
 
-  data.set("meta.upgrades." .. id, M.getUpgradeLevel(id) + 1)
-  M.addGold(-cost)
+  data.set("meta.upgrades." .. id, M.getUpgradeLevel(id) + 1, true)
   return true
 end
 
@@ -162,12 +172,11 @@ function M.unlockHero(id)
   if M.isHeroUnlocked(id) then
     return false, "unlocked"
   end
-  if M.getGold() < hero.cost then
+  if not M.spendGold(hero.cost) then
     return false, "gold"
   end
 
-  data.set("meta.heroes." .. id, true)
-  M.addGold(-hero.cost)
+  data.set("meta.heroes." .. id, true, true)
   return true
 end
 
