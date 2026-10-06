@@ -14,6 +14,7 @@ local goldText
 local playButton
 local upgradesButton
 local settingsButton
+local cardsButton
 
 -- Scene lifecycle functions
 
@@ -67,10 +68,23 @@ function scene:create(event)
     sceneGroup:insert(playButton)
     sceneGroup:insert(playButton.label)
     
+    -- Cards button: buy card packs and manage the collection
+    cardsButton = helpers.newButton({
+        x = helpers.centerX,
+        y = helpers.centerY + 80,
+        width = 200,
+        height = 60,
+        label = "CARDS",
+        fontSize = 24,
+        fillColor = {0.45, 0.3, 0.6}
+    })
+    sceneGroup:insert(cardsButton)
+    sceneGroup:insert(cardsButton.label)
+    
     -- Upgrades button: spend gold on permanent upgrades
     upgradesButton = helpers.newButton({
         x = helpers.centerX,
-        y = helpers.centerY + 80,
+        y = helpers.centerY + 160,
         width = 200,
         height = 60,
         label = "UPGRADES",
@@ -83,7 +97,7 @@ function scene:create(event)
     -- Settings button: sound and music toggles
     settingsButton = helpers.newButton({
         x = helpers.centerX,
-        y = helpers.centerY + 160,
+        y = helpers.centerY + 240,
         width = 200,
         height = 60,
         label = "SETTINGS",
@@ -133,6 +147,15 @@ function scene:show(event)
             return true
         end
         
+        local function onCardsTap(event)
+            composer.gotoScene("src.scenes.cards", {
+                effect = "fade",
+                time = 300,
+                params = { tab = "shop" }
+            })
+            return true
+        end
+        
         local function onSettingsTap(event)
             composer.gotoScene("src.scenes.settings", {
                 effect = "fade",
@@ -146,6 +169,8 @@ function scene:show(event)
         playButton:addEventListener("tap", onPlayTap)
         upgradesButton._tapListener = onUpgradesTap
         upgradesButton:addEventListener("tap", onUpgradesTap)
+        cardsButton._tapListener = onCardsTap
+        cardsButton:addEventListener("tap", onCardsTap)
         settingsButton._tapListener = onSettingsTap
         settingsButton:addEventListener("tap", onSettingsTap)
     end
@@ -156,7 +181,7 @@ function scene:hide(event)
     
     if phase == "will" then
         -- Remove button listeners before scene transitions
-        for _, button in ipairs({ playButton, upgradesButton, settingsButton }) do
+        for _, button in ipairs({ playButton, cardsButton, upgradesButton, settingsButton }) do
             if button and button._tapListener then
                 button:removeEventListener("tap", button._tapListener)
                 button._tapListener = nil
@@ -178,6 +203,7 @@ function scene:destroy(event)
     playButton = nil
     upgradesButton = nil
     settingsButton = nil
+    cardsButton = nil
 end
 
 -- Scene event listeners

@@ -178,6 +178,60 @@ function M.isEquipped(uid)
   return false
 end
 
+--- How many copies of a card the player owns
+function M.countOwned(cardId)
+  local count = 0
+  for _, instance in pairs(state().instances) do
+    if instance.cardId == cardId then
+      count = count + 1
+    end
+  end
+  return count
+end
+
+--- The owned copy of a card with the highest level (equipped copy wins a tie),
+--- or nil if the player owns none
+function M.bestInstance(cardId)
+  local best = nil
+  for _, instance in ipairs(M.getInstances()) do
+    if instance.cardId == cardId then
+      if not best or instance.level > best.level
+        or (instance.level == best.level and M.isEquipped(instance.uid) and not M.isEquipped(best.uid)) then
+        best = instance
+      end
+    end
+  end
+  return best
+end
+
+--- Unequipped cards of a tier that can be sacrificed, lowest level first
+-- @param tierId string Tier of the cards
+-- @param excludeUid string|nil A card to leave out (the merge target)
+-- @return table List of uids
+function M.spareCards(tierId, excludeUid)
+  local spare = {}
+  for _, instance in ipairs(M.getInstances()) do
+    if instance.tier == tierId and instance.uid ~= excludeUid and not M.isEquipped(instance.uid) then
+      table.insert(spare, instance)
+    end
+  end
+  -- getInstances is in uid order, so a stable sort keeps older cards first
+  for i = 2, #spare do
+    local current = spare[i]
+    local j = i - 1
+    while j >= 1 and spare[j].level > current.level do
+      spare[j + 1] = spare[j]
+      j = j - 1
+    end
+    spare[j + 1] = current
+  end
+  local uids = {}
+  for i, instance in ipairs(spare) do
+    uids[i] = instance.uid
+  end
+  return uids
+end
+
 -- Packs --------------------------------------------------------------------
 
 --- Roll one tier from the tier odds
@@ -361,6 +415,28 @@ function M.merge(targetUid, sacrificeUids)
   return true
 end
 
+--- Level up a card using the lowest-level spare cards of its tier
+-- @return boolean success, string|nil reason (as merge, plus "spare")
+function M.autoMerge(targetUid)
+  local target = M.getInstance(targetUid)
+  if not target then
+    return false, "unknown"
+  end
+  local cost = M.mergeCost(target.level)
+  if not cost then
+    return false, "maxed"
+  end
+  local spare = M.spareCards(target.tier, targetUid)
+  if #spare < cost then
+    return false, "spare"
+  end
+  local sacrifices = {}
+  for i = 1, cost do
+    sacrifices[i] = spare[i]
+  end
+  return M.merge(targetUid, sacrifices)
+end
+
 -- Fusion -------------------------------------------------------------------
 
 --- Cards of a tier needed for one fusion, or nil if the tier cannot fuse
@@ -406,6 +482,27 @@ function M.fuse(uids, rng)
   local uid = addInstance(cardId)
   save()
   return { uid = uid, cardId = cardId, tier = nextTier }
+end
+
+--- Fuse the lowest-level spare cards of a tier
+-- @param tierId string Tier to fuse
+-- @param excludeUid string|nil A card to keep out of the fusion
+-- @param rng function|nil Random function returning [0, 1)
+-- @return table|nil new card, string|nil reason (as fuse, plus "spare")
+function M.autoFuse(tierId, excludeUid, rng)
+  local cost = M.fusionCost(tierId)
+  if not cost then
+    return nil, "maxTier"
+  end
+  local spare = M.spareCards(tierId, excludeUid)
+  if #spare < cost then
+    return nil, "spare"
+  end
+  local uids = {}
+  for i = 1, cost do
+    uids[i] = spare[i]
+  end
+  return M.fuse(uids, rng)
 end
 
 -- Loadout ------------------------------------------------------------------

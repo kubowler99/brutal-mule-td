@@ -79,6 +79,8 @@ M.BACKGROUNDS = {
     game = { path = "assets/images/backgrounds/game.png", width = 288, height = 512 },
     menu = { path = "assets/images/backgrounds/menu.png", width = 286, height = 509 },
     settings = { path = "assets/images/backgrounds/settings.png", width = 288, height = 512 },
+    -- The card screen reuses the wizard's study from the settings screen
+    cards = { path = "assets/images/backgrounds/settings.png", width = 288, height = 512 },
     defeat = { path = "assets/images/backgrounds/defeat.png", width = 286, height = 509 },
     victory = { path = "assets/images/backgrounds/victory.png", width = 287, height = 514 },
 }
