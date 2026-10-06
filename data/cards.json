@@ -1,0 +1,604 @@
+{
+  "_comment": "Card system: packs, tiers, levels, merging, fusion, loadout, and the card catalog. See docs/arcane-survivor/game-concept.md (Cards).",
+  "tiers": [
+    {
+      "id": "common",
+      "name": "Common",
+      "odds": 0.75,
+      "color": [
+        0.7,
+        0.7,
+        0.7
+      ]
+    },
+    {
+      "id": "uncommon",
+      "name": "Uncommon",
+      "odds": 0.15,
+      "color": [
+        0.3,
+        0.8,
+        0.35
+      ]
+    },
+    {
+      "id": "rare",
+      "name": "Rare",
+      "odds": 0.07,
+      "color": [
+        0.3,
+        0.55,
+        1.0
+      ]
+    },
+    {
+      "id": "legendary",
+      "name": "Legendary",
+      "odds": 0.029,
+      "color": [
+        1.0,
+        0.8,
+        0.25
+      ]
+    },
+    {
+      "id": "mythic",
+      "name": "Mythic",
+      "odds": 0.001,
+      "color": [
+        0.7,
+        0.35,
+        1.0
+      ]
+    }
+  ],
+  "pack": {
+    "price": 150,
+    "cardsPerPack": 3,
+    "pity": [
+      {
+        "minTier": "rare",
+        "packs": 10
+      },
+      {
+        "minTier": "legendary",
+        "packs": 50
+      }
+    ]
+  },
+  "levels": {
+    "max": 15,
+    "mergeCosts": [
+      {
+        "upToLevel": 5,
+        "cards": 5
+      },
+      {
+        "upToLevel": 10,
+        "cards": 10
+      },
+      {
+        "upToLevel": 15,
+        "cards": 20
+      }
+    ],
+    "milestones": [
+      5,
+      10,
+      15
+    ],
+    "level10ExtraCharges": 1
+  },
+  "fusion": {
+    "common": 5,
+    "uncommon": 5,
+    "rare": 5,
+    "legendary": 10
+  },
+  "loadoutSlots": 3,
+  "cards": [
+    {
+      "id": "sharpened_focus",
+      "name": "Sharpened Focus",
+      "tier": "common",
+      "kind": "passive",
+      "description": "+4% damage",
+      "effects": [
+        {
+          "stat": "damageMultiplier",
+          "base": 0.04,
+          "perLevel": 0.005
+        }
+      ],
+      "milestones": {
+        "5": "Also +5% damage to elites",
+        "15": "Also +2% crit chance"
+      }
+    },
+    {
+      "id": "stone_mortar",
+      "name": "Stone Mortar",
+      "tier": "common",
+      "kind": "passive",
+      "description": "+10 wall health",
+      "effects": [
+        {
+          "stat": "wallHealth",
+          "base": 10,
+          "perLevel": 2
+        }
+      ],
+      "milestones": {
+        "5": "The wall starts each run with +5 bonus health",
+        "15": "The wall regenerates 1 health per second"
+      }
+    },
+    {
+      "id": "scholars_notes",
+      "name": "Scholar's Notes",
+      "tier": "common",
+      "kind": "passive",
+      "description": "+5% XP",
+      "effects": [
+        {
+          "stat": "xpMultiplier",
+          "base": 0.05,
+          "perLevel": 0.005
+        }
+      ],
+      "milestones": {
+        "5": "Boss kills give +25% XP",
+        "15": "The first level-up draft offers 4 cards"
+      }
+    },
+    {
+      "id": "gold_pouch",
+      "name": "Gold Pouch",
+      "tier": "common",
+      "kind": "passive",
+      "description": "+5% gold from the run",
+      "effects": [
+        {
+          "stat": "goldMultiplier",
+          "base": 0.05,
+          "perLevel": 0.005
+        }
+      ],
+      "milestones": {
+        "5": "+10 gold for every boss killed",
+        "15": "Victories give +50 bonus gold"
+      }
+    },
+    {
+      "id": "iron_spikes",
+      "name": "Iron Spikes",
+      "tier": "common",
+      "kind": "passive",
+      "description": "Enemies take 2 damage each time they hit the wall",
+      "effects": [
+        {
+          "stat": "thornsDamage",
+          "base": 2,
+          "perLevel": 0.5
+        }
+      ],
+      "milestones": {
+        "5": "Spike damage also applies a 1s slow",
+        "15": "Spike damage is doubled against elites"
+      }
+    },
+    {
+      "id": "head_start",
+      "name": "Head Start",
+      "tier": "common",
+      "kind": "passive",
+      "description": "Start the run with 20 XP",
+      "effects": [
+        {
+          "stat": "startXP",
+          "base": 20,
+          "perLevel": 5
+        }
+      ],
+      "milestones": {
+        "5": "Start with +5% XP gain for the first 2 minutes",
+        "15": "Start the run at level 2"
+      }
+    },
+    {
+      "id": "wall_patch",
+      "name": "Wall Patch",
+      "tier": "common",
+      "kind": "active",
+      "description": "Heal the wall for 10% of its maximum health",
+      "action": "healWall",
+      "charges": 1,
+      "params": {
+        "healPercent": {
+          "base": 0.1,
+          "perLevel": 0.01
+        }
+      },
+      "milestones": {
+        "5": "Also removes burn from the wall",
+        "15": "Also gives the wall a 5s shield"
+      }
+    },
+    {
+      "id": "spark",
+      "name": "Spark",
+      "tier": "common",
+      "kind": "active",
+      "description": "Strike the 3 nearest enemies for 30 damage",
+      "action": "strikeNearest",
+      "charges": 2,
+      "params": {
+        "targets": {
+          "base": 3,
+          "perLevel": 0
+        },
+        "damage": {
+          "base": 30,
+          "perLevel": 4
+        }
+      },
+      "milestones": {
+        "5": "Strikes 4 enemies",
+        "15": "Struck enemies are stunned for 0.5s"
+      }
+    },
+    {
+      "id": "swift_casting",
+      "name": "Swift Casting",
+      "tier": "uncommon",
+      "kind": "passive",
+      "description": "+6% cooldown speed",
+      "effects": [
+        {
+          "stat": "cooldownMultiplier",
+          "base": -0.06,
+          "perLevel": -0.005
+        }
+      ],
+      "milestones": {
+        "5": "The first ability fires immediately when a run starts",
+        "15": "Each level-up resets every cooldown"
+      }
+    },
+    {
+      "id": "ember_brand",
+      "name": "Ember Brand",
+      "tier": "uncommon",
+      "kind": "passive",
+      "description": "Hits have a 10% chance to burn for 3s",
+      "effects": [
+        {
+          "stat": "burnChance",
+          "base": 0.1,
+          "perLevel": 0.01
+        }
+      ],
+      "milestones": {
+        "5": "Burn lasts 1s longer",
+        "15": "Burning enemies take 10% more damage"
+      }
+    },
+    {
+      "id": "bulwark",
+      "name": "Bulwark",
+      "tier": "uncommon",
+      "kind": "passive",
+      "description": "The wall takes 8% less damage",
+      "effects": [
+        {
+          "stat": "wallDamageReduction",
+          "base": 0.08,
+          "perLevel": 0.005
+        }
+      ],
+      "milestones": {
+        "5": "Boss hits deal 10% less damage",
+        "15": "The wall ignores the first hit every 20s"
+      }
+    },
+    {
+      "id": "bounty_hunter",
+      "name": "Bounty Hunter",
+      "tier": "uncommon",
+      "kind": "passive",
+      "description": "Elites give +50% XP",
+      "effects": [
+        {
+          "stat": "eliteXPMultiplier",
+          "base": 0.5,
+          "perLevel": 0.05
+        }
+      ],
+      "milestones": {
+        "5": "Elites also give +5 gold",
+        "15": "Elites appear 25% more often"
+      }
+    },
+    {
+      "id": "second_opinion",
+      "name": "Second Opinion",
+      "tier": "uncommon",
+      "kind": "active",
+      "description": "Reroll the current level-up draft",
+      "action": "rerollDraft",
+      "charges": 1,
+      "params": {},
+      "milestones": {
+        "5": "+1 charge",
+        "15": "The reroll offers 4 cards"
+      }
+    },
+    {
+      "id": "frost_pulse",
+      "name": "Frost Pulse",
+      "tier": "uncommon",
+      "kind": "active",
+      "description": "Slow every enemy on screen by 40% for 4s",
+      "action": "slowAll",
+      "charges": 2,
+      "params": {
+        "slowFactor": {
+          "base": 0.6,
+          "perLevel": 0
+        },
+        "duration": {
+          "base": 4,
+          "perLevel": 0.2
+        }
+      },
+      "milestones": {
+        "5": "Slowed enemies take 10% more damage",
+        "15": "Freezes enemies for 1s before the slow"
+      }
+    },
+    {
+      "id": "split_shot",
+      "name": "Split Shot",
+      "tier": "rare",
+      "kind": "passive",
+      "description": "+1 projectile for projectile abilities",
+      "effects": [
+        {
+          "stat": "extraProjectiles",
+          "base": 1,
+          "perLevel": 0,
+          "doubleAtLevel10": false
+        },
+        {
+          "stat": "extraProjectilePenaltyReduction",
+          "base": 0,
+          "perLevel": 0.02
+        }
+      ],
+      "milestones": {
+        "5": "Extra projectiles pierce 1 enemy",
+        "15": "+1 more projectile"
+      }
+    },
+    {
+      "id": "chain_reaction",
+      "name": "Chain Reaction",
+      "tier": "rare",
+      "kind": "passive",
+      "description": "Kills have a 15% chance to explode for 20 area damage",
+      "effects": [
+        {
+          "stat": "killExplosionChance",
+          "base": 0.15,
+          "perLevel": 0.01
+        },
+        {
+          "stat": "killExplosionDamage",
+          "base": 20,
+          "perLevel": 2
+        }
+      ],
+      "milestones": {
+        "5": "Explosions apply burn",
+        "15": "Explosions can chain once"
+      }
+    },
+    {
+      "id": "executioner",
+      "name": "Executioner",
+      "tier": "rare",
+      "kind": "passive",
+      "description": "+25% damage to elites and bosses",
+      "effects": [
+        {
+          "stat": "bossDamageMultiplier",
+          "base": 0.25,
+          "perLevel": 0.02
+        }
+      ],
+      "milestones": {
+        "5": "Also +10% crit damage",
+        "15": "Enemies below 10% health die instantly (not bosses)"
+      }
+    },
+    {
+      "id": "purge",
+      "name": "Purge",
+      "tier": "rare",
+      "kind": "active",
+      "description": "Destroy every non-boss enemy on screen",
+      "action": "purge",
+      "charges": 1,
+      "params": {
+        "bossDamagePercent": {
+          "base": 0,
+          "perLevel": 0.02
+        }
+      },
+      "milestones": {
+        "5": "Destroyed enemies still give XP",
+        "15": "Also heals the wall 1% per enemy destroyed"
+      }
+    },
+    {
+      "id": "bastion",
+      "name": "Bastion",
+      "tier": "rare",
+      "kind": "active",
+      "description": "The wall takes no damage for 6s",
+      "action": "wallInvulnerable",
+      "charges": 1,
+      "params": {
+        "duration": {
+          "base": 6,
+          "perLevel": 0.3
+        }
+      },
+      "milestones": {
+        "5": "Enemies that hit the wall during Bastion are knocked back",
+        "15": "Bastion also reflects 50% of blocked damage"
+      }
+    },
+    {
+      "id": "second_wind",
+      "name": "Second Wind",
+      "tier": "legendary",
+      "kind": "passive",
+      "description": "The first time the wall would fall, it survives at 50% health instead",
+      "effects": [
+        {
+          "stat": "reviveWallPercent",
+          "base": 0.5,
+          "perLevel": 0.02,
+          "doubleAtLevel10": false
+        }
+      ],
+      "milestones": {
+        "5": "The revive also pushes back every enemy",
+        "15": "Triggers twice per run"
+      }
+    },
+    {
+      "id": "sixth_seal",
+      "name": "Sixth Seal",
+      "tier": "legendary",
+      "kind": "passive",
+      "description": "+1 active ability slot (6 instead of 5)",
+      "effects": [
+        {
+          "stat": "extraAbilitySlots",
+          "base": 1,
+          "perLevel": 0,
+          "doubleAtLevel10": false
+        },
+        {
+          "stat": "sixthAbilityDamage",
+          "base": 0,
+          "perLevel": 0.02
+        }
+      ],
+      "milestones": {
+        "5": "The sixth ability starts at tier 2",
+        "15": "The sixth ability gets +1 max tier"
+      }
+    },
+    {
+      "id": "twin_cast",
+      "name": "Twin Cast",
+      "tier": "legendary",
+      "kind": "passive",
+      "description": "Abilities have a 15% chance to fire twice",
+      "effects": [
+        {
+          "stat": "twinCastChance",
+          "base": 0.15,
+          "perLevel": 0.01
+        }
+      ],
+      "milestones": {
+        "5": "Twin casts deal +10% damage",
+        "15": "Twin casts can trigger a third cast"
+      }
+    },
+    {
+      "id": "meteor_storm",
+      "name": "Meteor Storm",
+      "tier": "legendary",
+      "kind": "active",
+      "description": "8 meteors strike random enemies for 150 damage each",
+      "action": "meteorStorm",
+      "charges": 1,
+      "params": {
+        "count": {
+          "base": 8,
+          "perLevel": 0
+        },
+        "damage": {
+          "base": 150,
+          "perLevel": 10
+        }
+      },
+      "milestones": {
+        "5": "+4 meteors",
+        "15": "Meteors leave burning ground"
+      }
+    },
+    {
+      "id": "time_stop",
+      "name": "Time Stop",
+      "tier": "mythic",
+      "kind": "active",
+      "description": "Freeze every enemy for 5s; abilities keep firing",
+      "action": "freezeAll",
+      "charges": 1,
+      "params": {
+        "duration": {
+          "base": 5,
+          "perLevel": 0.2
+        }
+      },
+      "milestones": {
+        "5": "Frozen enemies take 10% more damage",
+        "15": "Cooldowns refresh when Time Stop ends"
+      }
+    },
+    {
+      "id": "arcane_singularity",
+      "name": "Arcane Singularity",
+      "tier": "mythic",
+      "kind": "active",
+      "description": "Pull every non-boss enemy to one point and deal 500 damage",
+      "action": "singularity",
+      "charges": 1,
+      "params": {
+        "damage": {
+          "base": 500,
+          "perLevel": 40
+        }
+      },
+      "milestones": {
+        "5": "The pull also hits bosses for 10% of the damage",
+        "15": "Leaves a rift that damages enemies for 5s"
+      }
+    },
+    {
+      "id": "ascendance",
+      "name": "Ascendance",
+      "tier": "mythic",
+      "kind": "passive",
+      "description": "Every 5th level-up lets the player pick 2 cards from the draft instead of 1",
+      "effects": [
+        {
+          "stat": "ascendanceInterval",
+          "base": 5,
+          "perLevel": 0,
+          "doubleAtLevel10": false
+        }
+      ],
+      "milestones": {
+        "5": "Every 4th level-up instead",
+        "15": "Every 3rd level-up instead"
+      }
+    }
+  ]
+}
