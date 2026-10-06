@@ -5,6 +5,7 @@
 local composer = require("composer")
 local helpers = require("src.utils.helpers")
 local meta_progression = require("src.models.meta_progression")
+local card_collection = require("src.models.card_collection")
 
 local scene = composer.newScene()
 
@@ -12,9 +13,13 @@ local scene = composer.newScene()
 local FIRST_ROW_Y = 330
 local ROW_SPACING = 230
 
+local LOADOUT_LABEL_Y = 975
+local LOADOUT_SLOT_Y = 1045
+
 -- Scene variables
 local goldText
 local heroRows = {}  -- { heroId, nameText, button }
+local loadoutButtons = {}  -- slot -> button
 
 --- Button label for a hero: PLAY when unlocked, otherwise its price
 local function heroButtonLabel(hero)
@@ -24,8 +29,33 @@ local function heroButtonLabel(hero)
   return "UNLOCK (" .. tostring(hero.cost) .. " gold)"
 end
 
+--- Label for a loadout slot: the equipped card's name and level, or Empty
+function scene.loadoutLabel(slot)
+  local uid = card_collection.getLoadout()[slot]
+  local instance = uid and card_collection.getInstance(uid)
+  local card = instance and card_collection.getCard(instance.cardId)
+  if not card then
+    return "Empty"
+  end
+  return card.name .. " " .. tostring(instance.level)
+end
+
+--- Open the card collection to change the loadout
+function scene.openCards()
+  composer.gotoScene("src.scenes.cards", {
+    effect = "fade",
+    time = 300,
+    params = { tab = "collection", returnScene = "src.scenes.hero_select" }
+  })
+end
+
 --- Update gold and every hero button after a purchase
 function scene.refresh()
+  for slot, button in pairs(loadoutButtons) do
+    if button.label then
+      button.label.text = scene.loadoutLabel(slot)
+    end
+  end
   if goldText then
     goldText.text = "Gold: " .. tostring(meta_progression.getGold())
   end
@@ -128,6 +158,37 @@ function scene:create(event)
     table.insert(heroRows, { heroId = heroId, nameText = nameText, button = button })
   end
 
+  -- Card loadout: tap a slot to change cards in the collection
+  local loadoutText = display.newText({
+    parent = sceneGroup,
+    text = "CARD LOADOUT",
+    x = helpers.centerX,
+    y = LOADOUT_LABEL_Y,
+    font = native.systemFontBold,
+    fontSize = 22
+  })
+  loadoutText:setFillColor(1, 0.85, 0.3)
+
+  loadoutButtons = {}
+  local slots = card_collection.getLoadoutSlots()
+  for slot = 1, slots do
+    local button = helpers.newButton({
+      x = helpers.centerX + (slot - (slots + 1) / 2) * 225,
+      y = LOADOUT_SLOT_Y,
+      width = 210,
+      height = 60,
+      label = scene.loadoutLabel(slot),
+      fontSize = 16,
+      fillColor = {0.3, 0.35, 0.5},
+      onRelease = function()
+        scene.openCards()
+      end
+    })
+    sceneGroup:insert(button)
+    sceneGroup:insert(button.label)
+    loadoutButtons[slot] = button
+  end
+
   local backButton = helpers.newButton({
     x = helpers.centerX,
     y = helpers.height - 100,
@@ -153,6 +214,7 @@ end
 function scene:destroy(event)
   goldText = nil
   heroRows = {}
+  loadoutButtons = {}
 end
 
 scene:addEventListener("create", scene)
