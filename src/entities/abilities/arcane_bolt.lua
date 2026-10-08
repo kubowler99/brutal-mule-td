@@ -129,13 +129,14 @@ end
 -- Arcane Bolt sends each projectile at a different enemy, nearest first.
 -- With fewer enemies than projectiles, the extras go around the list again.
 -- @return table Array of { x, y } (empty when there is no target)
-function ArcaneBolt:getAimPoints(heroX, heroY, enemies)
-  local targets = self:findNearestEnemies(heroX, heroY, enemies, self.projectileCount)
+function ArcaneBolt:getAimPoints(heroX, heroY, enemies, heroStats)
+  local count = self:getVolleyCount(heroStats)
+  local targets = self:findNearestEnemies(heroX, heroY, enemies, count)
   local aims = {}
   if #targets == 0 then
     return aims
   end
-  for i = 1, self.projectileCount do
+  for i = 1, count do
     local target = targets[((i - 1) % #targets) + 1]
     local x, y = self:predictAim(heroX, heroY, target)
     aims[i] = { x = x, y = y }
@@ -153,14 +154,22 @@ function ArcaneBolt:getProjectileDamage(heroStats)
   if type(penalty) ~= "number" or penalty < 0 or penalty >= 1 then
     penalty = DEFAULT_EXTRA_PROJECTILE_PENALTY
   end
-  local countFactor = (1 - penalty) ^ math.max(0, self.projectileCount - 1)
+  -- Split Shot lowers the penalty as it levels up
+  penalty = math.max(0, penalty - ((heroStats and heroStats.extraProjectilePenaltyReduction) or 0))
+  local countFactor = (1 - penalty) ^ math.max(0, self:getVolleyCount(heroStats) - 1)
   return self.damage * ((heroStats and heroStats.damageMultiplier) or 1) * countFactor
+end
+
+--- Projectiles per volley: the ability's count plus extras from cards
+-- @param heroStats table|nil Hero stats; extraProjectiles adds projectiles
+function ArcaneBolt:getVolleyCount(heroStats)
+  return self.projectileCount + math.floor((heroStats and heroStats.extraProjectiles) or 0)
 end
 
 --- Fire one volley
 -- @param heroStats table|nil Hero stats; damageMultiplier scales projectile damage
 function ArcaneBolt:activate(heroX, heroY, enemies, projectilePool, displayGroup, heroStats)
-  local aims = self:getAimPoints(heroX, heroY, enemies)
+  local aims = self:getAimPoints(heroX, heroY, enemies, heroStats)
 
   -- If no target, don't activate
   if #aims == 0 then

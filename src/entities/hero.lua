@@ -34,13 +34,21 @@ function Hero:initialize(x, y)
 end
 
 function Hero:addAbility(ability)
-  -- Check if we have room for more abilities (max 5)
-  if #self.abilities >= 5 then
+  -- Check if we have room for more abilities (5, or more with Sixth Seal)
+  if #self.abilities >= self:getMaxAbilities() then
     return false
   end
   
   table.insert(self.abilities, ability)
   return true
+end
+
+-- Ability slots before cards add more
+local BASE_ABILITY_SLOTS = 5
+
+--- How many abilities the hero can hold
+function Hero:getMaxAbilities()
+  return BASE_ABILITY_SLOTS + (self.extraAbilitySlots or 0)
 end
 
 -- Lowest cooldown multiplier passives can reach
@@ -56,6 +64,8 @@ function Hero:getStats()
   local stats = {
     damageMultiplier = self.baseStats.damageMultiplier,
     cooldownMultiplier = self.baseStats.cooldownMultiplier,
+    extraProjectiles = self.baseStats.extraProjectiles or 0,
+    extraProjectilePenaltyReduction = self.baseStats.extraProjectilePenaltyReduction or 0,
   }
   for _, ability in ipairs(self.abilities) do
     if ability.applyStats then

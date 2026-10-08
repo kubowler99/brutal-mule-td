@@ -19,6 +19,8 @@ local ability_data_loader = require("src.models.ability_data_loader")
 local ability_registry = require("src.models.ability_registry")
 local config_loader = require("src.models.config_loader")
 local meta_progression = require("src.models.meta_progression")
+local card_collection = require("src.models.card_collection")
+local card_powers = require("src.systems.card_powers")
 local effects = require("src.systems.effects")
 local sound = require("src.systems.sound")
 
@@ -69,7 +71,9 @@ function M.initialize(group, heroId)
   -- Hero choice and permanent upgrades for this run
   heroId = heroId or meta_progression.getSelectedHeroId()
   local heroDefinition = heroId and meta_progression.getHero(heroId)
-  local bonuses = meta_progression.getRunBonuses(heroId)
+  local cardEffects = card_collection.getRunEffects()
+  local bonuses = meta_progression.getRunBonuses(heroId, cardEffects.stats)
+  game_state.goldMultiplier = bonuses.goldMultiplier
   
   -- Create wall at fixed position (360, 1200, display.contentWidth)
   -- Wall is positioned at Y=1200 with height 80
@@ -91,6 +95,9 @@ function M.initialize(group, heroId)
   hero.baseStats.cooldownMultiplier = bonuses.cooldownMultiplier
   hero.baseStats.lowWallDamageBonus = bonuses.lowWallDamageMultiplier
   hero.xpMultiplier = bonuses.xpMultiplier
+  hero.baseStats.extraProjectiles = bonuses.extraProjectiles
+  hero.baseStats.extraProjectilePenaltyReduction = bonuses.extraProjectilePenaltyReduction
+  hero.extraAbilitySlots = math.floor(bonuses.extraAbilitySlots)
   hero:setAppearance(heroDefinition)
   
   -- Add the hero's starting ability (Arcane Bolt if none is defined)
@@ -160,6 +167,22 @@ function M.initialize(group, heroId)
   spawner_system.onBossSpawned = M.onBossSpawned
   experience_system.initialize(hero, M.onLevelUp)
   upgrade_system.initialize(hero, M.onUpgradeSelected)
+  
+  -- Equipped cards
+  M.pendingPicks = 0
+  card_powers.start(cardEffects, {
+    wall = wall,
+    hero = hero,
+    getEnemies = spawner_system.getActiveWalkers,
+    applyDamage = combat_system.applyDamage,
+  })
+  
+  -- Head Start: begin the run with some XP (never a full level, so the first
+  -- level-up still happens during play)
+  local startXP = math.min(math.floor(bonuses.startXP), (hero.xpRequired or 1) - 1)
+  if startXP > 0 then
+    experience_system.addXP(startXP)
+  end
 end
 
 --- Start the game loop
@@ -193,6 +216,7 @@ function M.update(event)
   
   -- Update game state elapsed time
   game_state.update(dt)
+  card_powers.update(dt)
   
   -- Update systems in correct order:
   -- 1. Spawner system (create new enemies)
@@ -211,7 +235,9 @@ function M.update(event)
       -- Burn damage goes through combat_system so burn kills are rewarded
       local burnDamage = walker.takePendingBurnDamage and walker:takePendingBurnDamage() or 0
       if burnDamage > 0 then
-        combat_system.applyDamage(walker, burnDamage)
+        card_powers.applyBurnDamage(function()
+          combat_system.applyDamage(walker, burnDamage)
+        end)
       end
     end
   end
@@ -281,8 +307,10 @@ function M.update(event)
     if untilAttack <= 0 then
       local isSlam = enemy.eliteAbility == "slam"
       local damage = isSlam and enemy.damage * SLAM_DAMAGE_MULTIPLIER or enemy.damage
+      damage = card_powers.modifyWallDamage(damage)
       combat_system.applyDamage(wall, damage)
       wall:flashDamage()
+      card_powers.onWallHit(enemy)
       enemy.lastAttackTime = currentTime
       sound.play("wall_hit")
       
@@ -298,8 +326,8 @@ function M.update(event)
         M.showRangedAttack(enemy)
       end
       
-      -- Check if wall died
-      if wall:isDead() then
+      -- Check if wall died (Second Wind can bring it back once)
+      if wall:isDead() and not card_powers.tryReviveWall(wall) then
         M.onGameOver()
         return
       end
@@ -317,8 +345,10 @@ end
 -- Awards XP and counts the kill. Set as combat_system.onEnemyKilled.
 -- @param enemy table The enemy that was killed
 function M.onEnemyKilled(enemy)
-  experience_system.awardXP(enemy.type or "walker", enemy.x, enemy.y, enemy.xpMultiplier)
+  local xpMultiplier = (enemy.xpMultiplier or 1) * card_powers.xpMultiplierFor(enemy)
+  experience_system.awardXP(enemy.type or "walker", enemy.x, enemy.y, xpMultiplier)
   game_state.enemiesDefeated = game_state.enemiesDefeated + 1
+  card_powers.onEnemyKilled(enemy)
   
   -- Killing the final boss wins the run
   if enemy.isFinalBoss then
@@ -349,6 +379,9 @@ function M.onLevelUp(level)
   M.pause()
   sound.play("level_up")
   
+  -- Ascendance: some level-ups give an extra pick
+  M.pendingPicks = (M.pendingPicks or 0) + card_powers.onLevelUp()
+  
   -- Generate upgrade cards
   local cards = upgrade_system.generateCards(3)
   
@@ -367,7 +400,43 @@ function M.onUpgradeSelected(upgrade)
     upgrade_system.applyUpgrade(upgrade)
   end
   
+  -- An extra pick shows a fresh draft instead of resuming
+  if (M.pendingPicks or 0) > 0 then
+    M.pendingPicks = M.pendingPicks - 1
+    if M.onLevelUpCallback then
+      M.onLevelUpCallback(upgrade_system.generateCards(3))
+      return
+    end
+  end
+  
   M.resume()
+end
+
+--- Second Opinion: spend a charge and show a new draft
+-- @return table|nil The new cards, or nil if no charge was left
+function M.rerollDraft()
+  if not card_powers.useReroll() then
+    return nil
+  end
+  local cards = upgrade_system.generateCards(3)
+  if M.onLevelUpCallback then
+    M.onLevelUpCallback(cards)
+  end
+  return cards
+end
+
+--- Use an active card from the HUD
+-- @param index number Index from card_powers.getHudActives()
+-- @return boolean True if a charge was spent
+function M.useCard(index)
+  if isPaused or not wall or wall:isDead() then
+    return false
+  end
+  local used = card_powers.use(index)
+  if used then
+    effects.screenShake(3, 0.15)
+  end
+  return used
 end
 
 --- Whether an enemy winds up (telegraphs) before its wall attacks
@@ -383,6 +452,7 @@ end
 -- @param amount number Damage dealt
 -- @param killed boolean True if the hit killed it
 function M.onEnemyDamaged(enemy, amount, killed)
+  card_powers.onEnemyDamaged(enemy, amount, killed)
   effects.damageNumber(enemy.x, enemy.y, amount, killed)
   effects.hitSpark(enemy.x, enemy.y)
   sound.play(killed and "enemy_death" or "hit")
@@ -520,6 +590,8 @@ function M.cleanup()
   end
   
   -- Cleanup systems
+  card_powers.cleanup()
+  M.pendingPicks = 0
   effects.cleanup()
   sound.cleanup()
   combat_system.cleanup()

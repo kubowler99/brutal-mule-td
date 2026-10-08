@@ -84,7 +84,8 @@ function M.goldForRun(stats)
   if stats.victoryCondition then
     gold = gold + (rates.victoryBonus or 0)
   end
-  return math.floor(gold)
+  -- Gold Pouch and similar cards raise the whole run's gold
+  return math.floor(gold * (stats.goldMultiplier or 1))
 end
 
 -- Upgrades --------------------------------------------------------------------
@@ -196,17 +197,26 @@ end
 
 -- Run bonuses -----------------------------------------------------------------
 
---- Bonuses for a run: permanent upgrades plus the hero's bonuses
+--- Bonuses for a run: permanent upgrades, the hero's bonuses, and the
+--- equipped cards' passive stats
 -- @param heroId string|nil Hero for this run
+-- @param cardStats table|nil Passive card stats (card_collection.getRunEffects().stats);
+--   only stats listed below are added here
 -- @return table { wallHealth, damageMultiplier, cooldownMultiplier, xpMultiplier,
---   lowWallDamageMultiplier }
-function M.getRunBonuses(heroId)
+--   lowWallDamageMultiplier, goldMultiplier, startXP, extraProjectiles,
+--   extraProjectilePenaltyReduction, extraAbilitySlots }
+function M.getRunBonuses(heroId, cardStats)
   local bonuses = {
     wallHealth = 0,
     damageMultiplier = 1,
     cooldownMultiplier = 1,
     xpMultiplier = 1,
     lowWallDamageMultiplier = 0,  -- extra damage while the wall is below half health
+    goldMultiplier = 1,
+    startXP = 0,
+    extraProjectiles = 0,
+    extraProjectilePenaltyReduction = 0,
+    extraAbilitySlots = 0,
   }
 
   for _, upgrade in ipairs(M.getUpgrades()) do
@@ -222,6 +232,12 @@ function M.getRunBonuses(heroId)
       if type(bonuses[stat]) == "number" and type(amount) == "number" then
         bonuses[stat] = bonuses[stat] + amount
       end
+    end
+  end
+
+  for stat, amount in pairs(cardStats or {}) do
+    if type(bonuses[stat]) == "number" and type(amount) == "number" then
+      bonuses[stat] = bonuses[stat] + amount
     end
   end
 

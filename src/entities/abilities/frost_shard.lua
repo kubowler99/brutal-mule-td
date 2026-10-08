@@ -57,7 +57,7 @@ local FAN_ANGLE = math.rad(12)
 -- One shard flies straight at the target; extra shards spread evenly to
 -- either side, so a volley sweeps several lanes.
 -- @return table Array of { x, y } (empty when there is no target)
-function FrostShard:getAimPoints(heroX, heroY, enemies)
+function FrostShard:getAimPoints(heroX, heroY, enemies, heroStats)
   local target = self:findNearestEnemies(heroX, heroY, enemies, 1)[1]
   if not target then
     return {}
@@ -69,9 +69,10 @@ function FrostShard:getAimPoints(heroX, heroY, enemies)
   local distance = math.sqrt(dx * dx + dy * dy)
   local baseAngle = math.atan2(dy, dx)
 
+  local count = self:getVolleyCount(heroStats)
   local aims = {}
-  for i = 1, self.projectileCount do
-    local angle = baseAngle + (i - (self.projectileCount + 1) / 2) * FAN_ANGLE
+  for i = 1, count do
+    local angle = baseAngle + (i - (count + 1) / 2) * FAN_ANGLE
     aims[i] = {
       x = heroX + math.cos(angle) * distance,
       y = heroY + math.sin(angle) * distance,
