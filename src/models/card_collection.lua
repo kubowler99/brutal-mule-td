@@ -77,6 +77,17 @@ function M.getCard(cardId)
   return nil
 end
 
+--- Description of a card's milestone bonus at a level, or "-"
+-- @param card table Card definition
+-- @param level number Milestone level (5 or 15)
+function M.milestoneText(card, level)
+  local milestone = card and card.milestones and card.milestones[tostring(level)]
+  if type(milestone) == "table" then
+    return milestone.text or "-"
+  end
+  return type(milestone) == "string" and milestone or "-"
+end
+
 --- Card definitions of one tier, in catalog order
 function M.getCardsOfTier(tierId)
   local cards = {}
@@ -581,12 +592,34 @@ function M.getRunEffects()
       local level = instance.level
       local reachedTen = level >= 10
 
+      -- Milestone bonuses (levels 5 and 15) that are data: added stats,
+      -- added active-card params and charges, and replaced stats
+      local milestoneParams, milestoneCharges, setStats = {}, 0, {}
+      for _, milestoneLevel in ipairs({ 5, 15 }) do
+        local milestone = card.milestones and card.milestones[tostring(milestoneLevel)]
+        if level >= milestoneLevel and type(milestone) == "table" then
+          for stat, amount in pairs(milestone.stats or {}) do
+            effects.stats[stat] = (effects.stats[stat] or 0) + amount
+          end
+          for name, amount in pairs(milestone.params or {}) do
+            milestoneParams[name] = (milestoneParams[name] or 0) + amount
+          end
+          milestoneCharges = milestoneCharges + (milestone.charges or 0)
+          for stat, value in pairs(milestone.setStats or {}) do
+            setStats[stat] = value
+          end
+        end
+      end
+
       if card.kind == "passive" then
         for _, effect in ipairs(card.effects or {}) do
           local value = scaled(effect, level)
           -- Level 10 milestone: passive values get their level 1 value again
           if reachedTen and effect.doubleAtLevel10 ~= false then
             value = value + (effect.base or 0)
+          end
+          if setStats[effect.stat] then
+            value = setStats[effect.stat]
           end
           effects.stats[effect.stat] = (effects.stats[effect.stat] or 0) + value
         end
@@ -595,8 +628,12 @@ function M.getRunEffects()
         for name, value in pairs(card.params or {}) do
           params[name] = scaled(value, level)
         end
+        for name, amount in pairs(milestoneParams) do
+          params[name] = (params[name] or 0) + amount
+        end
         -- Level 10 milestone: active cards get extra charges
-        local charges = (card.charges or 0) + (reachedTen and (levels.level10ExtraCharges or 0) or 0)
+        local charges = (card.charges or 0) + milestoneCharges
+          + (reachedTen and (levels.level10ExtraCharges or 0) or 0)
         table.insert(effects.actives, {
           uid = uid, cardId = card.id, action = card.action, charges = charges, params = params,
         })

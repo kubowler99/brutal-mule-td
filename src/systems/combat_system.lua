@@ -83,7 +83,8 @@ function M.updateAbilities(dt)
   for i, ability in ipairs(hero.abilities) do
     if ability and ability.update then
       local originX, originY = M.getFireOrigin(i)
-      local success, err = pcall(ability.update, ability, dt, originX, originY, enemies, sceneGroup, heroStats)
+      local slotStats = card_powers.statsFor(heroStats, i)
+      local success, err = pcall(ability.update, ability, dt, originX, originY, enemies, sceneGroup, slotStats)
       if not success then
         print("Warning: Ability update failed:", err)
       end
@@ -124,7 +125,8 @@ function M.activateAbilities(currentTime)
   
   -- Iterate through hero abilities with pcall wrapper for critical operations
   for i, ability in ipairs(hero.abilities) do
-    if ability and ability.canActivate and ability:canActivate(currentTime, heroStats) then
+    local slotStats = card_powers.statsFor(heroStats, i)
+    if ability and ability.canActivate and ability:canActivate(currentTime, slotStats) then
       -- Create a tracking wrapper around the pool to capture created projectiles
       local trackingPool = {
         get = function(self, ...)
@@ -145,17 +147,24 @@ function M.activateAbilities(currentTime)
       
       -- Wrap ability activation in pcall for error handling
       local success, result = pcall(function()
-        return ability:activate(originX, originY, enemies, trackingPool, sceneGroup, heroStats)
+        return ability:activate(originX, originY, enemies, trackingPool, sceneGroup, slotStats)
       end)
       
       if success then
         -- If activation was successful, ensure display objects are in scene group
         if result then
-          -- Twin Cast: sometimes fire the same ability again
+          -- Twin Cast: sometimes fire the same ability again (and, at
+          -- level 15, roll once more for a third cast)
           if card_powers.rollTwinCast() then
+            local twinStats = card_powers.statsFor(heroStats, i, true)
             pcall(function()
-              ability:activate(originX, originY, enemies, trackingPool, sceneGroup, heroStats)
+              ability:activate(originX, originY, enemies, trackingPool, sceneGroup, twinStats)
             end)
+            if card_powers.canTripleCast() and card_powers.rollTwinCast() then
+              pcall(function()
+                ability:activate(originX, originY, enemies, trackingPool, sceneGroup, twinStats)
+              end)
+            end
           end
           M.refreshActiveProjectiles()
         end

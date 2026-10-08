@@ -200,11 +200,10 @@ local function buildDetail(group)
     helpers.centerX, 445, 20, card_face.tierColor(card.tier))
   addText(group, card.description or "", helpers.centerX, 490, 22, {1, 1, 1}, helpers.width - 80)
 
-  local milestones = card.milestones or {}
-  addText(group, "Lv 5: " .. (milestones["5"] or "-"), helpers.centerX, 550, 18, {0.85, 0.85, 0.9}, helpers.width - 80)
+  addText(group, "Lv 5: " .. card_collection.milestoneText(card, 5), helpers.centerX, 550, 18, {0.85, 0.85, 0.9}, helpers.width - 80)
   addText(group, "Lv 10: " .. (card.kind == "active" and "+1 charge" or "Level 1 bonus added again"),
     helpers.centerX, 585, 18, {0.85, 0.85, 0.9}, helpers.width - 80)
-  addText(group, "Lv 15: " .. (milestones["15"] or "-"), helpers.centerX, 620, 18, {0.85, 0.85, 0.9}, helpers.width - 80)
+  addText(group, "Lv 15: " .. card_collection.milestoneText(card, 15), helpers.centerX, 620, 18, {0.85, 0.85, 0.9}, helpers.width - 80)
 
   local spareForMerge = best and #card_collection.spareCards(card.tier, best.uid) or 0
   local cost = best and card_collection.mergeCost(best.level)
