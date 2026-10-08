@@ -21,6 +21,7 @@ function M.initialize()
     M.enemiesDefeated = 0
     M.finalLevel = 0
     M.victoryCondition = false
+    M.goldMultiplier = 1
 end
 
 --- Pause the game
@@ -64,7 +65,8 @@ function M.getStatistics()
         survivalTime = M.elapsedTime,
         enemiesDefeated = M.enemiesDefeated,
         finalLevel = M.finalLevel,
-        victoryCondition = M.victoryCondition
+        victoryCondition = M.victoryCondition,
+        goldMultiplier = M.goldMultiplier or 1
     }
 end
 

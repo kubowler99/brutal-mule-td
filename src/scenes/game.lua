@@ -12,6 +12,9 @@ local AbilityIndicator = require("src.ui.ability_indicator")
 local UpgradeCard = require("src.ui.upgrade_card")
 local stringUtils = require("src.utils.string")
 local combat_system = require("src.systems.combat_system")
+local card_powers = require("src.systems.card_powers")
+local card_face = require("src.ui.card_face")
+local card_collection = require("src.models.card_collection")
 
 local scene = composer.newScene()
 
@@ -37,6 +40,16 @@ local isPausedByPlayer = false
 local endSessionOnHide = false
 -- Hero for the current run; kept so Play Again reuses it
 local currentHeroId = nil
+-- Active card buttons in the HUD: { index, group, chargesText }
+local cardButtons = {}
+-- Second Opinion reroll button in the level-up panel
+local rerollButton = nil
+
+-- Active card buttons: a column at the right edge above the wall
+local CARD_BUTTON_SIZE = 76
+local CARD_BUTTON_X_INSET = 55
+local CARD_BUTTON_FIRST_Y = 1075
+local CARD_BUTTON_SPACING = 90
 
 local formatTime = stringUtils.formatTime
 
@@ -80,6 +93,15 @@ local function updateUI()
     end
     if boss then
       bossBar:update(boss.health, boss.maxHealth)
+    end
+  end
+  
+  -- Update active card charges (used-up cards fade)
+  for _, button in ipairs(cardButtons) do
+    local active = scene.findHudActive(button.index)
+    if active then
+      button.chargesText.text = tostring(active.chargesLeft)
+      button.group.alpha = active.chargesLeft > 0 and 1 or 0.35
     end
   end
   
@@ -143,13 +165,116 @@ local function showUpgradePanel(cards)
     
     -- Set tap handler
     card:onTap(function()
-      -- Apply upgrade and hide panel
-      game_controller.onUpgradeSelected(cardData)
+      -- Hide the panel first: an extra pick (Ascendance) shows it again
       hideUpgradePanel()
+      game_controller.onUpgradeSelected(cardData)
     end)
     
     table.insert(upgradeCards, card)
   end
+  
+  -- Second Opinion: reroll the draft while charges last
+  if rerollButton then
+    local charges = card_powers.chargesLeft("rerollDraft")
+    rerollButton.isVisible = charges > 0
+    rerollButton.label.isVisible = charges > 0
+    rerollButton.label.text = "REROLL (" .. tostring(charges) .. ")"
+    rerollButton:toFront()
+    rerollButton.label:toFront()
+  end
+end
+
+--- Find a HUD active card by its index in card_powers
+function scene.findHudActive(index)
+  for _, active in ipairs(card_powers.getHudActives()) do
+    if active.index == index then
+      return active
+    end
+  end
+  return nil
+end
+
+--- Remove the active card buttons
+function scene.destroyCardButtons()
+  for _, button in ipairs(cardButtons) do
+    if button.group and button.group.removeSelf then
+      button.group:removeSelf()
+    end
+  end
+  cardButtons = {}
+end
+
+--- Create one HUD button per equipped active card
+-- @param parent table Display group for the buttons
+function scene.createCardButtons(parent)
+  scene.destroyCardButtons()
+  for i, active in ipairs(card_powers.getHudActives()) do
+    local group = display.newGroup()
+    parent:insert(group)
+    group.x = helpers.width - CARD_BUTTON_X_INSET
+    group.y = CARD_BUTTON_FIRST_Y - (i - 1) * CARD_BUTTON_SPACING
+    group.cardId = active.cardId
+
+    local card = card_collection.getCard(active.cardId)
+    local color = card_face.tierColor(card and card.tier)
+    local background = display.newRoundedRect(group, 0, 0, CARD_BUTTON_SIZE, CARD_BUTTON_SIZE, 10)
+    background:setFillColor(0.1, 0.1, 0.15, 0.85)
+    background.strokeWidth = 3
+    background:setStrokeColor(color[1], color[2], color[3])
+
+    local icon = display.newImageRect(group, string.format(card_face.ICON_PATH, active.cardId),
+      CARD_BUTTON_SIZE * 0.7, CARD_BUTTON_SIZE * 0.7)
+    if not icon then
+      local name = display.newText({ parent = group, text = card and card.name or "?", x = 0, y = 0,
+        width = CARD_BUTTON_SIZE - 8, align = "center", font = native.systemFontBold, fontSize = 12 })
+      name:setFillColor(1, 1, 1)
+    end
+
+    local chargesText = display.newText({
+      parent = group,
+      text = tostring(active.chargesLeft),
+      x = CARD_BUTTON_SIZE * 0.32,
+      y = CARD_BUTTON_SIZE * 0.32,
+      font = native.systemFontBold,
+      fontSize = 20
+    })
+    chargesText:setFillColor(1, 0.9, 0.4)
+
+    local index = active.index
+    background:addEventListener("tap", function()
+      scene.useCard(index)
+      return true
+    end)
+
+    table.insert(cardButtons, { index = index, group = group, chargesText = chargesText })
+  end
+end
+
+--- Use an active card and refresh its button
+-- @return boolean True if a charge was spent
+function scene.useCard(index)
+  local used = game_controller.useCard(index)
+  local active = scene.findHudActive(index)
+  for _, button in ipairs(cardButtons) do
+    if button.index == index and active then
+      button.chargesText.text = tostring(active.chargesLeft)
+      button.group.alpha = active.chargesLeft > 0 and 1 or 0.35
+    end
+  end
+  return used
+end
+
+--- Second Opinion: spend a charge and show a new draft
+function scene.rerollDraft()
+  hideUpgradePanel()
+  local cards = game_controller.rerollDraft()
+  if not cards then
+    -- No charge left: the panel stays as it was
+    if upgradePanel then
+      upgradePanel.isVisible = true
+    end
+  end
+  return cards
 end
 
 --- Hide upgrade panel
@@ -338,6 +463,24 @@ function scene:create(event)
   })
   upgradeTitle:setFillColor(1, 1, 0)
   
+  -- Reroll button for the Second Opinion card (shown only with charges)
+  rerollButton = helpers.newButton({
+    x = helpers.centerX,
+    y = helpers.centerY + 160,
+    width = 220,
+    height = 56,
+    label = "REROLL",
+    fontSize = 22,
+    fillColor = {0.3, 0.55, 0.35},
+    onRelease = function()
+      scene.rerollDraft()
+    end
+  })
+  upgradePanel:insert(rerollButton)
+  upgradePanel:insert(rerollButton.label)
+  rerollButton.isVisible = false
+  rerollButton.label.isVisible = false
+  
   -- Boss health bar and label (hidden until a boss spawns)
   bossLabel = display.newText({
     parent = sceneGroup,
@@ -489,10 +632,12 @@ function scene:show(event)
     if #abilityIndicators == 0 then
       -- Position indicators on the wall center (wall spans Y=1160 to Y=1240)
       local indicatorY = 1200  -- Wall center Y-coordinate
-      local indicatorSpacing = 120  -- Wider spacing across wall width
-      local startX = helpers.centerX - 240  -- Center 5 indicators (480px total width)
+      -- 5 slots, or more with Sixth Seal (narrower spacing to fit the wall)
+      local slots = hero and hero.getMaxAbilities and hero:getMaxAbilities() or 5
+      local indicatorSpacing = slots <= 5 and 120 or 100
+      local startX = helpers.centerX - indicatorSpacing * (slots - 1) / 2
       
-      for i = 1, 5 do
+      for i = 1, slots do
         local indicatorX = startX + (i - 1) * indicatorSpacing
         local indicator = AbilityIndicator:new(indicatorX, indicatorY, i, scene.gameLayer)
         table.insert(abilityIndicators, indicator)
@@ -501,6 +646,9 @@ function scene:show(event)
 
     -- Pass indicator positions to combat system for fire origin resolution
     combat_system.setIndicatorPositions(abilityIndicators)
+    
+    -- Buttons for equipped active cards
+    scene.createCardButtons(scene.view)
     
     -- Set abilities on indicators
     if hero then
@@ -541,6 +689,7 @@ function scene:hide(event)
         indicator:destroy()
       end
       abilityIndicators = {}
+      scene.destroyCardButtons()
       
       -- Game over: cleanup all entities before transition
       game_controller.cleanup()
@@ -583,6 +732,8 @@ function scene:destroy(event)
     card:destroy()
   end
   upgradeCards = {}
+  scene.destroyCardButtons()
+  rerollButton = nil
   
   -- Clear references
   hero = nil

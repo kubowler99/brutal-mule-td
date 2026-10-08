@@ -20,6 +20,14 @@ upgrade_system.onUpgradeSelected = nil
 
 -- Build upgrade pool entries from ability_data_loader JSON data
 -- Returns a table of upgrade pool entries, or nil if data is not available
+--- Ability slots the hero has (5, or more with Sixth Seal)
+local function maxAbilities(hero)
+  if hero and hero.getMaxAbilities then
+    return hero:getMaxAbilities()
+  end
+  return 5
+end
+
 local function _buildUpgradePoolFromData()
   if not ability_data_loader then
     return nil
@@ -322,7 +330,7 @@ function upgrade_system.getAvailableUpgrades()
   end
   
   local available = {}
-  local hasAvailableSlots = #upgrade_system.hero.abilities < 5
+  local hasAvailableSlots = #upgrade_system.hero.abilities < maxAbilities(upgrade_system.hero)
   
   -- Check each upgrade in the pool
   for _, upgrade in ipairs(upgrade_system.upgradePool) do
@@ -433,7 +441,7 @@ function upgrade_system.getAvailableUpgrades()
               end
               
               -- Validate slot availability
-              if #hero.abilities >= 5 then
+              if #hero.abilities >= maxAbilities(hero) then
                 print("Warning: Cannot add ability - all 5 slots full")
                 return false
               end
@@ -488,7 +496,7 @@ function upgrade_system.canOfferNewAbility()
     return false
   end
   
-  return abilityCount < 5
+  return abilityCount < maxAbilities(upgrade_system.hero)
 end
 
 -- Apply selected upgrade to hero
@@ -557,7 +565,7 @@ function upgrade_system.applyUpgrade(upgradeCard)
       return false
     end
     
-    if #upgrade_system.hero.abilities >= 5 then
+    if #upgrade_system.hero.abilities >= maxAbilities(upgrade_system.hero) then
       print("Warning: Cannot add new ability - all 5 slots are full")
       return false
     end

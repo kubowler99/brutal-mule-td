@@ -4,6 +4,8 @@
 --
 -- @module combat_system
 
+local card_powers = require("src.systems.card_powers")
+
 local M = {}
 
 -- Internal state
@@ -149,6 +151,12 @@ function M.activateAbilities(currentTime)
       if success then
         -- If activation was successful, ensure display objects are in scene group
         if result then
+          -- Twin Cast: sometimes fire the same ability again
+          if card_powers.rollTwinCast() then
+            pcall(function()
+              ability:activate(originX, originY, enemies, trackingPool, sceneGroup, heroStats)
+            end)
+          end
           M.refreshActiveProjectiles()
         end
       else
@@ -255,6 +263,11 @@ function M.applyDamage(entity, amount)
   local validAmount = 0
   if type(amount) == "number" then
     validAmount = math.max(0, amount)
+  end
+  
+  -- Card bonuses against enemies (e.g. Executioner vs elites and bosses)
+  if wasActive then
+    validAmount = card_powers.modifyEnemyDamage(entity, validAmount)
   end
   
   -- Wrap damage application in pcall for error handling
