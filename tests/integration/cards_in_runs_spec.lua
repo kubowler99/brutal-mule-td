@@ -185,4 +185,68 @@ describe("Cards in runs", function()
             scene.destroyCardButtons()
         end)
     end)
+
+    describe("milestones in runs", function()
+        it("adds card gold from kills and victories to run gold", function()
+            local stats = { enemiesDefeated = 0, finalLevel = 1, victoryCondition = true,
+                bonusGold = 15, victoryBonusGold = 50 }
+            assert.are.equal(5 + 100 + 50 + 15, meta.goldForRun(stats))
+            stats.victoryCondition = false
+            assert.are.equal(5 + 15, meta.goldForRun(stats))
+        end)
+
+        it("counts boss and elite gold during a run (Gold Pouch 5, Bounty Hunter 5)", function()
+            equipCard("gold_pouch", 1, 5)
+            game_controller.initialize(sceneGroup)
+            game_controller.onEnemyKilled({ type = "boss", x = 0, y = 0, isBoss = true })
+            assert.are.equal(10, game_state.getStatistics().bonusGold)
+        end)
+
+        it("starts the run at level 2 (Head Start 15)", function()
+            equipCard("head_start", 1, 15)
+            game_controller.initialize(sceneGroup)
+            local drafts = 0
+            game_controller.onLevelUpCallback = function() drafts = drafts + 1 end
+            game_controller.start()
+            assert.are.equal(2, game_controller.getHero().level)
+            assert.are.equal(1, drafts)
+        end)
+
+        it("offers 4 cards in the first draft only (Scholar's Notes 15)", function()
+            equipCard("scholars_notes", 1, 15)
+            game_controller.initialize(sceneGroup)
+            local sizes = {}
+            game_controller.onLevelUpCallback = function(cardsOffered) table.insert(sizes, #cardsOffered) end
+            game_controller.onLevelUp(2)
+            game_controller.onUpgradeSelected(nil)
+            game_controller.onLevelUp(3)
+            assert.are.same({ 4, 3 }, sizes)
+        end)
+
+        it("makes elites more common (Bounty Hunter 15)", function()
+            local spawner_system = require("src.systems.spawner_system")
+            game_controller.initialize(sceneGroup)
+            local baseChance = spawner_system.elites.chance
+            game_controller.cleanup()
+
+            equipCard("bounty_hunter", 1, 15)
+            game_controller.initialize(sceneGroup)
+            assert.is_true(math.abs(spawner_system.elites.chance - math.min(1, baseChance * 1.25)) < 1e-9)
+        end)
+
+        it("gives extra projectiles more pierce (Split Shot 5)", function()
+            local bolt = ArcaneBolt:new()
+            local fired = {}
+            local pool = { get = function()
+                local p = { activate = function(self, x, y, tx, ty, speed, damage, pierce) self.pierce = pierce end }
+                table.insert(fired, p)
+                return p
+            end }
+            local enemies = { { x = 300, y = 500, isActive = true }, { x = 400, y = 500, isActive = true } }
+            bolt:activate(360, 1200, enemies, pool, nil,
+                { damageMultiplier = 1, extraProjectiles = 1, extraProjectilePierce = 1 })
+            assert.are.equal(bolt.pierceCount, fired[1].pierce)
+            assert.are.equal(bolt.pierceCount + 1, fired[2].pierce)
+        end)
+    end)
 end)

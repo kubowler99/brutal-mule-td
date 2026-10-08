@@ -148,14 +148,18 @@ local function showUpgradePanel(cards)
   end
   upgradeCards = {}
   
-  -- Create upgrade cards
+  -- Create upgrade cards: one row of up to 3, or a 2x2 grid for 4
   local cardWidth = 180
   local cardSpacing = 20
-  local startX = helpers.centerX - (cardWidth + cardSpacing)
-  local cardY = helpers.centerY
+  local columns = #cards == 4 and 2 or 3
+  local rowHeight = 140
+  local rows = math.ceil(#cards / columns)
   
   for i, cardData in ipairs(cards) do
-    local cardX = startX + (i - 1) * (cardWidth + cardSpacing)
+    local column = (i - 1) % columns
+    local row = math.floor((i - 1) / columns)
+    local cardX = helpers.centerX + (column - (columns - 1) / 2) * (cardWidth + cardSpacing)
+    local cardY = helpers.centerY + (row - (rows - 1) / 2) * rowHeight
     local card = UpgradeCard:new(cardX, cardY, cardData)
     
     -- Add card to upgrade panel group

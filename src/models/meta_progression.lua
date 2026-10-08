@@ -82,8 +82,10 @@ function M.goldForRun(stats)
   local gold = (stats.enemiesDefeated or 0) * (rates.perKill or 0)
     + (stats.finalLevel or 1) * (rates.perLevel or 0)
   if stats.victoryCondition then
-    gold = gold + (rates.victoryBonus or 0)
+    gold = gold + (rates.victoryBonus or 0) + (stats.victoryBonusGold or 0)
   end
+  -- Card gold from kills (Gold Pouch bosses, Bounty Hunter elites)
+  gold = gold + (stats.bonusGold or 0)
   -- Gold Pouch and similar cards raise the whole run's gold
   return math.floor(gold * (stats.goldMultiplier or 1))
 end
@@ -204,7 +206,7 @@ end
 --   only stats listed below are added here
 -- @return table { wallHealth, damageMultiplier, cooldownMultiplier, xpMultiplier,
 --   lowWallDamageMultiplier, goldMultiplier, startXP, extraProjectiles,
---   extraProjectilePenaltyReduction, extraAbilitySlots }
+--   extraProjectilePenaltyReduction, extraProjectilePierce, extraAbilitySlots }
 function M.getRunBonuses(heroId, cardStats)
   local bonuses = {
     wallHealth = 0,
@@ -216,6 +218,7 @@ function M.getRunBonuses(heroId, cardStats)
     startXP = 0,
     extraProjectiles = 0,
     extraProjectilePenaltyReduction = 0,
+    extraProjectilePierce = 0,
     extraAbilitySlots = 0,
   }
 

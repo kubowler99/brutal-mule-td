@@ -66,6 +66,7 @@ function Hero:getStats()
     cooldownMultiplier = self.baseStats.cooldownMultiplier,
     extraProjectiles = self.baseStats.extraProjectiles or 0,
     extraProjectilePenaltyReduction = self.baseStats.extraProjectilePenaltyReduction or 0,
+    extraProjectilePierce = self.baseStats.extraProjectilePierce or 0,
   }
   for _, ability in ipairs(self.abilities) do
     if ability.applyStats then

@@ -181,10 +181,13 @@ function ArcaneBolt:activate(heroX, heroY, enemies, projectilePool, displayGroup
   self.lastActivation = self._lastCurrentTime or os.clock()
 
   local damage = self:getProjectileDamage(heroStats)
-  for _, aim in ipairs(aims) do
+  -- Split Shot level 5: projectiles beyond the ability's own count pierce more
+  local extraPierce = math.floor((heroStats and heroStats.extraProjectilePierce) or 0)
+  for i, aim in ipairs(aims) do
     local projectile = projectilePool:get()
     if projectile then
-      projectile:activate(heroX, heroY, aim.x, aim.y, self.projectileSpeed, damage, self.pierceCount)
+      local pierce = self.pierceCount + (i > self.projectileCount and extraPierce or 0)
+      projectile:activate(heroX, heroY, aim.x, aim.y, self.projectileSpeed, damage, pierce)
     end
   end
 

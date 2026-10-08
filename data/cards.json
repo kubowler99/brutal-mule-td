@@ -1,5 +1,5 @@
 {
-  "_comment": "Card system: packs, tiers, levels, merging, fusion, loadout, and the card catalog. See docs/arcane-survivor/game-concept.md (Cards).",
+  "_comment": "Card system: packs, tiers, levels, merging, fusion, loadout, and the card catalog. See docs/arcane-survivor/game-concept.md (Cards). Milestones at levels 5 and 15 add stats, add to active card params or charges, or set stats (setStats replaces a value).",
   "tiers": [
     {
       "id": "common",
@@ -111,8 +111,18 @@
         }
       ],
       "milestones": {
-        "5": "Also +5% damage to elites",
-        "15": "Also +2% crit chance"
+        "5": {
+          "text": "Also +5% damage to elites and bosses",
+          "stats": {
+            "bossDamageMultiplier": 0.05
+          }
+        },
+        "15": {
+          "text": "Also +2% crit chance (crits deal double damage)",
+          "stats": {
+            "critChance": 0.02
+          }
+        }
       }
     },
     {
@@ -129,8 +139,18 @@
         }
       ],
       "milestones": {
-        "5": "The wall starts each run with +5 bonus health",
-        "15": "The wall regenerates 1 health per second"
+        "5": {
+          "text": "The wall starts each run with +5 bonus health",
+          "stats": {
+            "wallHealth": 5
+          }
+        },
+        "15": {
+          "text": "The wall regenerates 1 health per second",
+          "stats": {
+            "wallRegen": 1
+          }
+        }
       }
     },
     {
@@ -147,8 +167,18 @@
         }
       ],
       "milestones": {
-        "5": "Boss kills give +25% XP",
-        "15": "The first level-up draft offers 4 cards"
+        "5": {
+          "text": "Boss kills give +25% XP",
+          "stats": {
+            "bossXPMultiplier": 0.25
+          }
+        },
+        "15": {
+          "text": "The first level-up draft offers 4 cards",
+          "stats": {
+            "firstDraftExtraCards": 1
+          }
+        }
       }
     },
     {
@@ -165,8 +195,18 @@
         }
       ],
       "milestones": {
-        "5": "+10 gold for every boss killed",
-        "15": "Victories give +50 bonus gold"
+        "5": {
+          "text": "+10 gold for every boss killed",
+          "stats": {
+            "bossGold": 10
+          }
+        },
+        "15": {
+          "text": "Victories give +50 bonus gold",
+          "stats": {
+            "victoryGold": 50
+          }
+        }
       }
     },
     {
@@ -183,8 +223,18 @@
         }
       ],
       "milestones": {
-        "5": "Spike damage also applies a 1s slow",
-        "15": "Spike damage is doubled against elites"
+        "5": {
+          "text": "Spike damage also applies a 1s slow",
+          "stats": {
+            "thornsSlowDuration": 1
+          }
+        },
+        "15": {
+          "text": "Spike damage is doubled against elites",
+          "stats": {
+            "thornsEliteMultiplier": 1
+          }
+        }
       }
     },
     {
@@ -201,8 +251,18 @@
         }
       ],
       "milestones": {
-        "5": "Start with +5% XP gain for the first 2 minutes",
-        "15": "Start the run at level 2"
+        "5": {
+          "text": "+5% XP gain for the first 2 minutes",
+          "stats": {
+            "earlyXPMultiplier": 0.05
+          }
+        },
+        "15": {
+          "text": "Start the run at level 2",
+          "stats": {
+            "startLevelUps": 1
+          }
+        }
       }
     },
     {
@@ -220,8 +280,18 @@
         }
       },
       "milestones": {
-        "5": "Also removes burn from the wall",
-        "15": "Also gives the wall a 5s shield"
+        "5": {
+          "text": "Heals 5% more of the wall's maximum health",
+          "params": {
+            "healPercent": 0.05
+          }
+        },
+        "15": {
+          "text": "Also gives the wall a 5s shield",
+          "params": {
+            "shieldDuration": 5
+          }
+        }
       }
     },
     {
@@ -243,8 +313,18 @@
         }
       },
       "milestones": {
-        "5": "Strikes 4 enemies",
-        "15": "Struck enemies are stunned for 0.5s"
+        "5": {
+          "text": "Strikes 4 enemies",
+          "params": {
+            "targets": 1
+          }
+        },
+        "15": {
+          "text": "Struck enemies are stunned for 0.5s",
+          "params": {
+            "stunDuration": 0.5
+          }
+        }
       }
     },
     {
@@ -261,8 +341,18 @@
         }
       ],
       "milestones": {
-        "5": "The first ability fires immediately when a run starts",
-        "15": "Each level-up resets every cooldown"
+        "5": {
+          "text": "+3% more cooldown speed",
+          "stats": {
+            "cooldownMultiplier": -0.03
+          }
+        },
+        "15": {
+          "text": "Each level-up resets every cooldown",
+          "stats": {
+            "resetCooldownsOnLevelUp": 1
+          }
+        }
       }
     },
     {
@@ -279,8 +369,18 @@
         }
       ],
       "milestones": {
-        "5": "Burn lasts 1s longer",
-        "15": "Burning enemies take 10% more damage"
+        "5": {
+          "text": "Burn lasts 1s longer",
+          "stats": {
+            "burnDurationBonus": 1
+          }
+        },
+        "15": {
+          "text": "Burning enemies take 10% more damage",
+          "stats": {
+            "burningDamageBonus": 0.1
+          }
+        }
       }
     },
     {
@@ -297,8 +397,18 @@
         }
       ],
       "milestones": {
-        "5": "Boss hits deal 10% less damage",
-        "15": "The wall ignores the first hit every 20s"
+        "5": {
+          "text": "Boss hits deal 10% less damage",
+          "stats": {
+            "bossWallDamageReduction": 0.1
+          }
+        },
+        "15": {
+          "text": "The wall ignores the first hit every 20s",
+          "stats": {
+            "wallBlockInterval": 20
+          }
+        }
       }
     },
     {
@@ -315,8 +425,18 @@
         }
       ],
       "milestones": {
-        "5": "Elites also give +5 gold",
-        "15": "Elites appear 25% more often"
+        "5": {
+          "text": "Elites also give +5 gold",
+          "stats": {
+            "eliteGold": 5
+          }
+        },
+        "15": {
+          "text": "Elites appear 25% more often",
+          "stats": {
+            "eliteChanceMultiplier": 0.25
+          }
+        }
       }
     },
     {
@@ -329,8 +449,16 @@
       "charges": 1,
       "params": {},
       "milestones": {
-        "5": "+1 charge",
-        "15": "The reroll offers 4 cards"
+        "5": {
+          "text": "+1 charge",
+          "charges": 1
+        },
+        "15": {
+          "text": "The reroll offers 4 cards",
+          "params": {
+            "extraCards": 1
+          }
+        }
       }
     },
     {
@@ -352,8 +480,18 @@
         }
       },
       "milestones": {
-        "5": "Slowed enemies take 10% more damage",
-        "15": "Freezes enemies for 1s before the slow"
+        "5": {
+          "text": "Slowed enemies take 10% more damage",
+          "stats": {
+            "slowedDamageBonus": 0.1
+          }
+        },
+        "15": {
+          "text": "Freezes enemies for 1s before the slow",
+          "params": {
+            "freezeDuration": 1
+          }
+        }
       }
     },
     {
@@ -376,8 +514,18 @@
         }
       ],
       "milestones": {
-        "5": "Extra projectiles pierce 1 enemy",
-        "15": "+1 more projectile"
+        "5": {
+          "text": "Extra projectiles pierce 1 enemy",
+          "stats": {
+            "extraProjectilePierce": 1
+          }
+        },
+        "15": {
+          "text": "+1 more projectile",
+          "stats": {
+            "extraProjectiles": 1
+          }
+        }
       }
     },
     {
@@ -399,8 +547,18 @@
         }
       ],
       "milestones": {
-        "5": "Explosions apply burn",
-        "15": "Explosions can chain once"
+        "5": {
+          "text": "Explosions apply burn",
+          "stats": {
+            "explosionBurn": 1
+          }
+        },
+        "15": {
+          "text": "Explosions can chain once",
+          "stats": {
+            "explosionChains": 1
+          }
+        }
       }
     },
     {
@@ -417,8 +575,18 @@
         }
       ],
       "milestones": {
-        "5": "Also +10% crit damage",
-        "15": "Enemies below 10% health die instantly (not bosses)"
+        "5": {
+          "text": "Also +10% crit damage",
+          "stats": {
+            "critDamageBonus": 0.1
+          }
+        },
+        "15": {
+          "text": "Enemies below 10% health die instantly (not bosses)",
+          "stats": {
+            "executeThreshold": 0.1
+          }
+        }
       }
     },
     {
@@ -436,8 +604,16 @@
         }
       },
       "milestones": {
-        "5": "Destroyed enemies still give XP",
-        "15": "Also heals the wall 1% per enemy destroyed"
+        "5": {
+          "text": "+1 charge",
+          "charges": 1
+        },
+        "15": {
+          "text": "Also heals the wall 1% per enemy destroyed",
+          "params": {
+            "healPerKill": 0.01
+          }
+        }
       }
     },
     {
@@ -455,8 +631,18 @@
         }
       },
       "milestones": {
-        "5": "Enemies that hit the wall during Bastion are knocked back",
-        "15": "Bastion also reflects 50% of blocked damage"
+        "5": {
+          "text": "Enemies that hit the wall during Bastion are knocked back",
+          "params": {
+            "knockback": 120
+          }
+        },
+        "15": {
+          "text": "Bastion also reflects 50% of blocked damage",
+          "params": {
+            "reflect": 0.5
+          }
+        }
       }
     },
     {
@@ -474,8 +660,18 @@
         }
       ],
       "milestones": {
-        "5": "The revive also pushes back every enemy",
-        "15": "Triggers twice per run"
+        "5": {
+          "text": "The revive also pushes back every enemy",
+          "stats": {
+            "reviveKnockback": 150
+          }
+        },
+        "15": {
+          "text": "Triggers twice per run",
+          "stats": {
+            "extraRevives": 1
+          }
+        }
       }
     },
     {
@@ -498,8 +694,18 @@
         }
       ],
       "milestones": {
-        "5": "The sixth ability starts at tier 2",
-        "15": "The sixth ability gets +1 max tier"
+        "5": {
+          "text": "The sixth ability deals +10% damage",
+          "stats": {
+            "sixthAbilityDamage": 0.1
+          }
+        },
+        "15": {
+          "text": "+1 more ability slot (7 in total)",
+          "stats": {
+            "extraAbilitySlots": 1
+          }
+        }
       }
     },
     {
@@ -516,8 +722,18 @@
         }
       ],
       "milestones": {
-        "5": "Twin casts deal +10% damage",
-        "15": "Twin casts can trigger a third cast"
+        "5": {
+          "text": "Twin casts deal +10% damage",
+          "stats": {
+            "twinCastDamageBonus": 0.1
+          }
+        },
+        "15": {
+          "text": "Twin casts can trigger a third cast",
+          "stats": {
+            "twinCastExtraRoll": 1
+          }
+        }
       }
     },
     {
@@ -539,8 +755,18 @@
         }
       },
       "milestones": {
-        "5": "+4 meteors",
-        "15": "Meteors leave burning ground"
+        "5": {
+          "text": "+4 meteors",
+          "params": {
+            "count": 4
+          }
+        },
+        "15": {
+          "text": "Meteors set enemies on fire",
+          "params": {
+            "burnDps": 10
+          }
+        }
       }
     },
     {
@@ -558,8 +784,18 @@
         }
       },
       "milestones": {
-        "5": "Frozen enemies take 10% more damage",
-        "15": "Cooldowns refresh when Time Stop ends"
+        "5": {
+          "text": "Frozen enemies take 10% more damage",
+          "params": {
+            "damageBonus": 0.1
+          }
+        },
+        "15": {
+          "text": "Cooldowns refresh when Time Stop ends",
+          "params": {
+            "refreshCooldowns": 1
+          }
+        }
       }
     },
     {
@@ -577,8 +813,18 @@
         }
       },
       "milestones": {
-        "5": "The pull also hits bosses for 10% of the damage",
-        "15": "Leaves a rift that damages enemies for 5s"
+        "5": {
+          "text": "The pull also hits bosses for 10% of the damage",
+          "params": {
+            "bossDamageFraction": 0.1
+          }
+        },
+        "15": {
+          "text": "Leaves a rift that damages enemies for 5s",
+          "params": {
+            "riftDuration": 5
+          }
+        }
       }
     },
     {
@@ -596,8 +842,18 @@
         }
       ],
       "milestones": {
-        "5": "Every 4th level-up instead",
-        "15": "Every 3rd level-up instead"
+        "5": {
+          "text": "Every 4th level-up instead",
+          "setStats": {
+            "ascendanceInterval": 4
+          }
+        },
+        "15": {
+          "text": "Every 3rd level-up instead",
+          "setStats": {
+            "ascendanceInterval": 3
+          }
+        }
       }
     }
   ]

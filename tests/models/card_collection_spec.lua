@@ -324,7 +324,8 @@ describe("Card collection", function()
             cards.equip(2, wind)
 
             local stats = cards.getRunEffects().stats
-            assert.are.equal(10 + 2 * 9 + 10, stats.wallHealth)
+            -- level value + level 10 bonus + Stone Mortar's level 5 milestone (+5)
+            assert.are.equal(10 + 2 * 9 + 10 + 5, stats.wallHealth)
             assert.is_true(math.abs(stats.reviveWallPercent - (0.5 + 0.02 * 9)) < 1e-9)
         end)
 
@@ -337,7 +338,50 @@ describe("Card collection", function()
             assert.are.equal("strikeNearest", active.action)
             assert.are.equal(3, active.charges)
             assert.are.equal(30 + 4 * 9, active.params.damage)
+            -- 3 targets + Spark's level 5 milestone (+1)
+            assert.are.equal(4, active.params.targets)
+        end)
+
+        it("applies milestone stats, params, charges, and replaced stats", function()
+            local focus = give("sharpened_focus", 1)[1]
+            local purge = give("purge", 1)[1]
+            local ascend = give("ascendance", 1)[1]
+            setLevel(focus, 15)
+            setLevel(purge, 15)
+            setLevel(ascend, 5)
+            cards.equip(1, focus)
+            cards.equip(2, purge)
+            cards.equip(3, ascend)
+
+            local effects = cards.getRunEffects()
+            assert.is_true(math.abs(effects.stats.bossDamageMultiplier - 0.05) < 1e-9)
+            assert.is_true(math.abs(effects.stats.critChance - 0.02) < 1e-9)
+            assert.are.equal(4, effects.stats.ascendanceInterval)
+            local active = effects.actives[1]
+            -- 1 charge + level 5 milestone + level 10 bonus
+            assert.are.equal(3, active.charges)
+            assert.is_true(math.abs(active.params.healPerKill - 0.01) < 1e-9)
+        end)
+
+        it("does not apply milestones below their level", function()
+            local spark = give("spark", 1)[1]
+            setLevel(spark, 4)
+            cards.equip(1, spark)
+            local active = cards.getRunEffects().actives[1]
             assert.are.equal(3, active.params.targets)
+            assert.is_nil(active.params.stunDuration)
+        end)
+
+        it("replaces Ascendance's interval at level 15", function()
+            local ascend = give("ascendance", 1)[1]
+            setLevel(ascend, 15)
+            cards.equip(1, ascend)
+            assert.are.equal(3, cards.getRunEffects().stats.ascendanceInterval)
+        end)
+
+        it("describes milestones for the card screen", function()
+            assert.are.equal("Strikes 4 enemies", cards.milestoneText(cards.getCard("spark"), 5))
+            assert.are.equal("-", cards.milestoneText(cards.getCard("spark"), 7))
         end)
 
         it("lists reached milestones", function()

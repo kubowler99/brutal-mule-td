@@ -388,9 +388,9 @@ Every card has a unique power: no power appears twice, and each tier has its own
 - Cards go from **level 1 to level 15**.
 - A card's main value grows with level: `value = level 1 value + per level × (level − 1)`.
 - Levels **5, 10, and 15** are **milestones** that add an extra bonus on top of the normal growth:
-  - **Level 5**: a secondary effect. Examples: Wall Patch also removes burn from the wall; Executioner also adds +10% crit damage; Time Stop also makes frozen enemies take 10% more damage.
+  - **Level 5**: a secondary effect. Examples: Spark strikes 4 enemies instead of 3; Executioner also adds +10% crit damage; Time Stop also makes frozen enemies take 10% more damage.
   - **Level 10**: active cards get **+1 charge**; passive cards get their level 1 value added again.
-  - **Level 15**: a **capstone** unique to the card. Examples: Stone Mortar's wall health also regenerates 1 per second; Purge also heals the wall 1% per enemy destroyed; Second Wind triggers twice per run.
+  - **Level 15**: a **capstone** unique to the card. Examples: Stone Mortar's wall health also regenerates 1 per second; Purge also heals the wall 1% per enemy destroyed; Second Wind triggers twice per run. Each card's milestone bonuses are listed in `data/cards.json` and on the card detail screen.
 
 ### Merging (Leveling Up)
 

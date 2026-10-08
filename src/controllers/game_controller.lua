@@ -97,6 +97,7 @@ function M.initialize(group, heroId)
   hero.xpMultiplier = bonuses.xpMultiplier
   hero.baseStats.extraProjectiles = bonuses.extraProjectiles
   hero.baseStats.extraProjectilePenaltyReduction = bonuses.extraProjectilePenaltyReduction
+  hero.baseStats.extraProjectilePierce = bonuses.extraProjectilePierce
   hero.extraAbilitySlots = math.floor(bonuses.extraAbilitySlots)
   hero:setAppearance(heroDefinition)
   
@@ -175,7 +176,15 @@ function M.initialize(group, heroId)
     hero = hero,
     getEnemies = spawner_system.getActiveWalkers,
     applyDamage = combat_system.applyDamage,
+    getElapsed = function() return game_state.elapsedTime end,
   })
+  game_state.victoryBonusGold = card_powers.stat("victoryGold")
+  
+  -- Bounty Hunter level 15: elites appear more often
+  local eliteBoost = card_powers.stat("eliteChanceMultiplier")
+  if eliteBoost > 0 and spawner_system.elites then
+    spawner_system.elites.chance = math.min(1, spawner_system.elites.chance * (1 + eliteBoost))
+  end
   
   -- Head Start: begin the run with some XP (never a full level, so the first
   -- level-up still happens during play)
@@ -199,6 +208,14 @@ function M.start()
   gameLoopListener = Runtime:addEventListener("enterFrame", M.update)
   
   sound.playMusic()
+  
+  -- Head Start level 15: begin with a level-up (once per run)
+  if hero and not M.startLevelUpsGiven then
+    M.startLevelUpsGiven = true
+    for _ = 1, math.floor(card_powers.stat("startLevelUps")) do
+      experience_system.addXP(hero.xpRequired - hero.xp)
+    end
+  end
 end
 
 --- Main game update function (called every frame)
@@ -307,7 +324,7 @@ function M.update(event)
     if untilAttack <= 0 then
       local isSlam = enemy.eliteAbility == "slam"
       local damage = isSlam and enemy.damage * SLAM_DAMAGE_MULTIPLIER or enemy.damage
-      damage = card_powers.modifyWallDamage(damage)
+      damage = card_powers.modifyWallDamage(damage, enemy)
       combat_system.applyDamage(wall, damage)
       wall:flashDamage()
       card_powers.onWallHit(enemy)
@@ -348,6 +365,7 @@ function M.onEnemyKilled(enemy)
   local xpMultiplier = (enemy.xpMultiplier or 1) * card_powers.xpMultiplierFor(enemy)
   experience_system.awardXP(enemy.type or "walker", enemy.x, enemy.y, xpMultiplier)
   game_state.enemiesDefeated = game_state.enemiesDefeated + 1
+  game_state.bonusGold = (game_state.bonusGold or 0) + card_powers.goldForKill(enemy)
   card_powers.onEnemyKilled(enemy)
   
   -- Killing the final boss wins the run
@@ -379,11 +397,13 @@ function M.onLevelUp(level)
   M.pause()
   sound.play("level_up")
   
-  -- Ascendance: some level-ups give an extra pick
-  M.pendingPicks = (M.pendingPicks or 0) + card_powers.onLevelUp()
+  -- Ascendance: some level-ups give an extra pick; Scholar's Notes level 15
+  -- adds a card to the first draft
+  local extraPicks, extraCards = card_powers.onLevelUp()
+  M.pendingPicks = (M.pendingPicks or 0) + extraPicks
   
   -- Generate upgrade cards
-  local cards = upgrade_system.generateCards(3)
+  local cards = upgrade_system.generateCards(3 + extraCards)
   
   -- Trigger upgrade UI display (handled by scene)
   -- This is a callback that the scene should set
@@ -399,6 +419,7 @@ function M.onUpgradeSelected(upgrade)
   if upgrade then
     upgrade_system.applyUpgrade(upgrade)
   end
+  card_powers.onUpgradePicked()
   
   -- An extra pick shows a fresh draft instead of resuming
   if (M.pendingPicks or 0) > 0 then
@@ -415,10 +436,11 @@ end
 --- Second Opinion: spend a charge and show a new draft
 -- @return table|nil The new cards, or nil if no charge was left
 function M.rerollDraft()
-  if not card_powers.useReroll() then
+  local used, extraCards = card_powers.useReroll()
+  if not used then
     return nil
   end
-  local cards = upgrade_system.generateCards(3)
+  local cards = upgrade_system.generateCards(3 + extraCards)
   if M.onLevelUpCallback then
     M.onLevelUpCallback(cards)
   end
@@ -592,6 +614,7 @@ function M.cleanup()
   -- Cleanup systems
   card_powers.cleanup()
   M.pendingPicks = 0
+  M.startLevelUpsGiven = false
   effects.cleanup()
   sound.cleanup()
   combat_system.cleanup()
