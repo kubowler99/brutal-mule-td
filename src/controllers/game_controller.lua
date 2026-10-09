@@ -275,7 +275,20 @@ function M.update(event)
     -- Collisions are gathered before any damage is applied, so an earlier pair
     -- this frame may have killed the enemy or spent the projectile's pierce.
     -- Skip those pairs so a kill is only rewarded once.
-    if enemy.isActive and projectile.isActive then
+    -- A piercing projectile can still overlap an enemy it already hit
+    local alreadyHit = projectile.hasHit and projectile:hasHit(enemy)
+    if alreadyHit then
+      -- Nothing to do: each projectile hits each enemy once
+    elseif enemy.isActive and projectile.isActive and enemy.hasShield and not enemy.shieldBroken then
+      -- Shielders block projectiles; a piercing projectile breaks the shield
+      -- (spending its pierce) instead of dealing damage
+      if (projectile.pierceCount or 0) > 0 then
+        enemy.shieldBroken = true
+        projectile:onHit(enemy)
+      else
+        projectile:deactivate()
+      end
+    elseif enemy.isActive and projectile.isActive then
       -- Apply damage to enemy (kills are rewarded through onEnemyKilled)
       combat_system.applyDamage(enemy, projectile.damage)
 
@@ -320,8 +333,20 @@ function M.update(event)
       enemy:setTelegraph(untilAttack > 0 and untilAttack <= TELEGRAPH_TIME + 1e-6)
     end
     
+    -- Bombers explode against the wall the moment they arrive (no reward)
+    if (enemy.explodeDamage or 0) > 0 then
+      combat_system.applyDamage(wall, card_powers.modifyWallDamage(enemy.explodeDamage, enemy))
+      wall:flashDamage()
+      effects.screenShake(HEAVY_HIT_SHAKE, 0.2)
+      effects.hitSpark(enemy.x, enemy.y)
+      sound.play("wall_hit")
+      enemy:deactivate()
+      if wall:isDead() and not card_powers.tryReviveWall(wall) then
+        M.onGameOver()
+        return
+      end
     -- Check if enemy can attack (cooldown)
-    if untilAttack <= 0 then
+    elseif untilAttack <= 0 then
       local isSlam = enemy.eliteAbility == "slam"
       local damage = isSlam and enemy.damage * SLAM_DAMAGE_MULTIPLIER or enemy.damage
       damage = card_powers.modifyWallDamage(damage, enemy)
@@ -367,6 +392,11 @@ function M.onEnemyKilled(enemy)
   game_state.enemiesDefeated = game_state.enemiesDefeated + 1
   game_state.bonusGold = (game_state.bonusGold or 0) + card_powers.goldForKill(enemy)
   card_powers.onEnemyKilled(enemy)
+  
+  -- Splitters break into smaller enemies
+  if enemy.splitInto then
+    spawner_system.spawnSplit(enemy)
+  end
   
   -- Killing the final boss wins the run
   if enemy.isFinalBoss then

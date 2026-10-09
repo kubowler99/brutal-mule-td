@@ -146,6 +146,17 @@ function Projectile:update(dt)
   end
 end
 
+--- Whether this projectile has already hit an enemy (pierce keeps a
+--- projectile overlapping the same enemy for a few frames)
+function Projectile:hasHit(enemy)
+  for _, hitEnemy in ipairs(self.hitEnemies or {}) do
+    if hitEnemy == enemy then
+      return true
+    end
+  end
+  return false
+end
+
 function Projectile:onHit(enemy)
   if not self.isActive then
     return false

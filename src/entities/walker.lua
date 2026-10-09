@@ -41,6 +41,15 @@ local DEFAULT_STATS = {
   spitter = { health = 15, speed = 70, damage = 4, attackCooldown = 2.0, attackRange = 260 },
   boss = { health = 600, speed = 25, damage = 25, attackCooldown = 2.0, isBoss = true },
   final_boss = { health = 2000, speed = 20, damage = 40, attackCooldown = 2.0, isBoss = true, isFinalBoss = true },
+  shielder = { health = 30, speed = 60, damage = 6, attackCooldown = 1.2, hasShield = true },
+  frost_golem = { health = 120, speed = 35, damage = 14, attackCooldown = 1.6, slowImmune = true },
+  bomber = { health = 12, speed = 140, damage = 1, attackCooldown = 1.0, explodeDamage = 25 },
+  splitter = { health = 40, speed = 70, damage = 6, attackCooldown = 1.0, splitInto = "splitling", splitCount = 2 },
+  splitling = { health = 8, speed = 110, damage = 2, attackCooldown = 0.7 },
+  wraith = { health = 25, speed = 90, damage = 6, attackCooldown = 1.0, phaseInterval = 4, phaseDuration = 1.5 },
+  necromancer = { health = 35, speed = 50, damage = 3, attackCooldown = 2.0, attackRange = 320,
+    summonInterval = 6, summonCount = 2, summonType = "walker" },
+  burrower = { health = 30, speed = 120, damage = 8, attackCooldown = 1.0, burrows = true, surfaceDistance = 160 },
 }
 
 -- Scale applied to the 64x64 zombie sprite frames
@@ -55,7 +64,18 @@ local TYPE_STYLES = {
   spitter = { tint = {0.85, 1.0, 0.3}, scale = 0.9 },
   boss = { tint = {1.0, 0.4, 0.4}, scale = 2.2 },
   final_boss = { tint = {0.6, 0.3, 0.3}, scale = 2.8 },
+  shielder = { tint = {0.6, 0.65, 0.75}, scale = 1.1 },
+  frost_golem = { tint = {0.55, 0.85, 1.0}, scale = 1.45 },
+  bomber = { tint = {1.0, 0.3, 0.15}, scale = 0.8 },
+  splitter = { tint = {0.4, 0.9, 0.7}, scale = 1.15 },
+  splitling = { tint = {0.4, 0.9, 0.7}, scale = 0.6 },
+  wraith = { tint = {0.8, 0.8, 1.0}, scale = 1.0 },
+  necromancer = { tint = {0.5, 0.25, 0.6}, scale = 1.05 },
+  burrower = { tint = {0.65, 0.5, 0.3}, scale = 0.9 },
 }
+
+-- Phased wraiths and burrowed burrowers are drawn faint
+local UNTARGETABLE_ALPHA = 0.35
 
 -- Wind-up before a telegraphed attack (bosses, slam elites): red and larger
 local TELEGRAPH_TINT = {1.0, 0.15, 0.15}
@@ -116,6 +136,16 @@ local function _getEnemyStat(enemyType, key)
       return value
     end
   end
+  return defaults[key]
+end
+
+--- A string field (e.g. what a splitter splits into), from enemies.json or defaults
+local function _getEnemyString(enemyType, key)
+  local typeConfig = _loadEnemiesConfig()[enemyType]
+  if type(typeConfig) == "table" and type(typeConfig[key]) == "string" then
+    return typeConfig[key]
+  end
+  local defaults = DEFAULT_STATS[enemyType] or {}
   return defaults[key]
 end
 
@@ -184,6 +214,24 @@ function Walker:setType(enemyType)
   self.isElite = false
   self.xpMultiplier = 1
   
+  -- Special behaviors (see enemies.json _fields)
+  self.hasShield = _getEnemyFlag(enemyType, "hasShield")
+  self.shieldBroken = false
+  self.slowImmune = _getEnemyFlag(enemyType, "slowImmune")
+  self.explodeDamage = _getEnemyStat(enemyType, "explodeDamage") or 0
+  self.splitInto = _getEnemyString(enemyType, "splitInto")
+  self.splitCount = self.splitInto and (_getEnemyStat(enemyType, "splitCount") or 2) or 0
+  self.phaseInterval = _getEnemyStat(enemyType, "phaseInterval") or 0
+  self.phaseDuration = _getEnemyStat(enemyType, "phaseDuration") or 0
+  self.phaseTimer = 0
+  self.isPhased = false
+  self.summonInterval = _getEnemyStat(enemyType, "summonInterval") or 0
+  self.summonCount = _getEnemyStat(enemyType, "summonCount") or 0
+  self.summonType = _getEnemyString(enemyType, "summonType")
+  self.burrows = _getEnemyFlag(enemyType, "burrows")
+  self.surfaceDistance = _getEnemyStat(enemyType, "surfaceDistance") or 0
+  self.isBurrowed = self.burrows
+  
   -- Elite ability state
   self.eliteAbility = nil
   self.hasCharged = false
@@ -221,6 +269,7 @@ function Walker:refreshStyle()
     * (self.isTelegraphing and TELEGRAPH_SCALE or 1)
   self.displayObject.xScale = scale
   self.displayObject.yScale = scale
+  self.displayObject.alpha = self:isUntargetable() and UNTARGETABLE_ALPHA or 1
   
   if self.displayObject.setFillColor then
     local baseTint = self.isElite and ELITE_TINT or style.tint
@@ -241,7 +290,7 @@ end
 -- @param factor number Speed multiplier while slowed (0-1, lower is slower)
 -- @param duration number Seconds the slow lasts
 function Walker:applySlow(factor, duration)
-  if not self.isActive then
+  if not self.isActive or self.slowImmune then
     return
   end
   
@@ -250,6 +299,11 @@ function Walker:applySlow(factor, duration)
   end
   self.slowRemaining = math.max(self.slowRemaining, duration)
   self:refreshStyle()
+end
+
+--- Whether hits pass through this enemy right now (phased or burrowed)
+function Walker:isUntargetable()
+  return self.isPhased == true or self.isBurrowed == true
 end
 
 --- Show or hide the attack wind-up
@@ -324,6 +378,38 @@ function Walker:updateEliteAbility(dt, stopY)
   end
 end
 
+--- Run type behaviors for one frame: wraith phasing, necromancer raising,
+--- and burrowing until close to the wall
+-- @param dt number Delta time in seconds
+-- @param stopY number Y where this enemy stops to attack
+function Walker:updateTypeBehavior(dt, stopY)
+  local wasUntargetable = self:isUntargetable()
+  
+  -- Wraith: untargetable for phaseDuration at the end of every phaseInterval
+  if self.phaseInterval > 0 then
+    self.phaseTimer = (self.phaseTimer + dt) % self.phaseInterval
+    self.isPhased = self.phaseTimer >= self.phaseInterval - self.phaseDuration
+  end
+  
+  -- Necromancer: raise dead enemies (the spawner creates them)
+  if self.summonInterval > 0 and self.summonCount > 0 then
+    self.summonTimer = self.summonTimer + dt
+    while self.summonTimer >= self.summonInterval do
+      self.summonTimer = self.summonTimer - self.summonInterval
+      self.pendingSummons = self.pendingSummons + self.summonCount
+    end
+  end
+  
+  -- Burrower: underground until surfaceDistance short of the stop point
+  if self.burrows then
+    self.isBurrowed = self.y < stopY - self.surfaceDistance
+  end
+  
+  if wasUntargetable ~= self:isUntargetable() then
+    self:refreshStyle()
+  end
+end
+
 function Walker:activate(x, y, lane, enemyType)
   -- Set spawn position and lane
   self.x = x
@@ -344,6 +430,14 @@ function Walker:activate(x, y, lane, enemyType)
   self.slowRemaining = 0
   self:clearBurn()
   self.isTelegraphing = false
+  
+  -- Reset type behaviors
+  self.shieldBroken = false
+  self.phaseTimer = 0
+  self.isPhased = false
+  self.isBurrowed = self.burrows
+  self.summonTimer = 0
+  self.pendingSummons = 0
   
   -- Reset attack timer
   self.lastAttackTime = 0
@@ -426,6 +520,7 @@ function Walker:update(dt, wallThreshold)
   -- Elite charge and summon (speed for this frame was read above, so a
   -- charge starts moving fast on the next frame)
   self:updateEliteAbility(dt, stopY)
+  self:updateTypeBehavior(dt, stopY)
   
   -- Check if walker has reached its attack position
   if self.y >= stopY then
@@ -451,26 +546,33 @@ function Walker:update(dt, wallThreshold)
     end
   end
   
-  -- Update display object position (always sync with logical position)
+  -- Update display object position (always sync with logical position;
+  -- x can change too, e.g. when a card pulls enemies together)
   if self.displayObject then
+    self.displayObject.x = self.x
     self.displayObject.y = self.y
   end
   
-  -- Sync health bar position with walker y
+  -- Sync health bar position with the walker
   if self.healthBar then
     local newBarY = self.y - 25
     if self.healthBar.background then
+      self.healthBar.background.x = self.x
       self.healthBar.background.y = newBarY
     end
     if self.healthBar.foreground then
+      -- The foreground is anchored at its left edge
+      self.healthBar.foreground.x = self.x - (self.healthBar.width or 0) / 2
       self.healthBar.foreground.y = newBarY
     end
+    self.healthBar.x = self.x
     self.healthBar.y = newBarY
   end
 end
 
 function Walker:takeDamage(amount)
-  if not self.isActive then
+  -- Phased and burrowed enemies cannot be hurt
+  if not self.isActive or self:isUntargetable() then
     return
   end
   

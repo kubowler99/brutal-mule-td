@@ -329,10 +329,26 @@ function M.spawnSummons()
     for _, summoner in ipairs(summoners) do
         for i = 1, summoner.pendingSummons do
             local side = (i % 2 == 1) and -1 or 1
-            M.spawnWalker(SUMMON_TYPE, summoner.x + side * SUMMON_OFFSET, false,
+            M.spawnWalker(summoner.summonType or SUMMON_TYPE, summoner.x + side * SUMMON_OFFSET, false,
                 { y = summoner.y, noElite = true })
         end
         summoner.pendingSummons = 0
+    end
+end
+
+-- Split enemies appear this far to either side of the one that died
+local SPLIT_OFFSET = 25
+
+---Spawn the smaller enemies a splitter breaks into when it dies
+---@param enemy table The enemy that died
+function M.spawnSplit(enemy)
+    if not enemy or not enemy.splitInto or (enemy.splitCount or 0) <= 0 then
+        return
+    end
+    for i = 1, enemy.splitCount do
+        local side = (i % 2 == 1) and -1 or 1
+        M.spawnWalker(enemy.splitInto, enemy.x + side * SPLIT_OFFSET, false,
+            { y = enemy.y, noElite = true })
     end
 end
 
