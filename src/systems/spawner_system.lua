@@ -53,10 +53,12 @@ local function loadEliteSettings()
     }
 end
 
----Read spawner.bosses from game_config.json (no bosses without it)
+---Read the boss schedule: the stage's bosses, else spawner.bosses from
+---game_config.json (no bosses without either)
+---@param stage table|nil Stage definition from data/stages.json
 ---@return table Array of { level, type }
-local function loadBossSchedule()
-    local configured = config_loader.get("spawner.bosses")
+local function loadBossSchedule(stage)
+    local configured = stage and stage.bosses or config_loader.get("spawner.bosses")
     local schedule = {}
     if type(configured) == "table" then
         for _, entry in ipairs(configured) do
@@ -68,11 +70,13 @@ local function loadBossSchedule()
     return schedule
 end
 
----Read spawner.enemyTable from game_config.json
+---Read the enemy table: the stage's table, else spawner.enemyTable from
+---game_config.json
 ---Each entry: { type, weight, minLevel, groupSize }. Invalid entries are skipped.
+---@param stage table|nil Stage definition from data/stages.json
 ---@return table Array of spawn table entries
-local function loadEnemyTable()
-    local configured = config_loader.get("spawner.enemyTable")
+local function loadEnemyTable(stage)
+    local configured = stage and stage.enemyTable or config_loader.get("spawner.enemyTable")
     if type(configured) ~= "table" then
         return DEFAULT_ENEMY_TABLE
     end
@@ -106,6 +110,7 @@ M.enemyTable = DEFAULT_ENEMY_TABLE
 M.elites = nil          -- set in initialize()
 M.bossSchedule = {}     -- set in initialize()
 M.spawnedBossLevels = {}
+M.enemyMultiplier = 1   -- stage multiplier for enemy health and damage
 
 -- Called with the boss enemy when a boss spawns (set by game_controller)
 M.onBossSpawned = nil
@@ -117,7 +122,8 @@ M.initialSpawnCount = 0
 ---Initialize the spawner system
 ---@param walkerPool table Object pool for walker entities
 ---@param heroLevel number Initial hero level
-function M.initialize(walkerPool, heroLevel)
+---@param stage table|nil Stage definition (enemy table, bosses, enemyMultiplier)
+function M.initialize(walkerPool, heroLevel, stage)
     -- Error handling: Validate walker pool
     if not walkerPool then
         print("Error: spawner_system.initialize() - walkerPool is nil")
@@ -135,9 +141,11 @@ function M.initialize(walkerPool, heroLevel)
     M.spawnInterval = config_loader.positiveNumber(config_loader.get("spawner.spawnInterval"), DEFAULT_SPAWN_INTERVAL)
     M.spawnCount = config_loader.positiveNumber(config_loader.get("spawner.spawnCount"), DEFAULT_SPAWN_COUNT)
     M.maxConcurrent = config_loader.positiveNumber(config_loader.get("spawner.maxConcurrent"), 50)
-    M.enemyTable = loadEnemyTable()
+    M.enemyTable = loadEnemyTable(stage)
     M.elites = loadEliteSettings()
-    M.bossSchedule = loadBossSchedule()
+    M.bossSchedule = loadBossSchedule(stage)
+    M.enemyMultiplier = (stage and type(stage.enemyMultiplier) == "number" and stage.enemyMultiplier > 0)
+        and stage.enemyMultiplier or 1
     M.spawnedBossLevels = {}
     M.heroLevel = heroLevel or 1
     M.gameStartTime = nil
@@ -292,6 +300,17 @@ function M.spawnWalker(enemyType, spawnX, ignoreLimit, options)
         print("Error: spawner_system.spawnWalker() - walker activation failed:", err)
         M.walkerPool:release(walker)
         return
+    end
+    
+    -- Later stages make every enemy tougher
+    if M.enemyMultiplier ~= 1 then
+        walker.maxHealth = walker.maxHealth * M.enemyMultiplier
+        walker.health = walker.maxHealth
+        walker.damage = walker.damage * M.enemyMultiplier
+        walker.explodeDamage = (walker.explodeDamage or 0) * M.enemyMultiplier
+        if walker.healthBar then
+            walker.healthBar:update(walker.health, walker.maxHealth)
+        end
     end
     
     -- Some normal enemies spawn as elites once the hero is strong enough

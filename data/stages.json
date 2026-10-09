@@ -1,0 +1,326 @@
+{
+  "_comment": "Stages (battlefields): enemy roster, boss pair, multipliers, and unlock order. Winning a stage unlocks every stage whose unlockedBy is its id. See docs/arcane-survivor/game-concept.md (Stages).",
+  "stages": [
+    {
+      "id": "cursed_field",
+      "name": "Cursed Field",
+      "description": "The first line of defense.",
+      "background": "game",
+      "enemyMultiplier": 1.0,
+      "goldMultiplier": 1.0,
+      "unlockedBy": null,
+      "enemyTable": [
+        {
+          "type": "walker",
+          "weight": 7,
+          "minLevel": 1,
+          "groupSize": 1
+        },
+        {
+          "type": "runner",
+          "weight": 3,
+          "minLevel": 3,
+          "groupSize": 1
+        },
+        {
+          "type": "swarmling",
+          "weight": 2,
+          "minLevel": 4,
+          "groupSize": 4
+        },
+        {
+          "type": "brute",
+          "weight": 2,
+          "minLevel": 5,
+          "groupSize": 1
+        },
+        {
+          "type": "spitter",
+          "weight": 2,
+          "minLevel": 6,
+          "groupSize": 1
+        }
+      ],
+      "bosses": [
+        {
+          "level": 10,
+          "type": "boss"
+        },
+        {
+          "level": 20,
+          "type": "final_boss"
+        }
+      ]
+    },
+    {
+      "id": "frozen_pass",
+      "name": "Frozen Pass",
+      "description": "Shields and golems hold the icy road.",
+      "background": "frozen_pass",
+      "enemyMultiplier": 1.3,
+      "goldMultiplier": 1.25,
+      "unlockedBy": "cursed_field",
+      "enemyTable": [
+        {
+          "type": "walker",
+          "weight": 6,
+          "minLevel": 1,
+          "groupSize": 1
+        },
+        {
+          "type": "runner",
+          "weight": 3,
+          "minLevel": 2,
+          "groupSize": 1
+        },
+        {
+          "type": "shielder",
+          "weight": 3,
+          "minLevel": 3,
+          "groupSize": 1
+        },
+        {
+          "type": "swarmling",
+          "weight": 2,
+          "minLevel": 4,
+          "groupSize": 4
+        },
+        {
+          "type": "frost_golem",
+          "weight": 2,
+          "minLevel": 5,
+          "groupSize": 1
+        },
+        {
+          "type": "spitter",
+          "weight": 2,
+          "minLevel": 6,
+          "groupSize": 1
+        },
+        {
+          "type": "brute",
+          "weight": 1,
+          "minLevel": 7,
+          "groupSize": 1
+        }
+      ],
+      "bosses": [
+        {
+          "level": 10,
+          "type": "frost_troll"
+        },
+        {
+          "level": 20,
+          "type": "ice_wyrm"
+        }
+      ]
+    },
+    {
+      "id": "burning_keep",
+      "name": "Burning Keep",
+      "description": "Bombers and splitters pour through the flames.",
+      "background": "burning_keep",
+      "enemyMultiplier": 1.7,
+      "goldMultiplier": 1.5,
+      "unlockedBy": "frozen_pass",
+      "enemyTable": [
+        {
+          "type": "walker",
+          "weight": 5,
+          "minLevel": 1,
+          "groupSize": 1
+        },
+        {
+          "type": "runner",
+          "weight": 3,
+          "minLevel": 2,
+          "groupSize": 1
+        },
+        {
+          "type": "bomber",
+          "weight": 3,
+          "minLevel": 3,
+          "groupSize": 1
+        },
+        {
+          "type": "splitter",
+          "weight": 3,
+          "minLevel": 4,
+          "groupSize": 1
+        },
+        {
+          "type": "shielder",
+          "weight": 2,
+          "minLevel": 5,
+          "groupSize": 1
+        },
+        {
+          "type": "brute",
+          "weight": 2,
+          "minLevel": 6,
+          "groupSize": 1
+        },
+        {
+          "type": "spitter",
+          "weight": 2,
+          "minLevel": 7,
+          "groupSize": 1
+        }
+      ],
+      "bosses": [
+        {
+          "level": 10,
+          "type": "flame_juggernaut"
+        },
+        {
+          "level": 20,
+          "type": "ember_drake"
+        }
+      ]
+    },
+    {
+      "id": "sunken_crypt",
+      "name": "Sunken Crypt",
+      "description": "Wraiths drift and necromancers raise the dead.",
+      "background": "sunken_crypt",
+      "enemyMultiplier": 2.2,
+      "goldMultiplier": 1.75,
+      "unlockedBy": "burning_keep",
+      "enemyTable": [
+        {
+          "type": "walker",
+          "weight": 5,
+          "minLevel": 1,
+          "groupSize": 1
+        },
+        {
+          "type": "swarmling",
+          "weight": 3,
+          "minLevel": 2,
+          "groupSize": 4
+        },
+        {
+          "type": "wraith",
+          "weight": 3,
+          "minLevel": 3,
+          "groupSize": 1
+        },
+        {
+          "type": "necromancer",
+          "weight": 1,
+          "minLevel": 5,
+          "groupSize": 1
+        },
+        {
+          "type": "splitter",
+          "weight": 2,
+          "minLevel": 6,
+          "groupSize": 1
+        },
+        {
+          "type": "frost_golem",
+          "weight": 1,
+          "minLevel": 7,
+          "groupSize": 1
+        },
+        {
+          "type": "bomber",
+          "weight": 2,
+          "minLevel": 8,
+          "groupSize": 1
+        }
+      ],
+      "bosses": [
+        {
+          "level": 10,
+          "type": "drowned_priest"
+        },
+        {
+          "level": 20,
+          "type": "crypt_horror"
+        }
+      ]
+    },
+    {
+      "id": "arcane_rift",
+      "name": "Arcane Rift",
+      "description": "Every horror at once, and burrowers from below.",
+      "background": "arcane_rift",
+      "enemyMultiplier": 3.0,
+      "goldMultiplier": 2.0,
+      "unlockedBy": "sunken_crypt",
+      "enemyTable": [
+        {
+          "type": "walker",
+          "weight": 4,
+          "minLevel": 1,
+          "groupSize": 1
+        },
+        {
+          "type": "runner",
+          "weight": 3,
+          "minLevel": 1,
+          "groupSize": 1
+        },
+        {
+          "type": "burrower",
+          "weight": 3,
+          "minLevel": 2,
+          "groupSize": 1
+        },
+        {
+          "type": "wraith",
+          "weight": 2,
+          "minLevel": 3,
+          "groupSize": 1
+        },
+        {
+          "type": "shielder",
+          "weight": 2,
+          "minLevel": 3,
+          "groupSize": 1
+        },
+        {
+          "type": "bomber",
+          "weight": 2,
+          "minLevel": 4,
+          "groupSize": 1
+        },
+        {
+          "type": "splitter",
+          "weight": 2,
+          "minLevel": 5,
+          "groupSize": 1
+        },
+        {
+          "type": "necromancer",
+          "weight": 1,
+          "minLevel": 6,
+          "groupSize": 1
+        },
+        {
+          "type": "frost_golem",
+          "weight": 2,
+          "minLevel": 7,
+          "groupSize": 1
+        },
+        {
+          "type": "brute",
+          "weight": 1,
+          "minLevel": 8,
+          "groupSize": 1
+        }
+      ],
+      "bosses": [
+        {
+          "level": 10,
+          "type": "rift_warden"
+        },
+        {
+          "level": 20,
+          "type": "the_unmaker"
+        }
+      ]
+    }
+  ]
+}

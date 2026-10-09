@@ -6,6 +6,7 @@ local composer = require("composer")
 local helpers = require("src.utils.helpers")
 local meta_progression = require("src.models.meta_progression")
 local card_collection = require("src.models.card_collection")
+local stages = require("src.models.stages")
 
 local scene = composer.newScene()
 
@@ -76,7 +77,7 @@ function scene.selectHero(heroId)
     composer.gotoScene("src.scenes.game", {
       effect = "fade",
       time = 300,
-      params = { heroId = heroId }
+      params = { heroId = heroId, stageId = scene.stageId or stages.getSelectedStageId() }
     })
     return true
   end
@@ -198,7 +199,7 @@ function scene:create(event)
     fontSize = 22,
     fillColor = {0.5, 0.5, 0.6},
     onRelease = function()
-      composer.gotoScene("src.scenes.menu", { effect = "fade", time = 300 })
+      composer.gotoScene("src.scenes.stage_select", { effect = "fade", time = 300 })
     end
   })
   sceneGroup:insert(backButton)
@@ -207,6 +208,10 @@ end
 
 function scene:show(event)
   if event.phase == "will" then
+    -- Stage select passes the stage; coming back from the cards screen keeps it
+    if event.params and event.params.stageId then
+      scene.stageId = event.params.stageId
+    end
     scene.refresh()
   end
 end
