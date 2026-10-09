@@ -71,8 +71,9 @@ function M.checkProjectileCollisions(projectiles, enemies)
       for j = 1, #enemies do
         local enemy = enemies[j]
         
-        -- Skip inactive enemies or invalid positions
-        if enemy and enemy.isActive and 
+        -- Skip inactive enemies, enemies hits pass through (phased or
+        -- burrowed), and invalid positions
+        if enemy and enemy.isActive and not (enemy.isUntargetable and enemy:isUntargetable()) and 
            type(enemy.x) == "number" and type(enemy.y) == "number" then
           
           local distanceSq = M.checkDistanceSquared(

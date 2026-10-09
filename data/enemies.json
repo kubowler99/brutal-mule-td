@@ -9,7 +9,19 @@
       "attackCooldown": "number - Seconds between attacks",
       "attackRange": "number - Optional; ranged enemies stop this far short of the wall",
       "isBoss": "boolean - Optional; shows the boss health bar",
-      "isFinalBoss": "boolean - Optional; killing it wins the run"
+      "isFinalBoss": "boolean - Optional; killing it wins the run",
+      "hasShield": "boolean - Optional; blocks projectiles until a piercing projectile breaks the shield",
+      "slowImmune": "boolean - Optional; ignores slow and freeze",
+      "explodeDamage": "number - Optional; explodes for this much wall damage on reaching the wall (no reward)",
+      "splitInto": "string - Optional; enemy type it splits into when killed",
+      "splitCount": "number - Optional; how many enemies it splits into",
+      "phaseInterval": "number - Optional; seconds per phase cycle",
+      "phaseDuration": "number - Optional; seconds untargetable at the end of each phase cycle",
+      "summonInterval": "number - Optional; seconds between raising enemies",
+      "summonCount": "number - Optional; enemies raised each time",
+      "summonType": "string - Optional; enemy type raised (default swarmling)",
+      "burrows": "boolean - Optional; untargetable underground until near the wall",
+      "surfaceDistance": "number - Optional; surfaces this far short of its stop point"
     }
   },
   "walker": {
@@ -64,5 +76,74 @@
     "xpValue": 500,
     "isBoss": true,
     "isFinalBoss": true
+  },
+  "shielder": {
+    "health": 30,
+    "speed": 60,
+    "damage": 6,
+    "attackCooldown": 1.2,
+    "xpValue": 12,
+    "hasShield": true
+  },
+  "frost_golem": {
+    "health": 120,
+    "speed": 35,
+    "damage": 14,
+    "attackCooldown": 1.6,
+    "xpValue": 30,
+    "slowImmune": true
+  },
+  "bomber": {
+    "health": 12,
+    "speed": 140,
+    "damage": 1,
+    "attackCooldown": 1.0,
+    "xpValue": 10,
+    "explodeDamage": 25
+  },
+  "splitter": {
+    "health": 40,
+    "speed": 70,
+    "damage": 6,
+    "attackCooldown": 1.0,
+    "xpValue": 15,
+    "splitInto": "splitling",
+    "splitCount": 2
+  },
+  "splitling": {
+    "health": 8,
+    "speed": 110,
+    "damage": 2,
+    "attackCooldown": 0.7,
+    "xpValue": 3
+  },
+  "wraith": {
+    "health": 25,
+    "speed": 90,
+    "damage": 6,
+    "attackCooldown": 1.0,
+    "xpValue": 14,
+    "phaseInterval": 4,
+    "phaseDuration": 1.5
+  },
+  "necromancer": {
+    "health": 35,
+    "speed": 50,
+    "damage": 3,
+    "attackCooldown": 2.0,
+    "attackRange": 320,
+    "xpValue": 25,
+    "summonInterval": 6,
+    "summonCount": 2,
+    "summonType": "walker"
+  },
+  "burrower": {
+    "health": 30,
+    "speed": 120,
+    "damage": 8,
+    "attackCooldown": 1.0,
+    "xpValue": 18,
+    "burrows": true,
+    "surfaceDistance": 160
   }
 }
