@@ -268,5 +268,223 @@
         "burnIncrease": 4
       }
     }
+  },
+  "chain_lightning": {
+    "name": "Chain Lightning",
+    "description": "Lightning strikes the nearest enemy and jumps to 2 more",
+    "tags": ["projectile", "arcane"],
+    "module": "src.entities.abilities.chain_lightning",
+    "unlocked": true,
+    "maxTier": 5,
+    "icon": "assets/images/abilities/chain_lightning.png",
+    "baseStats": {
+      "cooldown": 1.6,
+      "damage": 18,
+      "jumps": 2,
+      "jumpRange": 180,
+      "falloff": 0.7,
+      "stunDuration": 0.5
+    },
+    "upgrades": {
+      "jump_count": {
+        "name": "Chain Lightning Jumps",
+        "description": "+1 jump",
+        "iconType": "count",
+        "jumpIncrease": 1
+      },
+      "damage_increase": {
+        "name": "Chain Lightning Damage",
+        "description": "+20% damage",
+        "iconType": "damage",
+        "damageMultiplier": 1.2
+      },
+      "no_falloff": {
+        "name": "Chain Lightning Conduit",
+        "description": "Jumps no longer lose damage",
+        "iconType": "pierce"
+      },
+      "stun": {
+        "name": "Chain Lightning Shock",
+        "description": "Each jump has a 20% chance to stun for 0.5s",
+        "iconType": "speed",
+        "stunChance": 0.2
+      }
+    }
+  },
+  "meteor": {
+    "name": "Meteor",
+    "description": "Calls a meteor down on the densest group of enemies",
+    "tags": ["area", "fire"],
+    "module": "src.entities.abilities.meteor",
+    "unlocked": true,
+    "maxTier": 5,
+    "icon": "assets/images/abilities/meteor.png",
+    "baseStats": {
+      "cooldown": 4.0,
+      "damage": 40,
+      "radius": 90,
+      "delay": 1.2,
+      "burnDps": 6,
+      "burnDuration": 2
+    },
+    "upgrades": {
+      "radius_increase": {
+        "name": "Meteor Size",
+        "description": "+25% radius",
+        "iconType": "radius",
+        "radiusMultiplier": 1.25
+      },
+      "attack_speed": {
+        "name": "Meteor Cooldown",
+        "description": "-1s cooldown",
+        "iconType": "speed",
+        "cooldownReduction": 1.0,
+        "minCooldown": 1.5
+      },
+      "burn_duration": {
+        "name": "Meteor Embers",
+        "description": "Burn lasts twice as long",
+        "iconType": "damage",
+        "burnDurationMultiplier": 2
+      },
+      "second_meteor": {
+        "name": "Meteor Shower",
+        "description": "A second, smaller meteor hits the next densest group",
+        "iconType": "count"
+      }
+    }
+  },
+  "poison_cloud": {
+    "name": "Poison Cloud",
+    "description": "Drops a lingering poison cloud on enemies near the wall",
+    "tags": ["area", "poison"],
+    "module": "src.entities.abilities.poison_cloud",
+    "unlocked": true,
+    "maxTier": 5,
+    "icon": "assets/images/abilities/poison_cloud.png",
+    "baseStats": {
+      "cooldown": 5.0,
+      "damagePerSecond": 6,
+      "radius": 80,
+      "duration": 4,
+      "range": 350,
+      "tickInterval": 0.5
+    },
+    "upgrades": {
+      "duration_increase": {
+        "name": "Poison Cloud Duration",
+        "description": "Clouds last 50% longer",
+        "iconType": "speed",
+        "durationMultiplier": 1.5
+      },
+      "stack_increase": {
+        "name": "Poison Cloud Potency",
+        "description": "+1 poison stack per tick",
+        "iconType": "damage",
+        "stackIncrease": 1
+      },
+      "vulnerability": {
+        "name": "Poison Cloud Rot",
+        "description": "Poisoned enemies take 10% more damage from everything",
+        "iconType": "damage",
+        "damageTakenIncrease": 0.1
+      },
+      "burst": {
+        "name": "Poison Cloud Bloom",
+        "description": "Enemies that die while poisoned burst into a small cloud",
+        "iconType": "radius"
+      }
+    }
+  },
+  "spirit_turret": {
+    "name": "Spirit Turret",
+    "description": "A spirit turret on the wall fires at the enemy nearest to it",
+    "tags": ["summon", "arcane"],
+    "module": "src.entities.abilities.spirit_turret",
+    "unlocked": true,
+    "maxTier": 5,
+    "icon": "assets/images/abilities/spirit_turret.png",
+    "baseStats": {
+      "cooldown": 1.2,
+      "damage": 8,
+      "turretCount": 1,
+      "projectileSpeed": 900,
+      "turretOffset": 40
+    },
+    "upgrades": {
+      "turret_count": {
+        "name": "Spirit Turret Count",
+        "description": "+1 turret",
+        "iconType": "count",
+        "countIncrease": 1,
+        "maxTurrets": 4
+      },
+      "fire_rate": {
+        "name": "Spirit Turret Fire Rate",
+        "description": "+30% fire rate",
+        "iconType": "speed",
+        "fireRateMultiplier": 1.3,
+        "minCooldown": 0.4
+      },
+      "pierce": {
+        "name": "Spirit Turret Pierce",
+        "description": "Turret shots pierce 1 enemy",
+        "iconType": "pierce",
+        "pierceIncrease": 1
+      },
+      "elemental_shots": {
+        "name": "Spirit Turret Elements",
+        "description": "Turret shots slow and burn",
+        "iconType": "damage"
+      }
+    }
+  },
+  "keen_eye": {
+    "name": "Keen Eye",
+    "description": "Passive: +4% crit chance per tier; crits deal double damage",
+    "tags": ["crit"],
+    "module": "src.entities.abilities.passive",
+    "unlocked": true,
+    "maxTier": 5,
+    "icon": "assets/images/abilities/keen_eye.png",
+    "baseStats": {},
+    "passive": {
+      "stat": "critChance",
+      "perTier": 0.04,
+      "maxTierBonus": {
+        "critDamageBonus": 0.5
+      }
+    },
+    "upgrades": {
+      "tier_up": {
+        "name": "Keen Eye",
+        "description": "+4% crit chance (tier 5: crits deal 2.5x)",
+        "iconType": "damage"
+      }
+    }
+  },
+  "mending_wards": {
+    "name": "Mending Wards",
+    "description": "Passive: the wall regenerates 0.5 health per second per tier",
+    "tags": ["sustain"],
+    "module": "src.entities.abilities.passive",
+    "unlocked": true,
+    "maxTier": 5,
+    "icon": "assets/images/abilities/mending_wards.png",
+    "baseStats": {},
+    "passive": {
+      "stat": "wallRegen",
+      "perTier": 0.5,
+      "maxTierBonus": {
+        "wallShieldPercent": 0.1
+      }
+    },
+    "upgrades": {
+      "tier_up": {
+        "name": "Mending Wards",
+        "description": "+0.5 wall health per second (tier 5: shield every 30s)",
+        "iconType": "radius"
+      }
+    }
   }
 }

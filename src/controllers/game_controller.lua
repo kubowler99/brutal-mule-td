@@ -259,6 +259,9 @@ function M.update(event)
     end
   end
   
+  -- Mending Wards: wall regeneration and a periodic shield
+  M.updateWallSustain(dt)
+  
   -- Let the hero know how damaged the wall is (some heroes get stronger)
   hero.wallHealthRatio = wall.health / wall.maxHealth
   
@@ -295,6 +298,11 @@ function M.update(event)
       -- On-hit slow from frost projectiles (ignored if the hit killed the enemy)
       if projectile.slowFactor and enemy.isActive and enemy.applySlow then
         enemy:applySlow(projectile.slowFactor, projectile.slowDuration or 0)
+      end
+
+      -- On-hit burn (e.g. Spirit Turret's elemental shots)
+      if projectile.burnDps and enemy.isActive and enemy.applyBurn then
+        enemy:applyBurn(projectile.burnDps, projectile.burnDuration or 0)
       end
 
       -- Chance to freeze (a full stop for a short time)
@@ -335,7 +343,7 @@ function M.update(event)
     
     -- Bombers explode against the wall the moment they arrive (no reward)
     if (enemy.explodeDamage or 0) > 0 then
-      combat_system.applyDamage(wall, card_powers.modifyWallDamage(enemy.explodeDamage, enemy))
+      M.damageWall(card_powers.modifyWallDamage(enemy.explodeDamage, enemy))
       wall:flashDamage()
       effects.screenShake(HEAVY_HIT_SHAKE, 0.2)
       effects.hitSpark(enemy.x, enemy.y)
@@ -350,7 +358,7 @@ function M.update(event)
       local isSlam = enemy.eliteAbility == "slam"
       local damage = isSlam and enemy.damage * SLAM_DAMAGE_MULTIPLIER or enemy.damage
       damage = card_powers.modifyWallDamage(damage, enemy)
-      combat_system.applyDamage(wall, damage)
+      M.damageWall(damage)
       wall:flashDamage()
       card_powers.onWallHit(enemy)
       enemy.lastAttackTime = currentTime
@@ -381,6 +389,47 @@ function M.update(event)
   
   -- 6. Screen shake
   effects.update(dt)
+end
+
+-- Mending Wards' shield comes back this often (seconds)
+local WALL_SHIELD_INTERVAL = 30
+
+--- Damage the wall, spending its shield first
+-- @param amount number Damage after card reductions
+function M.damageWall(amount)
+  if not wall or amount <= 0 then
+    return
+  end
+  local shield = wall.shield or 0
+  if shield > 0 then
+    local absorbed = math.min(shield, amount)
+    wall.shield = shield - absorbed
+    amount = amount - absorbed
+  end
+  if amount > 0 then
+    combat_system.applyDamage(wall, amount)
+  end
+end
+
+--- Heal the wall and refresh its shield from the hero's passives
+-- @param dt number Delta time in seconds
+function M.updateWallSustain(dt)
+  if not hero or not wall or not hero.getStats then
+    return
+  end
+  local stats = hero:getStats()
+  local regen = stats.wallRegen or 0
+  if regen > 0 then
+    wall.health = math.min(wall.maxHealth, wall.health + regen * dt)
+  end
+  local shieldPercent = stats.wallShieldPercent or 0
+  if shieldPercent > 0 then
+    M.wallShieldTimer = (M.wallShieldTimer or WALL_SHIELD_INTERVAL) + dt
+    if M.wallShieldTimer >= WALL_SHIELD_INTERVAL then
+      M.wallShieldTimer = 0
+      wall.shield = math.max(wall.shield or 0, wall.maxHealth * shieldPercent)
+    end
+  end
 end
 
 --- Reward a kill from any damage source
@@ -645,6 +694,7 @@ function M.cleanup()
   card_powers.cleanup()
   M.pendingPicks = 0
   M.startLevelUpsGiven = false
+  M.wallShieldTimer = nil
   effects.cleanup()
   sound.cleanup()
   combat_system.cleanup()

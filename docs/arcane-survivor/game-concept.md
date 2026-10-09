@@ -153,15 +153,16 @@ Six new abilities fill the categories the current roster lacks: summons, crit, a
 - Lv2: +1 turret
 - Lv3: +30% fire rate
 - Lv4: Turret shots pierce 1 enemy
-- Lv5: Turrets copy the slow or burn of the hero's other abilities
+- Lv5: Turret shots slow and burn
 
 #### Keen Eye
 
-- Lv2–Lv5: +5% crit chance per tier (20% crit chance at Lv5 including base); at Lv5 crits deal 2.5x damage
+- Each tier: +4% crit chance (20% at Lv5); crits deal 2x damage
+- Lv5: crits deal 2.5x damage
 
 #### Mending Wards
 
-- Lv2–Lv4: +0.5 wall health per second per tier
+- Each tier: +0.5 wall health per second (2.5 per second at Lv5)
 - Lv5: The wall also gets a shield equal to 10% of its maximum health every 30s
 
 ### Hero Ability Synergy Chart

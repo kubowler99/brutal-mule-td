@@ -431,7 +431,9 @@ function Walker:activate(x, y, lane, enemyType)
   self:clearBurn()
   self.isTelegraphing = false
   
-  -- Reset type behaviors
+  -- Reset type behaviors and poison vulnerability
+  self.vulnerableRemaining = 0
+  self.vulnerableBonus = 0
   self.shieldBroken = false
   self.phaseTimer = 0
   self.isPhased = false
@@ -496,6 +498,11 @@ function Walker:update(dt, wallThreshold)
       self.slowFactor = 1.0
       self:refreshStyle()
     end
+  end
+  
+  -- Poison vulnerability wears off
+  if (self.vulnerableRemaining or 0) > 0 then
+    self.vulnerableRemaining = math.max(0, self.vulnerableRemaining - dt)
   end
   
   -- Collect burn damage in ticks
