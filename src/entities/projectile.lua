@@ -90,6 +90,8 @@ function Projectile:activate(x, y, targetX, targetY, speed, damage, pierce)
   self.freezeChance = nil
   self.freezeDuration = nil
   self.ricochetsLeft = 0
+  self.burnDps = nil
+  self.burnDuration = nil
   self.needsRicochet = false
   
   -- Reset hit tracking

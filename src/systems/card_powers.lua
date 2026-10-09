@@ -253,9 +253,11 @@ function M.modifyEnemyDamage(enemy, amount)
   end
   amount = amount * (1 + bonus)
 
-  local critChance = M.stat("critChance")
+  -- Crits come from cards and from the hero's passives (Keen Eye)
+  local heroStats = context.hero and context.hero.getStats and context.hero:getStats() or {}
+  local critChance = M.stat("critChance") + (heroStats.critChance or 0)
   if critChance > 0 and random() < critChance then
-    amount = amount * (M.CRIT_MULTIPLIER + M.stat("critDamageBonus"))
+    amount = amount * (M.CRIT_MULTIPLIER + M.stat("critDamageBonus") + (heroStats.critDamageBonus or 0))
   end
 
   -- Executioner level 15: finish off enemies left below the threshold

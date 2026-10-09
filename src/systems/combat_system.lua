@@ -276,6 +276,10 @@ function M.applyDamage(entity, amount)
   
   -- Card bonuses against enemies (e.g. Executioner vs elites and bosses)
   if wasActive then
+    -- Poisoned enemies (Poison Cloud upgrade) take more damage from everything
+    if (entity.vulnerableRemaining or 0) > 0 then
+      validAmount = validAmount * (1 + (entity.vulnerableBonus or 0))
+    end
     validAmount = card_powers.modifyEnemyDamage(entity, validAmount)
   end
   
