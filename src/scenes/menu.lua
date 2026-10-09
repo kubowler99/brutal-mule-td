@@ -130,9 +130,9 @@ function scene:show(event)
         end
     elseif phase == "did" then
         -- Add button tap handlers when scene is fully visible
-        -- PLAY opens hero select, which starts the run
+        -- PLAY opens stage select, then hero select, which starts the run
         local function onPlayTap(event)
-            composer.gotoScene("src.scenes.hero_select", {
+            composer.gotoScene("src.scenes.stage_select", {
                 effect = "fade",
                 time = 300
             })

@@ -15,6 +15,7 @@ local combat_system = require("src.systems.combat_system")
 local card_powers = require("src.systems.card_powers")
 local card_face = require("src.ui.card_face")
 local card_collection = require("src.models.card_collection")
+local stages = require("src.models.stages")
 
 local scene = composer.newScene()
 
@@ -40,6 +41,10 @@ local isPausedByPlayer = false
 local endSessionOnHide = false
 -- Hero for the current run; kept so Play Again reuses it
 local currentHeroId = nil
+-- Stage for the current run; kept so Play Again reuses it
+local currentStageId = nil
+-- Battlefield background, swapped to match the stage
+local battlefieldBackground = nil
 -- Active card buttons in the HUD: { index, group, chargesText }
 local cardButtons = {}
 -- Second Opinion reroll button in the level-up panel
@@ -314,13 +319,42 @@ local function setPausePanelVisible(visible)
   end
 end
 
+--- Show the battlefield background for a stage
+-- @param stageId string|nil Stage id (nil keeps the default battlefield)
+function scene.setStageBackground(stageId)
+  local stage = stageId and stages.getStage(stageId)
+  local name = stage and stage.background or "game"
+  if not helpers.BACKGROUNDS[name] then
+    name = "game"
+  end
+  if battlefieldBackground and battlefieldBackground.backgroundName == name then
+    return
+  end
+  local parent = scene.view
+  if battlefieldBackground and battlefieldBackground.removeSelf then
+    battlefieldBackground:removeSelf()
+    if parent and parent.remove then
+      parent:remove(battlefieldBackground)
+    end
+  end
+  battlefieldBackground = helpers.newBackground(parent, name)
+  battlefieldBackground.backgroundName = name
+  if battlefieldBackground.toBack then
+    battlefieldBackground:toBack()
+  end
+end
+
 --- Announce a boss with a banner that fades out
 -- @param boss table The boss enemy that spawned
 function scene.showBossBanner(boss)
   if not bossBanner then
     return
   end
-  bossBanner.text = (boss and boss.isFinalBoss) and "FINAL BOSS" or "BOSS INCOMING"
+  local title = (boss and boss.isFinalBoss) and "FINAL BOSS" or "BOSS INCOMING"
+  if boss and boss.displayName then
+    title = title .. "\n" .. boss.displayName
+  end
+  bossBanner.text = title
   bossBanner.alpha = 1
   bossBanner.isVisible = true
   bossBanner:toFront()
@@ -388,8 +422,9 @@ end
 function scene:create(event)
   local sceneGroup = self.view
   
-  -- Battlefield background image
-  helpers.newBackground(sceneGroup, "game")
+  -- Battlefield background image (replaced per stage in show)
+  battlefieldBackground = helpers.newBackground(sceneGroup, "game")
+  battlefieldBackground.backgroundName = "game"
   
   -- Create a game layer for entities (walkers, projectiles, hero, wall)
   -- This layer is inserted BEFORE the UI overlay layer so entities always render behind UI
@@ -612,7 +647,11 @@ function scene:show(event)
     if event.params and event.params.heroId then
       currentHeroId = event.params.heroId
     end
-    game_controller.initialize(scene.gameLayer, currentHeroId)
+    if event.params and event.params.stageId then
+      currentStageId = event.params.stageId
+    end
+    game_controller.initialize(scene.gameLayer, currentHeroId, currentStageId)
+    scene.setStageBackground(game_state.stageId)
     
     -- A new session never starts paused
     isPausedByPlayer = false
@@ -740,6 +779,7 @@ function scene:destroy(event)
   rerollButton = nil
   
   -- Clear references
+  battlefieldBackground = nil
   hero = nil
   wall = nil
   levelText = nil

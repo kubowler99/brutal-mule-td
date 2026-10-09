@@ -77,6 +77,10 @@ end
 -- Full-screen background images and their pixel sizes
 M.BACKGROUNDS = {
     game = { path = "assets/images/backgrounds/game.png", width = 288, height = 512 },
+    frozen_pass = { path = "assets/images/backgrounds/frozen_pass.png", width = 288, height = 512 },
+    burning_keep = { path = "assets/images/backgrounds/burning_keep.png", width = 288, height = 512 },
+    sunken_crypt = { path = "assets/images/backgrounds/sunken_crypt.png", width = 288, height = 512 },
+    arcane_rift = { path = "assets/images/backgrounds/arcane_rift.png", width = 288, height = 512 },
     menu = { path = "assets/images/backgrounds/menu.png", width = 286, height = 509 },
     settings = { path = "assets/images/backgrounds/settings.png", width = 288, height = 512 },
     -- The card screen reuses the wizard's study from the settings screen
