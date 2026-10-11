@@ -124,7 +124,7 @@ describe("Meta progression scenes", function()
     end)
 
     describe("menu", function()
-        it("shows gold and opens hero select and upgrades", function()
+        it("shows gold and opens stage select, upgrades, and settings", function()
             meta.addGold(42)
             local menu = loadScene("src.scenes.menu")
             menu:dispatchEvent({ name = "create", phase = "will" })
@@ -141,7 +141,7 @@ describe("Meta progression scenes", function()
                 end
             end
             for _, call in ipairs(gotoCalls) do tapped[call.name] = true end
-            assert.is_true(tapped["src.scenes.hero_select"])
+            assert.is_true(tapped["src.scenes.stage_select"])
             assert.is_true(tapped["src.scenes.upgrades"])
             assert.is_true(tapped["src.scenes.settings"])
         end)

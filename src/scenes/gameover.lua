@@ -7,6 +7,7 @@ local composer = require("composer")
 local helpers = require("src.utils.helpers")
 local data = require("src.models.data")
 local meta_progression = require("src.models.meta_progression")
+local stages = require("src.models.stages")
 local stringUtils = require("src.utils.string")
 
 local scene = composer.newScene()
@@ -20,6 +21,7 @@ local enemiesDefeatedText
 local finalLevelText
 local bestRunText
 local goldEarnedText
+local unlockText
 local playAgainButton
 local mainMenuButton
 
@@ -109,6 +111,17 @@ function scene:create(event)
   })
   goldEarnedText:setFillColor(1, 0.85, 0.3)
   
+  -- New stage unlocked by this win (filled in on show)
+  unlockText = display.newText({
+    parent = sceneGroup,
+    text = "",
+    x = helpers.centerX,
+    y = statsY + statsSpacing * 5 + 20,
+    font = native.systemFontBold,
+    fontSize = 24
+  })
+  unlockText:setFillColor(0.5, 1, 0.6)
+  
   -- Play Again button (handler will be added in show phase)
   playAgainButton = helpers.newButton({
     x = helpers.centerX,
@@ -171,6 +184,16 @@ function scene:show(event)
     if finalLevelText then
       local finalLevel = stats.finalLevel or stats.level or 1
       finalLevelText.text = "Final Level: " .. tostring(finalLevel)
+    end
+    
+    -- A win unlocks the next stage
+    if unlockText then
+      local unlocked = stats.victoryCondition and stats.stageId and stages.unlockAfterVictory(stats.stageId) or {}
+      if #unlocked > 0 then
+        unlockText.text = "New stage unlocked: " .. (unlocked[1].name or unlocked[1].id)
+      else
+        unlockText.text = ""
+      end
     end
     
     -- Award gold for this run (saved by addGold)
@@ -284,6 +307,7 @@ function scene:destroy(event)
   finalLevelText = nil
   bestRunText = nil
   goldEarnedText = nil
+  unlockText = nil
   playAgainButton = nil
   mainMenuButton = nil
   stats = nil

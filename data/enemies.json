@@ -21,7 +21,9 @@
       "summonCount": "number - Optional; enemies raised each time",
       "summonType": "string - Optional; enemy type raised (default swarmling)",
       "burrows": "boolean - Optional; untargetable underground until near the wall",
-      "surfaceDistance": "number - Optional; surfaces this far short of its stop point"
+      "surfaceDistance": "number - Optional; surfaces this far short of its stop point",
+      "name": "string - Optional; display name (shown in the boss banner)",
+      "bossAbility": "string - Optional; a boss's attack ability: slam (double wall damage) or charge"
     }
   },
   "walker": {
@@ -66,7 +68,8 @@
     "damage": 25,
     "attackCooldown": 2.0,
     "xpValue": 200,
-    "isBoss": true
+    "isBoss": true,
+    "name": "Bone Colossus"
   },
   "final_boss": {
     "health": 2000,
@@ -75,7 +78,8 @@
     "attackCooldown": 2.0,
     "xpValue": 500,
     "isBoss": true,
-    "isFinalBoss": true
+    "isFinalBoss": true,
+    "name": "The Lich"
   },
   "shielder": {
     "health": 30,
@@ -145,5 +149,99 @@
     "xpValue": 18,
     "burrows": true,
     "surfaceDistance": 160
+  },
+  "frost_troll": {
+    "name": "Frost Troll",
+    "health": 650,
+    "speed": 25,
+    "damage": 25,
+    "attackCooldown": 2.0,
+    "xpValue": 250,
+    "isBoss": true,
+    "bossAbility": "slam"
+  },
+  "ice_wyrm": {
+    "name": "Ice Wyrm",
+    "health": 2200,
+    "speed": 18,
+    "damage": 40,
+    "attackCooldown": 2.0,
+    "xpValue": 500,
+    "isBoss": true,
+    "isFinalBoss": true,
+    "summonInterval": 8,
+    "summonCount": 2,
+    "summonType": "frost_golem"
+  },
+  "flame_juggernaut": {
+    "name": "Flame Juggernaut",
+    "health": 650,
+    "speed": 25,
+    "damage": 25,
+    "attackCooldown": 2.0,
+    "xpValue": 250,
+    "isBoss": true,
+    "bossAbility": "charge"
+  },
+  "ember_drake": {
+    "name": "Ember Drake",
+    "health": 2200,
+    "speed": 18,
+    "damage": 40,
+    "attackCooldown": 2.0,
+    "xpValue": 500,
+    "isBoss": true,
+    "isFinalBoss": true,
+    "summonInterval": 7,
+    "summonCount": 2,
+    "summonType": "bomber"
+  },
+  "drowned_priest": {
+    "name": "Drowned Priest",
+    "health": 650,
+    "speed": 25,
+    "damage": 22,
+    "attackCooldown": 2.0,
+    "xpValue": 250,
+    "isBoss": true,
+    "summonInterval": 6,
+    "summonCount": 3,
+    "summonType": "walker"
+  },
+  "crypt_horror": {
+    "name": "Crypt Horror",
+    "health": 2400,
+    "speed": 18,
+    "damage": 45,
+    "attackCooldown": 2.2,
+    "xpValue": 500,
+    "isBoss": true,
+    "isFinalBoss": true,
+    "bossAbility": "slam"
+  },
+  "rift_warden": {
+    "name": "Rift Warden",
+    "health": 700,
+    "speed": 28,
+    "damage": 25,
+    "attackCooldown": 2.0,
+    "xpValue": 250,
+    "isBoss": true,
+    "phaseInterval": 5,
+    "phaseDuration": 1.5
+  },
+  "the_unmaker": {
+    "name": "The Unmaker",
+    "health": 2600,
+    "speed": 18,
+    "damage": 45,
+    "attackCooldown": 2.0,
+    "xpValue": 600,
+    "isBoss": true,
+    "isFinalBoss": true,
+    "bossAbility": "slam",
+    "summonInterval": 8,
+    "summonCount": 2,
+    "summonType": "wraith"
   }
 }

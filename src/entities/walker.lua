@@ -72,6 +72,15 @@ local TYPE_STYLES = {
   wraith = { tint = {0.8, 0.8, 1.0}, scale = 1.0 },
   necromancer = { tint = {0.5, 0.25, 0.6}, scale = 1.05 },
   burrower = { tint = {0.65, 0.5, 0.3}, scale = 0.9 },
+  -- Stage bosses (mid bosses at 2.2, final bosses at 2.8)
+  frost_troll = { tint = {0.6, 0.85, 1.0}, scale = 2.2 },
+  ice_wyrm = { tint = {0.45, 0.7, 1.0}, scale = 2.8 },
+  flame_juggernaut = { tint = {1.0, 0.5, 0.2}, scale = 2.2 },
+  ember_drake = { tint = {1.0, 0.3, 0.1}, scale = 2.8 },
+  drowned_priest = { tint = {0.4, 0.65, 0.6}, scale = 2.2 },
+  crypt_horror = { tint = {0.45, 0.35, 0.55}, scale = 2.8 },
+  rift_warden = { tint = {0.75, 0.5, 1.0}, scale = 2.2 },
+  the_unmaker = { tint = {0.35, 0.15, 0.5}, scale = 2.8 },
 }
 
 -- Phased wraiths and burrowed burrowers are drawn faint
@@ -213,6 +222,7 @@ function Walker:setType(enemyType)
   self.isFinalBoss = _getEnemyFlag(enemyType, "isFinalBoss")
   self.isElite = false
   self.xpMultiplier = 1
+  self.displayName = _getEnemyString(enemyType, "name")
   
   -- Special behaviors (see enemies.json _fields)
   self.hasShield = _getEnemyFlag(enemyType, "hasShield")
@@ -232,8 +242,8 @@ function Walker:setType(enemyType)
   self.surfaceDistance = _getEnemyStat(enemyType, "surfaceDistance") or 0
   self.isBurrowed = self.burrows
   
-  -- Elite ability state
-  self.eliteAbility = nil
+  -- Elite ability state (stage bosses can have one from enemies.json)
+  self.eliteAbility = _getEnemyString(enemyType, "bossAbility")
   self.hasCharged = false
   self.chargeRemaining = 0
   self.summonTimer = 0

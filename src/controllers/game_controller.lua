@@ -20,6 +20,7 @@ local ability_registry = require("src.models.ability_registry")
 local config_loader = require("src.models.config_loader")
 local meta_progression = require("src.models.meta_progression")
 local card_collection = require("src.models.card_collection")
+local stages = require("src.models.stages")
 local card_powers = require("src.systems.card_powers")
 local effects = require("src.systems.effects")
 local sound = require("src.systems.sound")
@@ -56,7 +57,8 @@ local SLAM_DAMAGE_MULTIPLIER = 2
 -- Creates hero, initializes object pools, and sets up all systems
 -- @param group table The scene group to add display objects to
 -- @param heroId string|nil Hero for this run (default: the selected hero)
-function M.initialize(group, heroId)
+-- @param stageId string|nil Stage for this run (default: the selected stage)
+function M.initialize(group, heroId, stageId)
   sceneGroup = group
   isPaused = false
   
@@ -71,9 +73,14 @@ function M.initialize(group, heroId)
   -- Hero choice and permanent upgrades for this run
   heroId = heroId or meta_progression.getSelectedHeroId()
   local heroDefinition = heroId and meta_progression.getHero(heroId)
+  
+  -- Stage for this run (enemy roster, bosses, and multipliers)
+  stageId = stageId or stages.getSelectedStageId()
+  local stage = stageId and stages.getStage(stageId)
+  game_state.stageId = stage and stage.id or nil
   local cardEffects = card_collection.getRunEffects()
   local bonuses = meta_progression.getRunBonuses(heroId, cardEffects.stats)
-  game_state.goldMultiplier = bonuses.goldMultiplier
+  game_state.goldMultiplier = bonuses.goldMultiplier * ((stage and stage.goldMultiplier) or 1)
   
   -- Create wall at fixed position (360, 1200, display.contentWidth)
   -- Wall is positioned at Y=1200 with height 80
@@ -157,7 +164,7 @@ function M.initialize(group, heroId)
   -- Initialize systems
   -- IMPORTANT: spawner must be initialized BEFORE combat_system so that
   -- combat_system receives the live activeWalkers reference
-  spawner_system.initialize(walkerPool, hero.level)
+  spawner_system.initialize(walkerPool, hero.level, stage)
   combat_system.initialize(hero, projectilePool, spawner_system.getActiveWalkers(), sceneGroup)
   combat_system.onEnemyKilled = M.onEnemyKilled
   combat_system.onEnemyDamaged = M.onEnemyDamaged

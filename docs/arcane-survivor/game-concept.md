@@ -286,11 +286,13 @@ A run takes place in one **stage**: a battlefield with its own background, enemy
 
 | **#** | **Stage** | **Enemy Health & Damage** | **Gold** | **New Threats** | **Mid Boss (Lv 10)** | **Final Boss (Lv 20)** |
 | --- | --- | --- | --- | --- | --- | --- |
-| 1 | **Cursed Field** | x1.0 | x1.0 | Current roster | **Bone Colossus** — slams the wall | **The Lich** — raises the dead (current final boss) |
-| 2 | **Frozen Pass** | x1.3 | x1.25 | Frost Golem, Shielder | **Frost Troll** — telegraphed ground slam that slows the hero's cooldowns for 3s | **Ice Wyrm** — breathes a frost line along a marked lane |
-| 3 | **Burning Keep** | x1.7 | x1.5 | Bomber, Splitter | **Flame Juggernaut** — telegraphed charge at the wall | **Ember Drake** — fire rain on marked circles |
-| 4 | **Sunken Crypt** | x2.2 | x1.75 | Wraith, Necromancer | **Drowned Priest** — summons a ring of drowned walkers | **Crypt Horror** — sweeping tentacle across a marked row |
-| 5 | **Arcane Rift** | x3.0 | x2.0 | Burrower, plus every earlier threat | **Rift Warden** — teleports and turns untargetable briefly | **The Unmaker** — cycles through the attacks of the earlier final bosses |
+| 1 | **Cursed Field** | x1.0 | x1.0 | Current roster | **Bone Colossus** — heavy telegraphed wall hits | **The Lich** — heavy telegraphed wall hits |
+| 2 | **Frozen Pass** | x1.3 | x1.25 | Frost Golem, Shielder | **Frost Troll** — telegraphed slam (double wall damage) | **Ice Wyrm** — raises Frost Golems |
+| 3 | **Burning Keep** | x1.7 | x1.5 | Bomber, Splitter | **Flame Juggernaut** — charges the wall | **Ember Drake** — calls in Bombers |
+| 4 | **Sunken Crypt** | x2.2 | x1.75 | Wraith, Necromancer | **Drowned Priest** — raises walkers | **Crypt Horror** — telegraphed slam (double wall damage) |
+| 5 | **Arcane Rift** | x3.0 | x2.0 | Burrower, plus every earlier threat | **Rift Warden** — phases out like a Wraith | **The Unmaker** — slams and raises Wraiths |
+
+Bosses reuse the existing attack mechanics (telegraphed slams, charges, summons, and phasing). Unique attacks such as frost lines or fire rain on marked circles are a future addition.
 
 Each stage defines:
 
@@ -299,6 +301,8 @@ Each stage defines:
 - **Boss pair**: a mid boss at level 10 and a final boss at level 20.
 - **Multipliers**: enemy health and damage, and gold earned.
 - **Unlock**: the stage that must be won first.
+
+Players pick a stage after tapping PLAY, then pick a hero. Stage data lives in `data/stages.json`.
 
 ## Cards
 
